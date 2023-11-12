@@ -1,4 +1,4 @@
-module github.com/alserov/shop/proto
+module github.com/alserov/device-shop/proto
 
 go 1.21.0
 

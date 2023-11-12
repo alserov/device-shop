@@ -3,8 +3,8 @@ package app
 import (
 	"context"
 	"fmt"
-	"github.com/alserov/shop/gateway/internal/cache"
-	"github.com/alserov/shop/gateway/internal/controller"
+	"github.com/alserov/device-shop/gateway/internal/cache"
+	"github.com/alserov/device-shop/gateway/internal/controller"
 	"github.com/gin-gonic/gin"
 	"log"
 	"net/http"

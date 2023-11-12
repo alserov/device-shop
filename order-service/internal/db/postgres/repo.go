@@ -3,7 +3,6 @@ package postgres
 import (
 	"context"
 	"database/sql"
-	"github.com/alserov/shop/order-service/internal/utils"
 	"sync"
 	"time"
 )

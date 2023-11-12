@@ -2,10 +2,9 @@ package controller
 
 import (
 	"context"
-	"github.com/alserov/shop/gateway/pkg/client"
-	"github.com/alserov/shop/gateway/pkg/models"
-	"github.com/alserov/shop/gateway/pkg/responser"
-	"github.com/alserov/shop/proto/gen"
+	"github.com/alserov/device-shop/gateway/pkg/client"
+	"github.com/alserov/device-shop/gateway/pkg/models"
+	"github.com/alserov/device-shop/gateway/pkg/responser"
 	"github.com/gin-gonic/gin"
 	"google.golang.org/grpc/status"
 	"net/http"

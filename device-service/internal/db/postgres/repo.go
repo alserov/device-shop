@@ -4,7 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"github.com/alserov/shop/device-service/internal/entity"
+	"github.com/alserov/device-shop/device-service/internal/entity"
 )
 
 type Repository interface {
