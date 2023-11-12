@@ -4,7 +4,7 @@ go 1.21.0
 
 require (
 	github.com/alserov/shop/device-service v0.0.0-20231103114549-e67f23cb89f4
-	github.com/alserov/shop/proto v0.0.0-20231111183622-ff06614a0ee8
+	github.com/alserov/shop/proto v0.0.0-20231112081252-7b214cc4ec49
 	github.com/alserov/shop/user-service v0.0.0-20231031152425-4856539551fb
 	github.com/asaskevich/govalidator v0.0.0-20230301143203-a9d515a09cc2
 	github.com/gin-gonic/gin v1.9.1

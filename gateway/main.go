@@ -2,7 +2,7 @@ package main
 
 import (
 	"context"
-	"github.com/alserov/shop/api/internal/app"
+	"github.com/alserov/shop/gateway/internal/app"
 	"os"
 	"os/signal"
 )
