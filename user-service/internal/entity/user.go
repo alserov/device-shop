@@ -1,21 +1,21 @@
 package entity
 
 import (
-	"github.com/alserov/shop/api/pkg/entity"
+	"github.com/alserov/device-shop/gateway/pkg/models"
 	"golang.org/x/crypto/bcrypt"
 	"time"
 )
 
 type User struct {
-	UUID          string
-	Username      string
-	Password      string
-	Role          string
-	Email         string
-	Cash          int
-	RefreshToken  string
-	Token         string
-	CreatedAt     time.Time
+	UUID         string
+	Username     string
+	Password     string
+	Role         string
+	Email        string
+	Cash         int
+	RefreshToken string
+	Token        string
+	CreatedAt    time.Time
 }
 
 func (u *User) HashPassword() error {
@@ -40,7 +40,7 @@ type RepoLoginReq struct {
 }
 
 type AddReq struct {
-	Device   *entity.Device
+	Device   *models.Device
 	UserUUID string
 }
 

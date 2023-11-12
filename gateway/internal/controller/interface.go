@@ -1,7 +1,7 @@
 package controller
 
 import (
-	"github.com/alserov/shop/gateway/internal/cache"
+	"github.com/alserov/device-shop/gateway/internal/cache"
 	"github.com/go-redis/redis"
 )
 

@@ -8,6 +8,7 @@ import (
 	"github.com/alserov/device-shop/device-service/internal/db/mongo"
 	"github.com/alserov/device-shop/device-service/internal/db/postgres"
 	"github.com/alserov/device-shop/device-service/internal/entity"
+	"github.com/alserov/device-shop/proto/gen"
 	"github.com/google/uuid"
 	mg "go.mongodb.org/mongo-driver/mongo"
 	"google.golang.org/grpc/status"

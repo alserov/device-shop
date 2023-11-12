@@ -3,9 +3,9 @@ package service
 import (
 	"context"
 	"database/sql"
-	"github.com/alserov/shop/order-service/internal/db/postgres"
-	"github.com/alserov/shop/order-service/internal/utils"
-	"github.com/alserov/shop/proto/gen"
+	"github.com/alserov/device-shop/order-service/internal/db/postgres"
+	"github.com/alserov/device-shop/order-service/internal/utils"
+	"github.com/alserov/device-shop/proto/gen"
 	"github.com/google/uuid"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/timestamppb"

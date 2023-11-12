@@ -1,8 +1,8 @@
 package controller
 
 import (
-	"github.com/alserov/shop/gateway/pkg/models"
-	"github.com/alserov/shop/gateway/pkg/responser"
+	"github.com/alserov/device-shop/gateway/pkg/models"
+	"github.com/alserov/device-shop/gateway/pkg/responser"
 	"github.com/gin-gonic/gin"
 )
 

@@ -1,8 +1,8 @@
 package middleware
 
 import (
-	"github.com/alserov/shop/gateway/internal/utils"
-	"github.com/alserov/shop/gateway/pkg/responser"
+	"github.com/alserov/device-shop/gateway/internal/utils"
+	"github.com/alserov/device-shop/gateway/pkg/responser"
 	"github.com/gin-gonic/gin"
 )
 

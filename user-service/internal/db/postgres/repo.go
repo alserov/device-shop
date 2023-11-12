@@ -4,7 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"github.com/alserov/shop/user-service/internal/entity"
+	"github.com/alserov/device-shop/user-service/internal/entity"
 	"google.golang.org/grpc/status"
 	"net/http"
 )

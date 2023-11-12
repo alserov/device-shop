@@ -1,8 +1,8 @@
 package controller
 
 import (
-	_ "github.com/alserov/shop/gateway/docs"
-	"github.com/alserov/shop/gateway/internal/middleware"
+	_ "github.com/alserov/device-shop/gateway/docs"
+	"github.com/alserov/device-shop/gateway/internal/middleware"
 	"github.com/gin-gonic/gin"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"

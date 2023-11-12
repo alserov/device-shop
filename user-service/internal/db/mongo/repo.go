@@ -2,8 +2,8 @@ package mongo
 
 import (
 	"context"
-	"github.com/alserov/shop/gateway/pkg/models"
-	"github.com/alserov/shop/user-service/internal/entity"
+	"github.com/alserov/device-shop/gateway/pkg/models"
+	"github.com/alserov/device-shop/user-service/internal/entity"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 )

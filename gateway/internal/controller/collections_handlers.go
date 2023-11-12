@@ -5,6 +5,7 @@ import (
 	"github.com/alserov/device-shop/gateway/pkg/client"
 	"github.com/alserov/device-shop/gateway/pkg/models"
 	"github.com/alserov/device-shop/gateway/pkg/responser"
+	pb "github.com/alserov/shop/proto/gen"
 	"github.com/gin-gonic/gin"
 	"google.golang.org/grpc/status"
 	"net/http"

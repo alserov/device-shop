@@ -3,9 +3,8 @@ package app
 import (
 	"context"
 	"fmt"
-	"github.com/alserov/shop/order-service/internal/db/postgres"
-	"github.com/alserov/shop/order-service/internal/service"
-	"github.com/alserov/shop/proto/gen"
+	"github.com/alserov/device-shop/order-service/internal/db/postgres"
+	"github.com/alserov/device-shop/order-service/internal/service"
 	"google.golang.org/grpc"
 	"log"
 	"net"
