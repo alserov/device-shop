@@ -6,13 +6,14 @@ type CreateOrderReq struct {
 }
 
 type OrderDevice struct {
-	UUID         string
-	Title        string
-	Description  string
-	Price        float32
-	Manufacturer string
-	Amount       int32
-	Status       string
-	OrderUUID    string
-	CreatedAt    *time.Time
+	UserUUID           string
+	DeviceUUID         string
+	DeviceTitle        string
+	DeviceDescription  string
+	DevicePrice        float32
+	DeviceManufacturer string
+	OrderAmount        int32
+	OrderUUID          string
+	OrderStatus        string
+	OrderCreatedAt     *time.Time
 }
