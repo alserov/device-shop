@@ -3,12 +3,13 @@ package service
 import (
 	"context"
 	"database/sql"
-	"github.com/alserov/shop/gateway/pkg/models"
-	"github.com/alserov/shop/proto/gen"
-	"github.com/alserov/shop/user-service/internal/db/mongo"
-	"github.com/alserov/shop/user-service/internal/db/postgres"
-	"github.com/alserov/shop/user-service/internal/entity"
-	"github.com/alserov/shop/user-service/pkg/utils"
+	"github.com/alserov/device-shop/gateway/pkg/client"
+	"github.com/alserov/device-shop/gateway/pkg/models"
+	pb "github.com/alserov/device-shop/proto/gen"
+	"github.com/alserov/device-shop/user-service/internal/db/mongo"
+	"github.com/alserov/device-shop/user-service/internal/db/postgres"
+	"github.com/alserov/device-shop/user-service/internal/entity"
+	"github.com/alserov/device-shop/user-service/pkg/utils"
 	"github.com/google/uuid"
 	mg "go.mongodb.org/mongo-driver/mongo"
 	"google.golang.org/grpc/status"
@@ -187,7 +188,7 @@ func (s *service) AddToCart(ctx context.Context, req *pb.AddReq) (*emptypb.Empty
 	}
 	defer cc.Close()
 
-	getDeviceReq := &devicepb.UUIDReq{
+	getDeviceReq := &pb.UUIDReq{
 		UUID: req.DeviceUUID,
 	}
 

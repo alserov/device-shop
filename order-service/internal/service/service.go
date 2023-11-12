@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"database/sql"
+	"github.com/alserov/device-shop/gateway/pkg/models"
 	"github.com/alserov/device-shop/order-service/internal/db/postgres"
 	"github.com/alserov/device-shop/order-service/internal/utils"
 	"github.com/alserov/device-shop/proto/gen"
@@ -15,18 +16,21 @@ type service struct {
 	db postgres.Repo
 }
 
-func New(db *sql.DB) pb.OrderServer {
+func New(db *sql.DB) pb.OrdersServer {
 	return &service{
 		db: postgres.New(db),
 	}
 }
 
 func (s service) CreateOrder(ctx context.Context, req *pb.CreateOrderReq) (*pb.CreateOrderRes, error) {
+	devices := make([]*models.Device, 0, len(req.Devices))
+	// TODO: implement converting pb to struct
+
 	order := &postgres.CreateOrderReq{
 		OrderUUID: uuid.New().String(),
 		UserUUID:  req.UserUUID,
 		Status:    utils.StatusToCode(utils.CREATING),
-		Devices:   req.Devices,
+		Devices:   devices,
 	}
 
 	if err := s.db.CreateOrder(ctx, order); err != nil {
@@ -44,10 +48,26 @@ func (s service) CheckOrder(ctx context.Context, req *pb.CheckOrderReq) (*pb.Che
 		return &pb.CheckOrderRes{}, err
 	}
 
+	devices := make([]*pb.Device, 0, len(order.Devices))
+	price := int32(0)
+
+	for _, d := range order.Devices {
+		device := &pb.Device{
+			UUID:         d.UUID,
+			Title:        d.UUID,
+			Description:  d.Description,
+			Price:        d.Price,
+			Manufacturer: d.Manufacturer,
+			Amount:       int64(d.Amount),
+		}
+		price += d.Price
+		devices = append(devices, device)
+	}
+
 	return &pb.CheckOrderRes{
-		Devices: order.Devices,
+		Devices: devices,
 		Status:  utils.StatusCodeToString(order.Status),
-		Price:   int32(order.Price),
+		Price:   price,
 		CreatedAt: &timestamppb.Timestamp{
 			Seconds: order.CreatedAt.Unix(),
 			Nanos:   int32(order.CreatedAt.Nanosecond()),

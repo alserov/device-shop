@@ -1,8 +1,9 @@
 # SENSETIVE DATA
 docker-compose.yaml
+.env
 
+# IDE files
 .idea
 
+# Shortcuts
 Makefile
-
-.env

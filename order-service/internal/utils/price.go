@@ -1,7 +1,7 @@
 package utils
 
 import (
-	"github.com/alserov/shop/gateway/pkg/models"
+	"github.com/alserov/device-shop/gateway/pkg/models"
 	"sync"
 	"sync/atomic"
 )
@@ -13,7 +13,7 @@ func CountOrderPrice(items []*models.Device) uint {
 	for _, v := range items {
 		v := v
 		go func() {
-			atomic.AddUint32(&price, v.Price)
+			atomic.AddUint32(&price, uint32(v.Price))
 			wg.Done()
 		}()
 	}

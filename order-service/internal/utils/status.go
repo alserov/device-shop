@@ -14,7 +14,7 @@ const (
 	CANCELED   = "canceled"
 )
 
-func StatusCodeToString(code int) string {
+func StatusCodeToString(code int32) string {
 	switch code {
 	case CREATING_CODE:
 		return CREATING
@@ -31,7 +31,7 @@ func StatusCodeToString(code int) string {
 	}
 }
 
-func StatusToCode(status string) int {
+func StatusToCode(status string) int32 {
 	switch status {
 	case CREATING:
 		return CREATING_CODE

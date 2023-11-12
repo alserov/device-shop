@@ -3,6 +3,9 @@ package postgres
 import (
 	"context"
 	"database/sql"
+	"github.com/alserov/device-shop/gateway/pkg/models"
+	"github.com/alserov/device-shop/order-service/internal/entity"
+	"github.com/alserov/device-shop/order-service/internal/utils"
 	"sync"
 	"time"
 )
@@ -13,18 +16,18 @@ type Repo interface {
 	UpdateOrder(ctx context.Context, status string, orderUUID string) error
 }
 
-type repo struct {
-	db *sql.DB
-}
-
 func New(db *sql.DB) Repo {
 	return &repo{
 		db: db,
 	}
 }
 
+type repo struct {
+	db *sql.DB
+}
+
 func (r *repo) CreateOrder(ctx context.Context, req *CreateOrderReq) error {
-	query := `INSERT INTO orders (user_uuid,order_uuid,device_uuid,amount,status,created_at) VALUES($1,$2,$3,$4,$5)`
+	query := `INSERT INTO orders (user_uuid,order_uuid,device_uuid,amount,status,created_at) VALUES($1,$2,$3,$4,$5,$6)`
 
 	tx, err := r.db.Begin()
 	if err != nil {
@@ -45,19 +48,19 @@ func (r *repo) CreateOrder(ctx context.Context, req *CreateOrderReq) error {
 		}
 	}()
 
-	for _, v := range req.Devices {
-		v := v
+	for _, device := range req.Devices {
+		device := device
 		go func() {
 			defer wg.Done()
 
-			_, err = tx.Exec(query, req.UserUUID, req.OrderUUID, v.Price, v.UUID, v.Amount, req.Status, req.CreatedAt)
+			_, err = tx.Exec(query, req.UserUUID, req.OrderUUID, device.UUID, device.Amount, req.Status, req.CreatedAt)
 			if err != nil {
 				chErr <- err
 				return
 			}
 
 			query = `UPDATE devices SET amount = amount - $1 WHERE uuid = $2`
-			_, err = tx.Exec(query, v.Amount, v.UUID)
+			_, err = tx.Exec(query, device.Amount, device.UUID)
 			if err != nil {
 				chErr <- err
 			}
@@ -86,7 +89,11 @@ func (r *repo) CheckOrder(ctx context.Context, orderUUID string) (*CheckOrderRes
 		return nil, err
 	}
 
-	var devices []*models.Device
+	var (
+		devices    []*models.Device
+		createdAt  *time.Time
+		statusCode = int32(-1)
+	)
 
 	wg := &sync.WaitGroup{}
 	mu := &sync.Mutex{}
@@ -98,13 +105,27 @@ func (r *repo) CheckOrder(ctx context.Context, orderUUID string) (*CheckOrderRes
 		go func() {
 			defer wg.Done()
 
+			var orderedDevice entity.OrderedDevice
+			if err = rows.Scan(&orderedDevice); err != nil {
+				chErr <- err
+			}
+			if statusCode == -1 {
+				statusCode = orderedDevice.Status
+			}
+			if createdAt == nil {
+				createdAt = &orderedDevice.CreatedAt
+			}
+
+			query = `SELECT * FROM devices WHERE device_uuid = $1`
+
 			var device models.Device
-			if err = rows.Scan(&device); err != nil {
+
+			if err = r.db.QueryRow(query, orderedDevice.DeviceUUID).Scan(&device); err != nil {
 				chErr <- err
 			}
 
 			mu.Lock()
-			devices = append(devices, device)
+			devices = append(devices, &device)
 			mu.Unlock()
 		}()
 	}
@@ -120,10 +141,8 @@ func (r *repo) CheckOrder(ctx context.Context, orderUUID string) (*CheckOrderRes
 
 	return &CheckOrderRes{
 		Devices:   devices,
-		UserUUID:  devices[0].UserUUID,
-		Status:    devices[0].Status,
-		Price:     utils.CountOrderPrice(devices),
-		CreatedAt: devices[0].CreatedAt,
+		Status:    statusCode,
+		CreatedAt: createdAt,
 	}, err
 }
 
@@ -135,7 +154,10 @@ func (r *repo) UpdateOrder(ctx context.Context, status string, orderUUID string)
 			return err
 		}
 
-		var devices []*models.Device
+		var (
+			price    float32
+			userUUID string
+		)
 
 		wg := &sync.WaitGroup{}
 		mu := &sync.Mutex{}
@@ -146,13 +168,23 @@ func (r *repo) UpdateOrder(ctx context.Context, status string, orderUUID string)
 			go func() {
 				defer wg.Done()
 
-				var device models.Device
-				if err = rows.Scan(&device); err != nil {
+				var order entity.OrderedDevice
+				if err = rows.Scan(&order); err != nil {
+					chErr <- err
+				}
+				if userUUID == "" {
+					userUUID = order.UserUUID
+				}
+
+				query = `SELECT price FROM devices WHERE device_uuid = $1`
+
+				var devicePrice float32
+				if err = r.db.QueryRow(query, order.DeviceUUID).Scan(&devicePrice); err != nil {
 					chErr <- err
 				}
 
 				mu.Lock()
-				devices = append(devices, device)
+				price += devicePrice
 				mu.Unlock()
 			}()
 		}
@@ -163,7 +195,7 @@ func (r *repo) UpdateOrder(ctx context.Context, status string, orderUUID string)
 		}
 
 		query = `UPDATE users SET cash = cash + $1 WHERE user_uuid = $2`
-		_, err = r.db.Exec(query, utils.CountOrderPrice(devices), devices[0].UserUUID)
+		_, err = r.db.Exec(query, price, userUUID)
 		if err != nil {
 			return err
 		}
@@ -181,16 +213,16 @@ func (r *repo) UpdateOrder(ctx context.Context, status string, orderUUID string)
 
 type CreateOrderReq struct {
 	UserUUID  string
-	Devices   []*models.Device
 	OrderUUID string
-	Status    int
+	Devices   []*models.Device
+	Status    int32
 	CreatedAt *time.Time
 }
 
 type CheckOrderRes struct {
-	UserUUID  string           `bson:"userUUID"`
-	Devices   []*models.Device `bson:"devices"`
-	Status    int              `bson:"status"`
-	Price     uint             `bson:"price"`
-	CreatedAt *time.Time       `bson:"createdAt"`
+	UserUUID  string
+	OrderUUID string
+	Devices   []*models.Device
+	Status    int32
+	CreatedAt *time.Time
 }

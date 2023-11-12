@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/alserov/device-shop/order-service/internal/db/postgres"
 	"github.com/alserov/device-shop/order-service/internal/service"
+	"github.com/alserov/device-shop/proto/gen"
 	"google.golang.org/grpc"
 	"log"
 	"net"
@@ -32,7 +33,7 @@ func (a *App) Start(ctx context.Context) error {
 		return err
 	}
 
-	pb.RegisterOrderServer(s, service.New(pg))
+	pb.RegisterOrdersServer(s, service.New(pg))
 
 	chErr := make(chan error, 1)
 	go func() {

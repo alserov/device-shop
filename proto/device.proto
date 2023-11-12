@@ -41,7 +41,7 @@ message Device {
   string Description = 3;
   float Price = 4;
   string Manufacturer = 5;
-  int64 Amount = 6;
+  int32 Amount = 6;
 }
 
 message CreateReq {
