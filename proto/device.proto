@@ -1,0 +1,71 @@
+syntax = "proto3";
+
+option go_package = "/";
+
+import "google/protobuf/empty.proto";
+
+package device;
+
+service Devices {
+  rpc CreateDevice(CreateReq) returns(google.protobuf.Empty);
+  rpc DeleteDevice(DeleteReq) returns(google.protobuf.Empty);
+  rpc UpdateDevice(UpdateReq) returns(google.protobuf.Empty);
+  rpc GetAllDevices(GetAllReq) returns (DevicesRes);
+  rpc GetDevicesByTitle(GetByTitleReq) returns (DevicesRes);
+  rpc GetDevicesByManufacturer(GetByManufacturer) returns(DevicesRes);
+  rpc GetDevicesByPrice(GetByPrice) returns(DevicesRes);
+
+  rpc GetDeviceByUUID(UUIDReq) returns(Device);
+}
+
+message GetByPrice {
+  uint32 Min = 1;
+  uint32 Max = 2;
+}
+
+message GetByManufacturer {
+  string Manufacturer = 1;
+}
+
+message UUIDReq {
+  string UUID = 1;
+}
+
+message DevicesRes {
+  repeated Device Devices = 1;
+}
+
+message Device {
+  string UUID = 1;
+  string  Title = 2;
+  string Description = 3;
+  float Price = 4;
+  string Manufacturer = 5;
+}
+
+message CreateReq {
+  string  Title = 1;
+  string Description = 2;
+  float Price = 3;
+  string Manufacturer = 4;
+}
+
+message DeleteReq {
+  string UUID = 1;
+}
+
+message UpdateReq {
+  string  Title = 1;
+  string Description = 2;
+  float Price = 3;
+  string UUID = 4;
+}
+
+message GetAllReq {
+  int32 Index = 1;
+  int32 Amount = 2;
+}
+
+message GetByTitleReq {
+  string Title = 1;
+}

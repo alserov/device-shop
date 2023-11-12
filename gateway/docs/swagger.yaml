@@ -1,0 +1,9 @@
+basePath: /
+host: localhost:8001
+info:
+  contact: {}
+  description: API Gateway for Device Shop
+  title: Device Shop
+  version: "1.0"
+paths: {}
+swagger: "2.0"

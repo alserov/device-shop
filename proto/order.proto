@@ -1,0 +1,40 @@
+syntax = "proto3";
+
+option go_package = "/";
+
+import "proto/device.proto";
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/empty.proto";
+
+package order;
+
+service Orders {
+  rpc CreateOrder(CreateOrderReq) returns(CreateOrderRes);
+  rpc CheckOrder(CheckOrderReq) returns(CheckOrderRes);
+  rpc UpdateOrder(UpdateOrderReq) returns(google.protobuf.Empty);
+}
+
+message CreateOrderReq {
+  string UserUUID = 1;
+  repeated device.Device Devices = 2;
+}
+
+message CreateOrderRes {
+  string OrderUUID = 1;
+}
+
+message CheckOrderReq {
+  string OrderUUID = 1;
+}
+
+message CheckOrderRes {
+  repeated device.Device Devices = 1;
+  string Status = 2;
+  int32 Price = 3;
+  google.protobuf.Timestamp CreatedAt = 4;
+}
+
+message UpdateOrderReq {
+  string Status = 1;
+  string OrderUUID = 2;
+}
