@@ -4,7 +4,7 @@
 // - protoc             v4.24.1
 // source: proto/user.proto
 
-package pb
+package __
 
 import (
 	context "context"
@@ -125,6 +125,7 @@ type UsersServer interface {
 	AddToCart(context.Context, *AddReq) (*emptypb.Empty, error)
 	RemoveFromCart(context.Context, *RemoveReq) (*emptypb.Empty, error)
 	GetCart(context.Context, *GetReq) (*GetRes, error)
+	mustEmbedUnimplementedUsersServer()
 }
 
 // UnimplementedUsersServer must be embedded to have forward compatible implementations.

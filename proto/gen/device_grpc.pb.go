@@ -4,7 +4,7 @@
 // - protoc             v4.24.1
 // source: proto/device.proto
 
-package pb
+package __
 
 import (
 	context "context"
@@ -125,6 +125,7 @@ type DevicesServer interface {
 	GetDevicesByManufacturer(context.Context, *GetByManufacturer) (*DevicesRes, error)
 	GetDevicesByPrice(context.Context, *GetByPrice) (*DevicesRes, error)
 	GetDeviceByUUID(context.Context, *UUIDReq) (*Device, error)
+	mustEmbedUnimplementedDevicesServer()
 }
 
 // UnimplementedDevicesServer must be embedded to have forward compatible implementations.

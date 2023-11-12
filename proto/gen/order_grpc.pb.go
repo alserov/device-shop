@@ -4,7 +4,7 @@
 // - protoc             v4.24.1
 // source: proto/order.proto
 
-package pb
+package __
 
 import (
 	context "context"
@@ -70,6 +70,7 @@ type OrdersServer interface {
 	CreateOrder(context.Context, *CreateOrderReq) (*CreateOrderRes, error)
 	CheckOrder(context.Context, *CheckOrderReq) (*CheckOrderRes, error)
 	UpdateOrder(context.Context, *UpdateOrderReq) (*emptypb.Empty, error)
+	mustEmbedUnimplementedOrdersServer()
 }
 
 // UnimplementedOrdersServer must be embedded to have forward compatible implementations.
