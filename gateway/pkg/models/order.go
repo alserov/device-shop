@@ -5,9 +5,14 @@ import "time"
 type CreateOrderReq struct {
 }
 
-type Order struct {
-	Status    string
-	OrderUUID string
-	Price     float32
-	CreatedAt *time.Time
+type OrderDevice struct {
+	UUID         string
+	Title        string
+	Description  string
+	Price        float32
+	Manufacturer string
+	Amount       int32
+	Status       string
+	OrderUUID    string
+	CreatedAt    *time.Time
 }
