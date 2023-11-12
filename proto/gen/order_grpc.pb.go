@@ -70,7 +70,6 @@ type OrdersServer interface {
 	CreateOrder(context.Context, *CreateOrderReq) (*CreateOrderRes, error)
 	CheckOrder(context.Context, *CheckOrderReq) (*CheckOrderRes, error)
 	UpdateOrder(context.Context, *UpdateOrderReq) (*emptypb.Empty, error)
-	mustEmbedUnimplementedOrdersServer()
 }
 
 // UnimplementedOrdersServer must be embedded to have forward compatible implementations.
