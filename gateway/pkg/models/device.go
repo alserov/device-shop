@@ -8,12 +8,12 @@ func Validate[T interface{}](s *T) error {
 }
 
 type Device struct {
-	UUID         string `json:"uuid,omitempty" bson:"uuid"`
-	Title        string `json:"title,omitempty" bson:"title" validate:"required,min=3"`
-	Description  string `json:"description,omitempty" bson:"description"`
-	Price        int32  `json:"price,omitempty" bson:"price" validate:"required,gt=0"`
-	Manufacturer string `json:"manufacturer,omitempty" bson:"manufacturer" validate:"required"`
-	Amount       uint   `bson:"amount,omitempty" bson:"amount" validate:"gt=0"`
+	UUID         string  `json:"uuid,omitempty" bson:"uuid"`
+	Title        string  `json:"title,omitempty" bson:"title" validate:"required,min=3"`
+	Description  string  `json:"description,omitempty" bson:"description"`
+	Price        float32 `json:"price,omitempty" bson:"price" validate:"required,gt=0"`
+	Manufacturer string  `json:"manufacturer,omitempty" bson:"manufacturer" validate:"required"`
+	Amount       uint    `bson:"amount,omitempty" bson:"amount" validate:"gt=0"`
 }
 
 type DeleteReq struct {
@@ -26,10 +26,10 @@ type RemoveReq struct {
 }
 
 type UpdateReq struct {
-	UUID        string `json:"uuid,omitempty" validate:"required"`
-	Title       string `json:"title,omitempty" validate:"required,min=3"`
-	Description string `json:"description,omitempty"`
-	Price       int32  `json:"price,omitempty" validate:"required,gt=0"`
+	UUID        string  `json:"uuid,omitempty" validate:"required"`
+	Title       string  `json:"title,omitempty" validate:"required,min=3"`
+	Description string  `json:"description,omitempty"`
+	Price       float32 `json:"price,omitempty" validate:"required,gt=0"`
 }
 
 type GetAllReq struct {
