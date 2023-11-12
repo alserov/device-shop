@@ -125,7 +125,6 @@ type UsersServer interface {
 	AddToCart(context.Context, *AddReq) (*emptypb.Empty, error)
 	RemoveFromCart(context.Context, *RemoveReq) (*emptypb.Empty, error)
 	GetCart(context.Context, *GetReq) (*GetRes, error)
-	mustEmbedUnimplementedUsersServer()
 }
 
 // UnimplementedUsersServer must be embedded to have forward compatible implementations.

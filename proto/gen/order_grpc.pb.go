@@ -69,8 +69,6 @@ func (c *ordersClient) UpdateOrder(ctx context.Context, in *UpdateOrderReq, opts
 type OrdersServer interface {
 	CreateOrder(context.Context, *CreateOrderReq) (*CreateOrderRes, error)
 	CheckOrder(context.Context, *CheckOrderReq) (*CheckOrderRes, error)
-	UpdateOrder(context.Context, *UpdateOrderReq) (*emptypb.Empty, error)
-	mustEmbedUnimplementedOrdersServer()
 }
 
 // UnimplementedOrdersServer must be embedded to have forward compatible implementations.

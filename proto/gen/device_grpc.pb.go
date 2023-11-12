@@ -125,7 +125,6 @@ type DevicesServer interface {
 	GetDevicesByManufacturer(context.Context, *GetByManufacturer) (*DevicesRes, error)
 	GetDevicesByPrice(context.Context, *GetByPrice) (*DevicesRes, error)
 	GetDeviceByUUID(context.Context, *UUIDReq) (*Device, error)
-	mustEmbedUnimplementedDevicesServer()
 }
 
 // UnimplementedDevicesServer must be embedded to have forward compatible implementations.
