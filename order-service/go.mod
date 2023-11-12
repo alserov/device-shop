@@ -3,7 +3,7 @@ module github.com/alserov/device-shop/order-service
 go 1.21.0
 
 require (
-	github.com/alserov/device-shop/gateway v0.0.0-20231112140749-99845256dd3c // indirect
+	github.com/alserov/device-shop/gateway v0.0.0-20231112144213-d382a5e37a2d // indirect
 	github.com/alserov/device-shop/proto v0.0.0-20231112133909-9720392037fe // indirect
 	github.com/asaskevich/govalidator v0.0.0-20230301143203-a9d515a09cc2 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.2 // indirect

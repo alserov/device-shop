@@ -24,7 +24,17 @@ func New(db *sql.DB) pb.OrdersServer {
 
 func (s service) CreateOrder(ctx context.Context, req *pb.CreateOrderReq) (*pb.CreateOrderRes, error) {
 	devices := make([]*models.Device, 0, len(req.Devices))
-	// TODO: implement converting pb to struct
+	for _, d := range req.Devices {
+		device := &models.Device{
+			UUID:         d.UUID,
+			Title:        d.UUID,
+			Description:  d.Description,
+			Price:        d.Price,
+			Manufacturer: d.Manufacturer,
+			Amount:       uint(d.Amount),
+		}
+		devices = append(devices, device)
+	}
 
 	order := &postgres.CreateOrderReq{
 		OrderUUID: uuid.New().String(),
@@ -49,7 +59,7 @@ func (s service) CheckOrder(ctx context.Context, req *pb.CheckOrderReq) (*pb.Che
 	}
 
 	devices := make([]*pb.Device, 0, len(order.Devices))
-	price := int32(0)
+	price := float32(0)
 
 	for _, d := range order.Devices {
 		device := &pb.Device{

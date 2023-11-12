@@ -30,7 +30,7 @@ message CheckOrderReq {
 message CheckOrderRes {
   repeated device.Device Devices = 1;
   string Status = 2;
-  int32 Price = 3;
+  float Price = 3;
   google.protobuf.Timestamp CreatedAt = 4;
 }
 
