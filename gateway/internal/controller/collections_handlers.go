@@ -69,7 +69,7 @@ func (h *handler) AddToFavourite(c *gin.Context) {
 }
 
 func (h *handler) RemoveFromFavourite(c *gin.Context) {
-	var req models.RemoveReq
+	var req models.RemoveDeviceReq
 
 	if err := c.ShouldBindJSON(&req); err != nil {
 		responser.UserError(c.Writer, "failed to decode req body")
@@ -189,7 +189,7 @@ func (h *handler) AddToCart(c *gin.Context) {
 }
 
 func (h *handler) RemoveFromCart(c *gin.Context) {
-	var req models.RemoveReq
+	var req models.RemoveDeviceReq
 
 	if err := c.ShouldBindJSON(&req); err != nil {
 		responser.UserError(c.Writer, "failed to decode req body")

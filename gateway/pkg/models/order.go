@@ -7,6 +7,14 @@ type CreateOrderReq struct {
 	Devices  []*Device `json:"devices,omitempty" validate:"required"`
 }
 
+type UpdateOrderReq struct {
+
+}
+
+type CheckOrderReq struct {
+
+}
+
 type Order struct {
 	UserUUID  string
 	OrderUUID string

@@ -3,7 +3,6 @@ package service
 import (
 	"context"
 	"database/sql"
-	"github.com/alserov/device-shop/gateway/pkg/models"
 	"github.com/alserov/device-shop/order-service/internal/db/postgres"
 	"github.com/alserov/device-shop/order-service/internal/utils"
 	"github.com/alserov/device-shop/proto/gen"
@@ -23,24 +22,11 @@ func New(db *sql.DB) pb.OrdersServer {
 }
 
 func (s service) CreateOrder(ctx context.Context, req *pb.CreateOrderReq) (*pb.CreateOrderRes, error) {
-	devices := make([]*models.Device, 0, len(req.Devices))
-	for _, d := range req.Devices {
-		device := &models.Device{
-			UUID:         d.UUID,
-			Title:        d.UUID,
-			Description:  d.Description,
-			Price:        d.Price,
-			Manufacturer: d.Manufacturer,
-			Amount:       uint(d.Amount),
-		}
-		devices = append(devices, device)
-	}
-
 	order := &postgres.CreateOrderReq{
 		OrderUUID: uuid.New().String(),
 		UserUUID:  req.UserUUID,
 		Status:    utils.StatusToCode(utils.CREATING),
-		Devices:   devices,
+		Devices:   req.Devices,
 	}
 
 	if err := s.db.CreateOrder(ctx, order); err != nil {
@@ -68,7 +54,7 @@ func (s service) CheckOrder(ctx context.Context, req *pb.CheckOrderReq) (*pb.Che
 			Description:  d.Description,
 			Price:        d.Price,
 			Manufacturer: d.Manufacturer,
-			Amount:       int64(d.Amount),
+			Amount:       d.Amount,
 		}
 		price += d.Price
 		devices = append(devices, device)

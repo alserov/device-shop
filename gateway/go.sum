@@ -12,6 +12,8 @@ github.com/alserov/device-shop/proto v0.0.0-20231112180800-1073915fc65d h1:aN4Fe
 github.com/alserov/device-shop/proto v0.0.0-20231112180800-1073915fc65d/go.mod h1:jTRYFmTaJqxlcsigo+73JGY8OQJ0e5uTv1D3bTDAPV4=
 github.com/alserov/device-shop/proto v0.0.0-20231113145134-d25ce4cdb60d h1:6ujDNhpUSzrqPt/w75v0LRXry6zGsaHCCWz4f7a79jw=
 github.com/alserov/device-shop/proto v0.0.0-20231113145134-d25ce4cdb60d/go.mod h1:jTRYFmTaJqxlcsigo+73JGY8OQJ0e5uTv1D3bTDAPV4=
+github.com/alserov/device-shop/proto v0.0.0-20231113153041-bdbc12b07083 h1:0FVm1htkb07ERLZzVLn7laQ265ZLBP3myooXAyTPMNg=
+github.com/alserov/device-shop/proto v0.0.0-20231113153041-bdbc12b07083/go.mod h1:jTRYFmTaJqxlcsigo+73JGY8OQJ0e5uTv1D3bTDAPV4=
 github.com/alserov/shop/proto v0.0.0-20231112081252-7b214cc4ec49 h1:6Q0vsqkz/HSG/SAwy1t0KwN94E9hLXy3nr0zuu5HUUA=
 github.com/alserov/shop/proto v0.0.0-20231112081252-7b214cc4ec49/go.mod h1:eOBMQ06R5TuXvpNTYTQWbZjuIMhAFTudUt+emFJKkzw=
 github.com/asaskevich/govalidator v0.0.0-20230301143203-a9d515a09cc2 h1:DklsrG3dyBCFEj5IhUbnKptjxatkF07cF2ak3yi77so=
@@ -79,6 +81,8 @@ github.com/google/go-cmp v0.5.5/go.mod h1:v8dTdLbMG2kIc/vJvl+f65V22dbkXbowE6jgT/
 github.com/google/go-cmp v0.6.0 h1:ofyhxvXcZhMsU5ulbFiLKl/XBFqE1GSq7atu8tAmTRI=
 github.com/google/go-cmp v0.6.0/go.mod h1:17dUlkBOakJ0+DkrSSNjCkIjxS6bF9zb3elmeNGIjoY=
 github.com/google/gofuzz v1.0.0/go.mod h1:dBl0BpW6vV/+mYPU4Po3pmUjxk6FQPldtuIdl/M65Eg=
+github.com/google/uuid v1.3.1 h1:KjJaJ9iWZ3jOFZIf1Lqf4laDRCasjl0BCmnEGxkdLb4=
+github.com/google/uuid v1.3.1/go.mod h1:TIyPZe4MgqvfeYDBFedMoGGpEw/LqOeaOT+nhxU+yHo=
 github.com/hpcloud/tail v1.0.0/go.mod h1:ab1qPbhIpdTxEkNHXyeSf5vhxWSCs/tWer42PpOxQnU=
 github.com/josharian/intern v1.0.0 h1:vlS4z54oSdjm0bgjRigI+G1HpF+tI+9rE5LLzOg8HmY=
 github.com/josharian/intern v1.0.0/go.mod h1:5DoeVV0s6jJacbCEi61lwdGj/aVlrQvzHFFd8Hwg//Y=

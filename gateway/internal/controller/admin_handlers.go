@@ -2,6 +2,7 @@ package controller
 
 import (
 	"context"
+	"github.com/alserov/device-shop/gateway/internal/utils"
 	"github.com/alserov/device-shop/gateway/pkg/client"
 	"github.com/alserov/device-shop/gateway/pkg/models"
 	"github.com/alserov/device-shop/gateway/pkg/responser"
@@ -19,15 +20,9 @@ type AdminHandler interface {
 }
 
 func (h *handler) CreateDevice(c *gin.Context) {
-	var req models.Device
-
-	if err := c.ShouldBindJSON(&req); err != nil {
-		responser.UserError(c.Writer, "failed decode req body")
-		return
-	}
-
-	if err := models.Validate(&req); err != nil {
-		responser.UserError(c.Writer, err.Error())
+	msg, err := utils.RequestToPBMessage[models.Device, pb.CreateReq](c.Request, utils.CreateDeviceToPB)
+	if err != nil {
+		responser.ServerError(c.Writer, err)
 		return
 	}
 
@@ -38,17 +33,10 @@ func (h *handler) CreateDevice(c *gin.Context) {
 	}
 	defer cc.Close()
 
-	r := &pb.CreateReq{
-		Title:        req.Title,
-		Description:  req.Description,
-		Manufacturer: req.Manufacturer,
-		Price:        req.Price,
-	}
-
 	ctx, cancel := context.WithTimeout(c.Request.Context(), time.Duration(1000)*time.Millisecond)
 	defer cancel()
 
-	_, err = cl.CreateDevice(ctx, r)
+	_, err = cl.CreateDevice(ctx, msg)
 	if err != nil {
 		if st, ok := status.FromError(err); ok {
 			responser.UserError(c.Writer, st.Message())
@@ -97,7 +85,7 @@ func (h *handler) DeleteDevice(c *gin.Context) {
 }
 
 func (h *handler) UpdateDevice(c *gin.Context) {
-	var req models.UpdateReq
+	var req models.UpdateDeviceReq
 
 	if err := c.ShouldBindJSON(&req); err != nil {
 		responser.UserError(c.Writer, "failed to decode req body")
