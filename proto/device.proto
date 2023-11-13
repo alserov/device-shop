@@ -41,7 +41,7 @@ message Device {
   string Description = 3;
   float Price = 4;
   string Manufacturer = 5;
-  int32 Amount = 6;
+  uint32 Amount = 6;
 }
 
 message CreateReq {
@@ -63,8 +63,8 @@ message UpdateReq {
 }
 
 message GetAllReq {
-  int32 Index = 1;
-  int32 Amount = 2;
+  uint32 Index = 1;
+  uint32 Amount = 2;
 }
 
 message GetByTitleReq {
