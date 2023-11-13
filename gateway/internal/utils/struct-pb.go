@@ -3,7 +3,7 @@ package utils
 import (
 	"encoding/json"
 	"github.com/alserov/device-shop/gateway/pkg/models"
-	pb "github.com/alserov/device-shop/proto/gen"
+	"github.com/alserov/device-shop/proto/gen"
 	"net/http"
 )
 
@@ -39,4 +39,28 @@ func CheckOrderToPB(str *models.CheckOrderReq) *pb.CheckOrderReq {
 
 func CreateDeviceToPB(str *models.Device) *pb.CreateReq {
 	return &pb.CreateReq{}
+}
+
+func UpdateDeviceToPB(str *models.UpdateDeviceReq) *pb.UpdateReq {
+	return &pb.UpdateReq{}
+}
+
+func SignupReqToPB(str *models.SignupReq) *pb.SignupReq {
+	return &pb.SignupReq{}
+}
+
+func LoginReqToPB(str *models.LoginReq) *pb.LoginReq {
+	return &pb.LoginReq{}
+}
+
+func AddReqToPB(str *models.AddToCollectionReq) *pb.AddReq {
+	return &pb.AddReq{}
+}
+
+func RemoveReqToPB(str *models.RemoveDeviceReq) *pb.RemoveReq {
+	return &pb.RemoveReq{}
+}
+
+func GetAllReqToPB(str *models.GetAllDevicesReq) *pb.GetAllReq {
+	return &pb.GetAllReq{}
 }

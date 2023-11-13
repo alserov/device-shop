@@ -4,10 +4,11 @@ import (
 	"context"
 	"fmt"
 	"github.com/alserov/device-shop/gateway/internal/cache"
+	"github.com/alserov/device-shop/gateway/internal/utils"
 	"github.com/alserov/device-shop/gateway/pkg/client"
 	"github.com/alserov/device-shop/gateway/pkg/models"
 	"github.com/alserov/device-shop/gateway/pkg/responser"
-	pb "github.com/alserov/shop/proto/gen"
+	"github.com/alserov/device-shop/proto/gen"
 	"github.com/gin-gonic/gin"
 	"google.golang.org/grpc/status"
 	"log"
@@ -29,25 +30,19 @@ var (
 )
 
 func (h *handler) GetAllDevices(c *gin.Context) {
-	var req models.GetAllReq
+	msg, err := utils.RequestToPBMessage[models.GetAllDevicesReq, pb.GetAllReq](c.Request, utils.GetAllReqToPB)
+	if err != nil {
+		responser.ServerError(c.Writer, err)
+		return
+	}
 
-	val, err := h.cache.GetValue(c.Request.Context(), fmt.Sprintf("%d%d", req.Index, req.Amount))
+	val, err := h.cache.GetValue(c.Request.Context(), fmt.Sprintf("%d%d", msg.Index, msg.Amount))
 	if err == nil {
 		responser.Data(c.Writer, responser.H{
 			"data":   val,
 			"amount": len(val.([]interface{})),
-			"index":  *req.Index + 1,
+			"index":  msg.Index + 1,
 		})
-		return
-	}
-
-	if err = c.ShouldBindJSON(&req); err != nil {
-		responser.UserError(c.Writer, "failed to decode req body")
-		return
-	}
-
-	if err = models.Validate(&req); err != nil {
-		responser.UserError(c.Writer, err.Error())
 		return
 	}
 
@@ -58,15 +53,10 @@ func (h *handler) GetAllDevices(c *gin.Context) {
 	}
 	defer cc.Close()
 
-	r := &pb.GetAllReq{
-		Index:  *req.Index,
-		Amount: *req.Amount,
-	}
-
 	ctx, cancel := context.WithTimeout(c.Request.Context(), time.Duration(1000)*time.Millisecond)
 	defer cancel()
 
-	devices, err := cl.GetAllDevices(ctx, r)
+	devices, err := cl.GetAllDevices(ctx, msg)
 	if err != nil {
 		if st, ok := status.FromError(err); ok {
 			responser.UserError(c.Writer, st.Message())
@@ -78,7 +68,7 @@ func (h *handler) GetAllDevices(c *gin.Context) {
 
 	err = h.cache.SetValue(c.Request.Context(), &cache.Set{
 		Val: devices.Devices,
-		Key: fmt.Sprintf("%d%d", req.Index, req.Amount),
+		Key: fmt.Sprintf("%d%d", msg.Index, msg.Amount),
 	})
 	if err != nil {
 		log.Println("failed to cache: ", err)
@@ -87,7 +77,7 @@ func (h *handler) GetAllDevices(c *gin.Context) {
 	responser.Data(c.Writer, responser.H{
 		"data":   devices.Devices,
 		"amount": len(devices.Devices),
-		"index":  *req.Index + 1,
+		"index":  msg.Index + 1,
 	})
 }
 
@@ -115,14 +105,10 @@ func (h *handler) GetDevicesByTitle(c *gin.Context) {
 	}
 	defer cc.Close()
 
-	r := &pb.GetByTitleReq{
-		Title: title,
-	}
-
 	ctx, cancel := context.WithTimeout(c.Request.Context(), time.Duration(1000)*time.Millisecond)
 	defer cancel()
 
-	devices, err := cl.GetDevicesByTitle(ctx, r)
+	devices, err := cl.GetDevicesByTitle(ctx, &pb.GetByTitleReq{Title: title})
 
 	err = h.cache.SetValue(c.Request.Context(), &cache.Set{
 		Val: devices.Devices,

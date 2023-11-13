@@ -4,6 +4,8 @@ github.com/alserov/device-shop/proto v0.0.0-20231112180800-1073915fc65d h1:aN4Fe
 github.com/alserov/device-shop/proto v0.0.0-20231112180800-1073915fc65d/go.mod h1:jTRYFmTaJqxlcsigo+73JGY8OQJ0e5uTv1D3bTDAPV4=
 github.com/alserov/device-shop/proto v0.0.0-20231113145134-d25ce4cdb60d h1:6ujDNhpUSzrqPt/w75v0LRXry6zGsaHCCWz4f7a79jw=
 github.com/alserov/device-shop/proto v0.0.0-20231113145134-d25ce4cdb60d/go.mod h1:jTRYFmTaJqxlcsigo+73JGY8OQJ0e5uTv1D3bTDAPV4=
+github.com/alserov/device-shop/proto v0.0.0-20231113153041-bdbc12b07083 h1:0FVm1htkb07ERLZzVLn7laQ265ZLBP3myooXAyTPMNg=
+github.com/alserov/device-shop/proto v0.0.0-20231113153041-bdbc12b07083/go.mod h1:jTRYFmTaJqxlcsigo+73JGY8OQJ0e5uTv1D3bTDAPV4=
 github.com/asaskevich/govalidator v0.0.0-20230301143203-a9d515a09cc2 h1:DklsrG3dyBCFEj5IhUbnKptjxatkF07cF2ak3yi77so=
 github.com/asaskevich/govalidator v0.0.0-20230301143203-a9d515a09cc2/go.mod h1:WaHUgvxTVq04UNunO+XhnAqY/wQc+bxr74GqbsZ/Jqw=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=

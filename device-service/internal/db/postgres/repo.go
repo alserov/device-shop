@@ -4,18 +4,18 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"github.com/alserov/device-shop/device-service/internal/entity"
+	"github.com/alserov/device-shop/gateway/pkg/models"
 )
 
 type Repository interface {
-	CreateDevice(ctx context.Context, device *entity.Device) error
+	CreateDevice(ctx context.Context, device *models.Device) error
 	DeleteDevice(ctx context.Context, uuid string) error
-	UpdateDevice(ctx context.Context, device *entity.UpdateDeviceReq) error
-	GetAllDevices(ctx context.Context, index int32, amount int32) ([]*entity.Device, error)
-	GetDevicesByTitle(ctx context.Context, title string) ([]*entity.Device, error)
-	GetDeviceByUUID(ctx context.Context, uuid string) (*entity.Device, error)
-	GetDevicesByManufacturer(ctx context.Context, manu string) ([]*entity.Device, error)
-	GetDevicesByPrice(ctx context.Context, min uint, max uint) ([]*entity.Device, error)
+	UpdateDevice(ctx context.Context, device *models.UpdateDeviceReq) error
+	GetAllDevices(ctx context.Context, index int32, amount int32) ([]*models.Device, error)
+	GetDevicesByTitle(ctx context.Context, title string) ([]*models.Device, error)
+	GetDeviceByUUID(ctx context.Context, uuid string) (*models.Device, error)
+	GetDevicesByManufacturer(ctx context.Context, manu string) ([]*models.Device, error)
+	GetDevicesByPrice(ctx context.Context, min uint, max uint) ([]*models.Device, error)
 }
 
 type repo struct {
@@ -28,7 +28,7 @@ func NewRepo(db *sql.DB) Repository {
 	}
 }
 
-func (r *repo) CreateDevice(ctx context.Context, device *entity.Device) error {
+func (r *repo) CreateDevice(ctx context.Context, device *models.Device) error {
 	query := `INSERT INTO devices (uuid, title, description, price, manufacturer) VALUES($1,$2,$3,$4,$5)`
 
 	_, err := r.db.Exec(query, device.UUID, device.Title, device.Description, device.Price, device.Manufacturer)
@@ -50,7 +50,7 @@ func (r *repo) DeleteDevice(ctx context.Context, uuid string) error {
 	return nil
 }
 
-func (r *repo) UpdateDevice(ctx context.Context, device *entity.UpdateDeviceReq) error {
+func (r *repo) UpdateDevice(ctx context.Context, device *models.UpdateDeviceReq) error {
 	query := `UPDATE devices SET title = $1, description = $2, price = $3 WHERE uuid = $4`
 
 	_, err := r.db.Exec(query, device.Title, device.Description, device.Price, device.UUID)
@@ -61,7 +61,7 @@ func (r *repo) UpdateDevice(ctx context.Context, device *entity.UpdateDeviceReq)
 	return nil
 }
 
-func (r *repo) GetAllDevices(ctx context.Context, index int32, amount int32) ([]*entity.Device, error) {
+func (r *repo) GetAllDevices(ctx context.Context, index int32, amount int32) ([]*models.Device, error) {
 	query := `SELECT * FROM devices LIMIT $1 OFFSET $2`
 
 	rows, err := r.db.Query(query, amount, index)
@@ -69,9 +69,9 @@ func (r *repo) GetAllDevices(ctx context.Context, index int32, amount int32) ([]
 		return nil, nil
 	}
 
-	devices := make([]*entity.Device, 0, amount)
+	devices := make([]*models.Device, 0, amount)
 	for rows.Next() {
-		d := entity.Device{}
+		d := models.Device{}
 		if err = rows.Scan(&d.UUID, &d.Title, &d.Description, &d.Price, &d.Manufacturer); err != nil {
 			return nil, err
 		}
@@ -81,7 +81,7 @@ func (r *repo) GetAllDevices(ctx context.Context, index int32, amount int32) ([]
 	return devices, nil
 }
 
-func (r *repo) GetDevicesByTitle(ctx context.Context, title string) ([]*entity.Device, error) {
+func (r *repo) GetDevicesByTitle(ctx context.Context, title string) ([]*models.Device, error) {
 	query := `SELECT * FROM devices WHERE title LIKE $1`
 
 	rows, err := r.db.Query(query, "%"+title+"%")
@@ -89,9 +89,9 @@ func (r *repo) GetDevicesByTitle(ctx context.Context, title string) ([]*entity.D
 		return nil, err
 	}
 
-	var devices []*entity.Device
+	var devices []*models.Device
 	for rows.Next() {
-		d := entity.Device{}
+		d := models.Device{}
 		if err = rows.Scan(&d.UUID, &d.Title, &d.Description, &d.Price, &d.Manufacturer); err != nil {
 			return nil, err
 		}
@@ -101,10 +101,10 @@ func (r *repo) GetDevicesByTitle(ctx context.Context, title string) ([]*entity.D
 	return devices, nil
 }
 
-func (r *repo) GetDeviceByUUID(ctx context.Context, uuid string) (*entity.Device, error) {
+func (r *repo) GetDeviceByUUID(ctx context.Context, uuid string) (*models.Device, error) {
 	query := `SELECT * FROM devices WHERE uuid = $1`
 
-	d := entity.Device{}
+	d := models.Device{}
 
 	err := r.db.QueryRow(query, uuid).Scan(&d.UUID, &d.Title, &d.Description, &d.Price, &d.Manufacturer)
 	if err != nil && !errors.Is(err, sql.ErrNoRows) {
@@ -114,7 +114,7 @@ func (r *repo) GetDeviceByUUID(ctx context.Context, uuid string) (*entity.Device
 	return &d, nil
 }
 
-func (r *repo) GetDevicesByManufacturer(ctx context.Context, manu string) ([]*entity.Device, error) {
+func (r *repo) GetDevicesByManufacturer(ctx context.Context, manu string) ([]*models.Device, error) {
 	query := `SELECT * FROM devices WHERE manufacturer = $1`
 
 	rows, err := r.db.Query(query, manu)
@@ -122,9 +122,9 @@ func (r *repo) GetDevicesByManufacturer(ctx context.Context, manu string) ([]*en
 		return nil, err
 	}
 
-	var devices []*entity.Device
+	var devices []*models.Device
 	for rows.Next() {
-		d := entity.Device{}
+		d := models.Device{}
 		if err = rows.Scan(&d.UUID, &d.Title, &d.Description, &d.Price, &d.Manufacturer); err != nil {
 			return nil, err
 		}
@@ -134,7 +134,7 @@ func (r *repo) GetDevicesByManufacturer(ctx context.Context, manu string) ([]*en
 	return devices, nil
 }
 
-func (r *repo) GetDevicesByPrice(ctx context.Context, min uint, max uint) ([]*entity.Device, error) {
+func (r *repo) GetDevicesByPrice(ctx context.Context, min uint, max uint) ([]*models.Device, error) {
 	query := `SELECT * FROM devices WHERE price BETWEEN $1 AND $2`
 
 	rows, err := r.db.Query(query, min, max)
@@ -142,9 +142,9 @@ func (r *repo) GetDevicesByPrice(ctx context.Context, min uint, max uint) ([]*en
 		return nil, err
 	}
 
-	var devices []*entity.Device
+	var devices []*models.Device
 	for rows.Next() {
-		d := entity.Device{}
+		d := models.Device{}
 		if err = rows.Scan(&d.UUID, &d.Title, &d.Description, &d.Price, &d.Manufacturer); err != nil {
 			return nil, err
 		}

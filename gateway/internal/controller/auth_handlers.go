@@ -2,10 +2,12 @@ package controller
 
 import (
 	"context"
+	"github.com/alserov/device-shop/gateway/internal/utils"
 	"github.com/alserov/device-shop/gateway/pkg/client"
 	"github.com/alserov/device-shop/gateway/pkg/models"
 	"github.com/alserov/device-shop/gateway/pkg/responser"
-	pb "github.com/alserov/shop/proto/gen"
+	"github.com/alserov/device-shop/proto/gen"
+	"github.com/asaskevich/govalidator"
 	"github.com/gin-gonic/gin"
 	"google.golang.org/grpc/status"
 	"time"
@@ -29,15 +31,14 @@ type AuthHandler interface {
 // @Router /auth/signup [post]
 
 func (h *handler) Signup(c *gin.Context) {
-	var req models.SignupReq
-
-	if err := c.ShouldBindJSON(&req); err != nil {
-		responser.UserError(c.Writer, "failed to parse req body")
+	msg, err := utils.RequestToPBMessage[models.SignupReq, pb.SignupReq](c.Request, utils.SignupReqToPB)
+	if err != nil {
+		responser.ServerError(c.Writer, err)
 		return
 	}
 
-	if invalidEmail := req.Validate(); invalidEmail != nil {
-		responser.UserError(c.Writer, invalidEmail.Error())
+	if valid := govalidator.IsEmail(msg.Email); !valid {
+		responser.UserError(c.Writer, "invalid email")
 		return
 	}
 
@@ -48,16 +49,10 @@ func (h *handler) Signup(c *gin.Context) {
 	}
 	defer cc.Close()
 
-	r := &pb.SignupReq{
-		Username: req.Username,
-		Password: req.Password,
-		Email:    req.Email,
-	}
-
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
 	defer cancel()
 
-	user, err := cl.Signup(ctx, r)
+	user, err := cl.Signup(ctx, msg)
 	if err != nil {
 		if st, ok := status.FromError(err); ok {
 			responser.UserError(c.Writer, st.Message())
@@ -72,15 +67,9 @@ func (h *handler) Signup(c *gin.Context) {
 }
 
 func (h *handler) Login(c *gin.Context) {
-	var req models.LoginReq
-
-	if err := c.ShouldBindJSON(&req); err != nil {
-		responser.UserError(c.Writer, "failed to parse req body")
-		return
-	}
-
-	if err := models.Validate(&req); err != nil {
-		responser.UserError(c.Writer, err.Error())
+	msg, err := utils.RequestToPBMessage[models.LoginReq, pb.LoginReq](c.Request, utils.LoginReqToPB)
+	if err != nil {
+		responser.ServerError(c.Writer, err)
 		return
 	}
 
@@ -91,15 +80,10 @@ func (h *handler) Login(c *gin.Context) {
 	}
 	defer cc.Close()
 
-	r := &pb.LoginReq{
-		Username: req.Username,
-		Password: req.Password,
-	}
-
 	ctx, cancel := context.WithTimeout(c.Request.Context(), time.Second)
 	defer cancel()
 
-	tokens, err := cl.Login(ctx, r)
+	tokens, err := cl.Login(ctx, msg)
 	if err != nil {
 		if st, ok := status.FromError(err); ok {
 			responser.UserError(c.Writer, st.Message())

@@ -2,10 +2,11 @@ package controller
 
 import (
 	"context"
+	"github.com/alserov/device-shop/gateway/internal/utils"
 	"github.com/alserov/device-shop/gateway/pkg/client"
 	"github.com/alserov/device-shop/gateway/pkg/models"
 	"github.com/alserov/device-shop/gateway/pkg/responser"
-	pb "github.com/alserov/shop/proto/gen"
+	"github.com/alserov/device-shop/proto/gen"
 	"github.com/gin-gonic/gin"
 	"google.golang.org/grpc/status"
 	"net/http"
@@ -28,15 +29,9 @@ var (
 )
 
 func (h *handler) AddToFavourite(c *gin.Context) {
-	var req models.AddReq
-
-	if err := c.ShouldBindJSON(&req); err != nil {
-		responser.UserError(c.Writer, "failed to decode req body")
-		return
-	}
-
-	if err := models.Validate(&req); err != nil {
-		responser.UserError(c.Writer, err.Error())
+	msg, err := utils.RequestToPBMessage[models.AddToCollectionReq, pb.AddReq](c.Request, utils.AddReqToPB)
+	if err != nil {
+		responser.ServerError(c.Writer, err)
 		return
 	}
 
@@ -47,15 +42,10 @@ func (h *handler) AddToFavourite(c *gin.Context) {
 	}
 	defer cc.Close()
 
-	r := &pb.AddReq{
-		UserUUID:   req.UserUUID,
-		DeviceUUID: req.DeviceUUID,
-	}
-
 	ctx, cancel := context.WithTimeout(c.Request.Context(), time.Second)
 	defer cancel()
 
-	_, err = cl.AddToFavourite(ctx, r)
+	_, err = cl.AddToFavourite(ctx, msg)
 	if err != nil {
 		if st, ok := status.FromError(err); ok {
 			responser.UserError(c.Writer, st.Message())
@@ -69,15 +59,9 @@ func (h *handler) AddToFavourite(c *gin.Context) {
 }
 
 func (h *handler) RemoveFromFavourite(c *gin.Context) {
-	var req models.RemoveDeviceReq
-
-	if err := c.ShouldBindJSON(&req); err != nil {
-		responser.UserError(c.Writer, "failed to decode req body")
-		return
-	}
-
-	if err := models.Validate(&req); err != nil {
-		responser.UserError(c.Writer, err.Error())
+	msg, err := utils.RequestToPBMessage[models.RemoveDeviceReq, pb.RemoveReq](c.Request, utils.RemoveReqToPB)
+	if err != nil {
+		responser.ServerError(c.Writer, err)
 		return
 	}
 
@@ -88,15 +72,10 @@ func (h *handler) RemoveFromFavourite(c *gin.Context) {
 	}
 	defer cc.Close()
 
-	r := &pb.RemoveReq{
-		UserUUID:   req.UserUUID,
-		DeviceUUID: req.DeviceUUID,
-	}
-
 	ctx, cancel := context.WithTimeout(c.Request.Context(), time.Second)
 	defer cancel()
 
-	_, err = cl.RemoveFromFavourite(ctx, r)
+	_, err = cl.RemoveFromFavourite(ctx, msg)
 	if err != nil {
 		if st, ok := status.FromError(err); ok {
 			responser.UserError(c.Writer, st.Message())
@@ -124,14 +103,10 @@ func (h *handler) GetFavourite(c *gin.Context) {
 	}
 	defer cc.Close()
 
-	r := &pb.GetReq{
-		UserUUID: userUUID,
-	}
-
 	ctx, cancel := context.WithTimeout(c.Request.Context(), time.Second)
 	defer cancel()
 
-	coll, err := cl.GetFavourite(ctx, r)
+	coll, err := cl.GetFavourite(ctx, &pb.GetReq{UserUUID: userUUID})
 	if err != nil {
 		if st, ok := status.FromError(err); ok {
 			responser.UserError(c.Writer, st.Message())
@@ -148,15 +123,9 @@ func (h *handler) GetFavourite(c *gin.Context) {
 }
 
 func (h *handler) AddToCart(c *gin.Context) {
-	var req models.AddReq
-
-	if err := c.ShouldBindJSON(&req); err != nil {
-		responser.UserError(c.Writer, "failed to decode req body")
-		return
-	}
-
-	if err := models.Validate(&req); err != nil {
-		responser.UserError(c.Writer, err.Error())
+	msg, err := utils.RequestToPBMessage[models.AddToCollectionReq, pb.AddReq](c.Request, utils.AddReqToPB)
+	if err != nil {
+		responser.ServerError(c.Writer, err)
 		return
 	}
 
@@ -167,15 +136,10 @@ func (h *handler) AddToCart(c *gin.Context) {
 	}
 	defer cc.Close()
 
-	r := &pb.AddReq{
-		UserUUID:   req.UserUUID,
-		DeviceUUID: req.DeviceUUID,
-	}
-
 	ctx, cancel := context.WithTimeout(c.Request.Context(), time.Second)
 	defer cancel()
 
-	_, err = cl.AddToCart(ctx, r)
+	_, err = cl.AddToCart(ctx, msg)
 	if err != nil {
 		if st, ok := status.FromError(err); ok {
 			responser.UserError(c.Writer, st.Message())
@@ -189,18 +153,11 @@ func (h *handler) AddToCart(c *gin.Context) {
 }
 
 func (h *handler) RemoveFromCart(c *gin.Context) {
-	var req models.RemoveDeviceReq
-
-	if err := c.ShouldBindJSON(&req); err != nil {
-		responser.UserError(c.Writer, "failed to decode req body")
+	msg, err := utils.RequestToPBMessage[models.RemoveDeviceReq, pb.RemoveReq](c.Request, utils.RemoveReqToPB)
+	if err != nil {
+		responser.ServerError(c.Writer, err)
 		return
 	}
-
-	if err := models.Validate(&req); err != nil {
-		responser.UserError(c.Writer, err.Error())
-		return
-	}
-
 	cl, cc, err := client.DialUser(USER_ADDR)
 	if err != nil {
 		responser.ServerError(c.Writer, err)
@@ -208,15 +165,10 @@ func (h *handler) RemoveFromCart(c *gin.Context) {
 	}
 	defer cc.Close()
 
-	r := &pb.RemoveReq{
-		UserUUID:   req.UserUUID,
-		DeviceUUID: req.DeviceUUID,
-	}
-
 	ctx, cancel := context.WithTimeout(c.Request.Context(), time.Second)
 	defer cancel()
 
-	_, err = cl.RemoveFromCart(ctx, r)
+	_, err = cl.RemoveFromCart(ctx, msg)
 	if err != nil {
 		if st, ok := status.FromError(err); ok {
 			responser.UserError(c.Writer, st.Message())

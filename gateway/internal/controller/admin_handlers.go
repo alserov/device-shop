@@ -6,7 +6,7 @@ import (
 	"github.com/alserov/device-shop/gateway/pkg/client"
 	"github.com/alserov/device-shop/gateway/pkg/models"
 	"github.com/alserov/device-shop/gateway/pkg/responser"
-	pb "github.com/alserov/shop/proto/gen"
+	"github.com/alserov/device-shop/proto/gen"
 	"github.com/gin-gonic/gin"
 	"google.golang.org/grpc/status"
 	"net/http"
@@ -64,14 +64,10 @@ func (h *handler) DeleteDevice(c *gin.Context) {
 	}
 	defer cc.Close()
 
-	r := &pb.DeleteReq{
-		UUID: deviceUUID,
-	}
-
 	ctx, cancel := context.WithTimeout(c.Request.Context(), time.Duration(1000)*time.Millisecond)
 	defer cancel()
 
-	_, err = cl.DeleteDevice(ctx, r)
+	_, err = cl.DeleteDevice(ctx, &pb.DeleteReq{UUID: deviceUUID})
 	if err != nil {
 		if st, ok := status.FromError(err); ok {
 			responser.UserError(c.Writer, st.Message())
@@ -85,15 +81,9 @@ func (h *handler) DeleteDevice(c *gin.Context) {
 }
 
 func (h *handler) UpdateDevice(c *gin.Context) {
-	var req models.UpdateDeviceReq
-
-	if err := c.ShouldBindJSON(&req); err != nil {
-		responser.UserError(c.Writer, "failed to decode req body")
-		return
-	}
-
-	if err := models.Validate(&req); err != nil {
-		responser.UserError(c.Writer, err.Error())
+	msg, err := utils.RequestToPBMessage[models.UpdateDeviceReq, pb.UpdateReq](c.Request, utils.UpdateDeviceToPB)
+	if err != nil {
+		responser.ServerError(c.Writer, err)
 		return
 	}
 
@@ -104,17 +94,10 @@ func (h *handler) UpdateDevice(c *gin.Context) {
 	}
 	defer cc.Close()
 
-	r := &pb.UpdateReq{
-		Title:       req.Title,
-		Description: req.Description,
-		Price:       req.Price,
-		UUID:        req.UUID,
-	}
-
 	ctx, cancel := context.WithTimeout(c.Request.Context(), time.Duration(1000)*time.Millisecond)
 	defer cancel()
 
-	_, err = cl.UpdateDevice(ctx, r)
+	_, err = cl.UpdateDevice(ctx, msg)
 	if err != nil {
 		if st, ok := status.FromError(err); ok {
 			responser.UserError(c.Writer, st.Message())

@@ -9,7 +9,7 @@ import (
 	"github.com/alserov/device-shop/user-service/internal/db/mongo"
 	"github.com/alserov/device-shop/user-service/internal/db/postgres"
 	"github.com/alserov/device-shop/user-service/internal/entity"
-	"github.com/alserov/device-shop/user-service/pkg/utils"
+	utils2 "github.com/alserov/device-shop/user-service/internal/utils"
 	"github.com/google/uuid"
 	mg "go.mongodb.org/mongo-driver/mongo"
 	"google.golang.org/grpc/status"
@@ -53,7 +53,7 @@ func (s *service) Signup(ctx context.Context, req *pb.SignupReq) (*pb.SignupRes,
 		Password:  req.Password,
 	}
 
-	r.Token, r.RefreshToken, err = utils.GenerateTokens("user")
+	r.Token, r.RefreshToken, err = utils2.GenerateTokens("user")
 	if err != nil {
 		return &pb.SignupRes{}, err
 	}
@@ -67,7 +67,7 @@ func (s *service) Signup(ctx context.Context, req *pb.SignupReq) (*pb.SignupRes,
 	}
 
 	go func() {
-		if err = utils.SendEmail(r.Email); err != nil {
+		if err = utils2.SendEmail(r.Email); err != nil {
 			log.Println("FAILED TO SEND EMAIL: ", err.Error())
 		}
 	}()
@@ -92,7 +92,7 @@ func (s *service) Login(ctx context.Context, req *pb.LoginReq) (*pb.LoginRes, er
 		return nil, status.Error(http.StatusBadRequest, "invalid password")
 	}
 
-	token, rToken, err := utils.GenerateTokens(user.Role)
+	token, rToken, err := utils2.GenerateTokens(user.Role)
 	if err != nil {
 		return &pb.LoginRes{}, err
 	}

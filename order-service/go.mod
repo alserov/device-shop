@@ -4,7 +4,7 @@ go 1.21.0
 
 require (
 	github.com/alserov/device-shop/gateway v0.0.0-20231112180800-1073915fc65d
-	github.com/alserov/device-shop/proto v0.0.0-20231113145134-d25ce4cdb60d
+	github.com/alserov/device-shop/proto v0.0.0-20231113153041-bdbc12b07083
 	github.com/google/uuid v1.3.1
 	google.golang.org/grpc v1.59.0
 	google.golang.org/protobuf v1.31.0

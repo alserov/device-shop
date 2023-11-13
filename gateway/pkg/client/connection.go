@@ -1,7 +1,7 @@
 package client
 
 import (
-	"github.com/alserov/shop/proto/gen"
+	"github.com/alserov/device-shop/proto/gen"
 	"google.golang.org/grpc"
 )
 
