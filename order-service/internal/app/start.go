@@ -9,15 +9,7 @@ import (
 	"google.golang.org/grpc"
 	"log"
 	"net"
-	"os"
-	"strconv"
 )
-
-type App struct {
-	port     int
-	host     string
-	connType string
-}
 
 func (a *App) Start(ctx context.Context) error {
 	log.Println("starting service")
@@ -50,34 +42,4 @@ func (a *App) Start(ctx context.Context) error {
 	case err = <-chErr:
 		return err
 	}
-}
-
-const (
-	DEFAULT_PORT = 8001
-	DEFAULT_HOST = "localhost"
-)
-
-func New() (*App, error) {
-	port, err := strconv.Atoi(os.Getenv("PORT"))
-	if err != nil {
-		return nil, err
-	}
-	if port == 0 {
-		log.Println("SET DEFAULT VALUE FOR PORT: ", DEFAULT_PORT)
-		port = DEFAULT_PORT
-	}
-
-	host := os.Getenv("HOST")
-	if host == "" {
-		log.Println("SET DEFAULT VALUE FOR HOST: ", DEFAULT_HOST)
-		host = DEFAULT_HOST
-	}
-
-	a := &App{
-		port:     port,
-		host:     host,
-		connType: "tcp",
-	}
-
-	return a, nil
 }

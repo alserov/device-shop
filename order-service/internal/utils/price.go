@@ -1,12 +1,12 @@
 package utils
 
 import (
-	"github.com/alserov/device-shop/gateway/pkg/models"
+	pb "github.com/alserov/device-shop/proto/gen"
 	"sync"
 	"sync/atomic"
 )
 
-func CountOrderPrice(items []*models.Device) uint {
+func CountOrderPrice(items []*pb.Device) uint {
 	var price uint32
 	wg := &sync.WaitGroup{}
 	wg.Add(len(items))

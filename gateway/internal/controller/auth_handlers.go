@@ -41,7 +41,7 @@ func (h *handler) Signup(c *gin.Context) {
 		return
 	}
 
-	cl, cc, err := client.DialUsers(USER_ADDR)
+	cl, cc, err := client.DialUser(USER_ADDR)
 	if err != nil {
 		responser.ServerError(c.Writer, err)
 		return
@@ -84,7 +84,7 @@ func (h *handler) Login(c *gin.Context) {
 		return
 	}
 
-	cl, cc, err := client.DialUsers(USER_ADDR)
+	cl, cc, err := client.DialUser(USER_ADDR)
 	if err != nil {
 		responser.ServerError(c.Writer, err)
 		return

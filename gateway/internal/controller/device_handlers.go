@@ -51,7 +51,7 @@ func (h *handler) GetAllDevices(c *gin.Context) {
 		return
 	}
 
-	cl, cc, err := client.DialDevices(DEVICE_ADDR)
+	cl, cc, err := client.DialDevice(DEVICE_ADDR)
 	if err != nil {
 		responser.ServerError(c.Writer, err)
 		return
@@ -108,7 +108,7 @@ func (h *handler) GetDevicesByTitle(c *gin.Context) {
 		return
 	}
 
-	cl, cc, err := client.DialDevices(DEVICE_ADDR)
+	cl, cc, err := client.DialDevice(DEVICE_ADDR)
 	if err != nil {
 		responser.ServerError(c.Writer, err)
 		return
@@ -163,7 +163,7 @@ func (h *handler) GetDevicesByManufacturer(c *gin.Context) {
 		return
 	}
 
-	cl, cc, err := client.DialDevices(DEVICE_ADDR)
+	cl, cc, err := client.DialDevice(DEVICE_ADDR)
 	if err != nil {
 		responser.ServerError(c.Writer, err)
 		return
@@ -228,7 +228,7 @@ func (h *handler) GetDevicesByPrice(c *gin.Context) {
 		return
 	}
 
-	cl, cc, err := client.DialDevices(DEVICE_ADDR)
+	cl, cc, err := client.DialDevice(DEVICE_ADDR)
 	if err != nil {
 		responser.ServerError(c.Writer, err)
 		return

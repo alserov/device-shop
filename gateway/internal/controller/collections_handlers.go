@@ -40,7 +40,7 @@ func (h *handler) AddToFavourite(c *gin.Context) {
 		return
 	}
 
-	cl, cc, err := client.DialUsers(USER_ADDR)
+	cl, cc, err := client.DialUser(USER_ADDR)
 	if err != nil {
 		responser.ServerError(c.Writer, err)
 		return
@@ -81,7 +81,7 @@ func (h *handler) RemoveFromFavourite(c *gin.Context) {
 		return
 	}
 
-	cl, cc, err := client.DialUsers(USER_ADDR)
+	cl, cc, err := client.DialUser(USER_ADDR)
 	if err != nil {
 		responser.ServerError(c.Writer, err)
 		return
@@ -117,7 +117,7 @@ func (h *handler) GetFavourite(c *gin.Context) {
 		return
 	}
 
-	cl, cc, err := client.DialUsers(USER_ADDR)
+	cl, cc, err := client.DialUser(USER_ADDR)
 	if err != nil {
 		responser.ServerError(c.Writer, err)
 		return
@@ -160,7 +160,7 @@ func (h *handler) AddToCart(c *gin.Context) {
 		return
 	}
 
-	cl, cc, err := client.DialUsers(USER_ADDR)
+	cl, cc, err := client.DialUser(USER_ADDR)
 	if err != nil {
 		responser.ServerError(c.Writer, err)
 		return
@@ -201,7 +201,7 @@ func (h *handler) RemoveFromCart(c *gin.Context) {
 		return
 	}
 
-	cl, cc, err := client.DialUsers(USER_ADDR)
+	cl, cc, err := client.DialUser(USER_ADDR)
 	if err != nil {
 		responser.ServerError(c.Writer, err)
 		return
@@ -237,7 +237,7 @@ func (h *handler) GetCart(c *gin.Context) {
 		return
 	}
 
-	cl, cc, err := client.DialUsers(USER_ADDR)
+	cl, cc, err := client.DialUser(USER_ADDR)
 	if err != nil {
 		responser.ServerError(c.Writer, err)
 		return

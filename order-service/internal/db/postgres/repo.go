@@ -3,9 +3,9 @@ package postgres
 import (
 	"context"
 	"database/sql"
-	"github.com/alserov/device-shop/gateway/pkg/models"
 	"github.com/alserov/device-shop/order-service/internal/entity"
 	"github.com/alserov/device-shop/order-service/internal/utils"
+	"github.com/alserov/device-shop/proto/gen"
 	"sync"
 	"time"
 )
@@ -90,7 +90,7 @@ func (r *repo) CheckOrder(ctx context.Context, orderUUID string) (*CheckOrderRes
 	}
 
 	var (
-		devices    []*models.Device
+		devices    []*pb.Device
 		createdAt  *time.Time
 		statusCode = int32(-1)
 	)
@@ -118,7 +118,7 @@ func (r *repo) CheckOrder(ctx context.Context, orderUUID string) (*CheckOrderRes
 
 			query = `SELECT * FROM devices WHERE device_uuid = $1`
 
-			var device models.Device
+			var device pb.Device
 
 			if err = r.db.QueryRow(query, orderedDevice.DeviceUUID).Scan(&device); err != nil {
 				chErr <- err
@@ -214,7 +214,7 @@ func (r *repo) UpdateOrder(ctx context.Context, status string, orderUUID string)
 type CreateOrderReq struct {
 	UserUUID  string
 	OrderUUID string
-	Devices   []*models.Device
+	Devices   []*pb.Device
 	Status    int32
 	CreatedAt *time.Time
 }
@@ -222,7 +222,7 @@ type CreateOrderReq struct {
 type CheckOrderRes struct {
 	UserUUID  string
 	OrderUUID string
-	Devices   []*models.Device
+	Devices   []*pb.Device
 	Status    int32
 	CreatedAt *time.Time
 }

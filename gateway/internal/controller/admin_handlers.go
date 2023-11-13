@@ -31,7 +31,7 @@ func (h *handler) CreateDevice(c *gin.Context) {
 		return
 	}
 
-	cl, cc, err := client.DialDevices(DEVICE_ADDR)
+	cl, cc, err := client.DialDevice(DEVICE_ADDR)
 	if err != nil {
 		responser.ServerError(c.Writer, err)
 		return
@@ -69,7 +69,7 @@ func (h *handler) DeleteDevice(c *gin.Context) {
 		return
 	}
 
-	cl, cc, err := client.DialDevices(DEVICE_ADDR)
+	cl, cc, err := client.DialDevice(DEVICE_ADDR)
 	if err != nil {
 		responser.ServerError(c.Writer, err)
 		return
@@ -109,7 +109,7 @@ func (h *handler) UpdateDevice(c *gin.Context) {
 		return
 	}
 
-	cl, cc, err := client.DialDevices(DEVICE_ADDR)
+	cl, cc, err := client.DialDevice(DEVICE_ADDR)
 	if err != nil {
 		responser.ServerError(c.Writer, err)
 		return
