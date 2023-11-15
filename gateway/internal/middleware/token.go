@@ -10,7 +10,7 @@ func CheckIfAuthorized() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		token, err := c.Cookie("token")
 		if err != nil {
-			responser.ServerError(c.Writer, err)
+			responser.UserError(c.Writer, err.Error())
 			c.Abort()
 		}
 

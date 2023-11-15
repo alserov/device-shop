@@ -2,6 +2,7 @@ package app
 
 import (
 	"fmt"
+	"github.com/joho/godotenv"
 	"log"
 	"os"
 	"strconv"
@@ -21,13 +22,24 @@ const (
 )
 
 func New() (*App, error) {
-	port, err := strconv.Atoi(os.Getenv("PORT"))
-	if err != nil {
+	var (
+		port int
+		err  error
+	)
+
+	if err = godotenv.Load(".env"); err != nil {
 		return nil, err
 	}
-	if port == 0 {
+
+	portString := os.Getenv("PORT")
+	if portString == "" {
 		log.Println("SET DEFAULT VALUE FOR PORT: ", DEFAULT_PORT)
 		port = DEFAULT_PORT
+	} else {
+		port, err = strconv.Atoi(portString)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	host := os.Getenv("HOST")

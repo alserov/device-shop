@@ -12,8 +12,8 @@ func Connect() (*redis.Client, error) {
 		Addr:        os.Getenv("REDIS_ADDR"),
 		Password:    "",
 		DB:          0,
-		DialTimeout: 100 * time.Millisecond,
-		ReadTimeout: 100 * time.Millisecond,
+		DialTimeout: 3 * time.Second,
+		ReadTimeout: 3 * time.Second,
 	})
 
 	res, err := cl.Ping().Result()

@@ -4,9 +4,9 @@ import (
 	"context"
 	"github.com/alserov/device-shop/gateway/internal/utils"
 	"github.com/alserov/device-shop/gateway/pkg/client"
-	"github.com/alserov/device-shop/gateway/pkg/models"
 	"github.com/alserov/device-shop/gateway/pkg/responser"
 	"github.com/alserov/device-shop/proto/gen"
+	user "github.com/alserov/device-shop/user-service/pkg/entity"
 	"github.com/asaskevich/govalidator"
 	"github.com/gin-gonic/gin"
 	"google.golang.org/grpc/status"
@@ -31,9 +31,9 @@ type AuthHandler interface {
 // @Router /auth/signup [post]
 
 func (h *handler) Signup(c *gin.Context) {
-	msg, err := utils.RequestToPBMessage[models.SignupReq, pb.SignupReq](c.Request, utils.SignupReqToPB)
+	msg, err := utils.RequestToPBMessage[user.SignupReq, pb.SignupReq](c.Request, utils.SignupReqToPB)
 	if err != nil {
-		responser.ServerError(c.Writer, err)
+		responser.ServerError(c.Writer, h.logger, err)
 		return
 	}
 
@@ -42,9 +42,9 @@ func (h *handler) Signup(c *gin.Context) {
 		return
 	}
 
-	cl, cc, err := client.DialUser(USER_ADDR)
+	cl, cc, err := client.DialUser(h.userAddr)
 	if err != nil {
-		responser.ServerError(c.Writer, err)
+		responser.ServerError(c.Writer, h.logger, err)
 		return
 	}
 	defer cc.Close()
@@ -58,7 +58,7 @@ func (h *handler) Signup(c *gin.Context) {
 			responser.UserError(c.Writer, st.Message())
 			return
 		}
-		responser.ServerError(c.Writer, err)
+		responser.ServerError(c.Writer, h.logger, err)
 		return
 	}
 
@@ -67,15 +67,15 @@ func (h *handler) Signup(c *gin.Context) {
 }
 
 func (h *handler) Login(c *gin.Context) {
-	msg, err := utils.RequestToPBMessage[models.LoginReq, pb.LoginReq](c.Request, utils.LoginReqToPB)
+	msg, err := utils.RequestToPBMessage[user.LoginReq, pb.LoginReq](c.Request, utils.LoginReqToPB)
 	if err != nil {
-		responser.ServerError(c.Writer, err)
+		responser.ServerError(c.Writer, h.logger, err)
 		return
 	}
 
-	cl, cc, err := client.DialUser(USER_ADDR)
+	cl, cc, err := client.DialUser(h.userAddr)
 	if err != nil {
-		responser.ServerError(c.Writer, err)
+		responser.ServerError(c.Writer, h.logger, err)
 		return
 	}
 	defer cc.Close()
@@ -89,7 +89,7 @@ func (h *handler) Login(c *gin.Context) {
 			responser.UserError(c.Writer, st.Message())
 			return
 		}
-		responser.ServerError(c.Writer, err)
+		responser.ServerError(c.Writer, h.logger, err)
 		return
 	}
 

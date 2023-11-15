@@ -5,7 +5,6 @@ import (
 	"github.com/alserov/device-shop/device-service/pkg/entity"
 	"github.com/alserov/device-shop/gateway/internal/utils"
 	"github.com/alserov/device-shop/gateway/pkg/client"
-	"github.com/alserov/device-shop/gateway/pkg/models"
 	"github.com/alserov/device-shop/gateway/pkg/responser"
 	"github.com/alserov/device-shop/proto/gen"
 	"github.com/gin-gonic/gin"
@@ -23,11 +22,11 @@ type AdminHandler interface {
 func (h *handler) CreateDevice(c *gin.Context) {
 	msg, err := utils.RequestToPBMessage[entity.Device, pb.CreateReq](c.Request, utils.CreateDeviceToPB)
 	if err != nil {
-		responser.ServerError(c.Writer, h.logger, err)
+		responser.UserError(c.Writer, err.Error())
 		return
 	}
 
-	cl, cc, err := client.DialDevice(DEVICE_ADDR)
+	cl, cc, err := client.DialDevice(h.deviceAddr)
 	if err != nil {
 		responser.ServerError(c.Writer, h.logger, err)
 		return
@@ -58,7 +57,7 @@ func (h *handler) DeleteDevice(c *gin.Context) {
 		return
 	}
 
-	cl, cc, err := client.DialDevice(DEVICE_ADDR)
+	cl, cc, err := client.DialDevice(h.userAddr)
 	if err != nil {
 		responser.ServerError(c.Writer, h.logger, err)
 		return
@@ -82,13 +81,13 @@ func (h *handler) DeleteDevice(c *gin.Context) {
 }
 
 func (h *handler) UpdateDevice(c *gin.Context) {
-	msg, err := utils.RequestToPBMessage[models.UpdateDeviceReq, pb.UpdateReq](c.Request, utils.UpdateDeviceToPB)
+	msg, err := utils.RequestToPBMessage[entity.UpdateDeviceReq, pb.UpdateReq](c.Request, utils.UpdateDeviceToPB)
 	if err != nil {
 		responser.ServerError(c.Writer, h.logger, err)
 		return
 	}
 
-	cl, cc, err := client.DialDevice(DEVICE_ADDR)
+	cl, cc, err := client.DialDevice(h.userAddr)
 	if err != nil {
 		responser.ServerError(c.Writer, h.logger, err)
 		return

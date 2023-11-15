@@ -2,16 +2,15 @@ package controller
 
 import (
 	"context"
-	"github.com/alserov/device-shop/device-service/pkg/entity"
+	device "github.com/alserov/device-shop/device-service/pkg/entity"
 	"github.com/alserov/device-shop/gateway/internal/utils"
 	"github.com/alserov/device-shop/gateway/pkg/client"
-	"github.com/alserov/device-shop/gateway/pkg/models"
 	"github.com/alserov/device-shop/gateway/pkg/responser"
 	"github.com/alserov/device-shop/proto/gen"
+	user "github.com/alserov/device-shop/user-service/pkg/entity"
 	"github.com/gin-gonic/gin"
 	"google.golang.org/grpc/status"
 	"net/http"
-	"os"
 	"time"
 )
 
@@ -25,18 +24,14 @@ type CollectionsHandler interface {
 	GetCart(c *gin.Context)
 }
 
-var (
-	USER_ADDR = os.Getenv("USER_ADDR")
-)
-
 func (h *handler) AddToFavourite(c *gin.Context) {
-	msg, err := utils.RequestToPBMessage[models.AddToCollectionReq, pb.AddReq](c.Request, utils.AddReqToPB)
+	msg, err := utils.RequestToPBMessage[user.AddToCollectionReq, pb.AddReq](c.Request, utils.AddReqToPB)
 	if err != nil {
 		responser.ServerError(c.Writer, h.logger, err)
 		return
 	}
 
-	cl, cc, err := client.DialUser(USER_ADDR)
+	cl, cc, err := client.DialUser(h.userAddr)
 	if err != nil {
 		responser.ServerError(c.Writer, h.logger, err)
 		return
@@ -60,13 +55,13 @@ func (h *handler) AddToFavourite(c *gin.Context) {
 }
 
 func (h *handler) RemoveFromFavourite(c *gin.Context) {
-	msg, err := utils.RequestToPBMessage[entity.RemoveDeviceReq, pb.RemoveReq](c.Request, utils.RemoveReqToPB)
+	msg, err := utils.RequestToPBMessage[device.RemoveDeviceReq, pb.RemoveReq](c.Request, utils.RemoveReqToPB)
 	if err != nil {
 		responser.ServerError(c.Writer, h.logger, err)
 		return
 	}
 
-	cl, cc, err := client.DialUser(USER_ADDR)
+	cl, cc, err := client.DialUser(h.userAddr)
 	if err != nil {
 		responser.ServerError(c.Writer, h.logger, err)
 		return
@@ -97,7 +92,7 @@ func (h *handler) GetFavourite(c *gin.Context) {
 		return
 	}
 
-	cl, cc, err := client.DialUser(USER_ADDR)
+	cl, cc, err := client.DialUser(h.userAddr)
 	if err != nil {
 		responser.ServerError(c.Writer, h.logger, err)
 		return
@@ -124,13 +119,13 @@ func (h *handler) GetFavourite(c *gin.Context) {
 }
 
 func (h *handler) AddToCart(c *gin.Context) {
-	msg, err := utils.RequestToPBMessage[models.AddToCollectionReq, pb.AddReq](c.Request, utils.AddReqToPB)
+	msg, err := utils.RequestToPBMessage[user.AddToCollectionReq, pb.AddReq](c.Request, utils.AddReqToPB)
 	if err != nil {
 		responser.ServerError(c.Writer, h.logger, err)
 		return
 	}
 
-	cl, cc, err := client.DialUser(USER_ADDR)
+	cl, cc, err := client.DialUser(h.userAddr)
 	if err != nil {
 		responser.ServerError(c.Writer, h.logger, err)
 		return
@@ -154,12 +149,12 @@ func (h *handler) AddToCart(c *gin.Context) {
 }
 
 func (h *handler) RemoveFromCart(c *gin.Context) {
-	msg, err := utils.RequestToPBMessage[models.RemoveDeviceReq, pb.RemoveReq](c.Request, utils.RemoveReqToPB)
+	msg, err := utils.RequestToPBMessage[device.RemoveDeviceReq, pb.RemoveReq](c.Request, utils.RemoveReqToPB)
 	if err != nil {
 		responser.ServerError(c.Writer, h.logger, err)
 		return
 	}
-	cl, cc, err := client.DialUser(USER_ADDR)
+	cl, cc, err := client.DialUser(h.userAddr)
 	if err != nil {
 		responser.ServerError(c.Writer, h.logger, err)
 		return
@@ -190,7 +185,7 @@ func (h *handler) GetCart(c *gin.Context) {
 		return
 	}
 
-	cl, cc, err := client.DialUser(USER_ADDR)
+	cl, cc, err := client.DialUser(h.userAddr)
 	if err != nil {
 		responser.ServerError(c.Writer, h.logger, err)
 		return

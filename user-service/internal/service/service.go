@@ -3,18 +3,17 @@ package service
 import (
 	"context"
 	"database/sql"
+	device "github.com/alserov/device-shop/device-service/pkg/entity"
 	"github.com/alserov/device-shop/gateway/pkg/client"
-	"github.com/alserov/device-shop/gateway/pkg/models"
 	pb "github.com/alserov/device-shop/proto/gen"
 	"github.com/alserov/device-shop/user-service/internal/db/mongo"
 	"github.com/alserov/device-shop/user-service/internal/db/postgres"
 	"github.com/alserov/device-shop/user-service/internal/entity"
-	utils2 "github.com/alserov/device-shop/user-service/internal/utils"
+	"github.com/alserov/device-shop/user-service/internal/utils"
 	"github.com/google/uuid"
 	mg "go.mongodb.org/mongo-driver/mongo"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
-	"log"
 	"net/http"
 	"os"
 	"time"
@@ -53,7 +52,7 @@ func (s *service) Signup(ctx context.Context, req *pb.SignupReq) (*pb.SignupRes,
 		Password:  req.Password,
 	}
 
-	r.Token, r.RefreshToken, err = utils2.GenerateTokens("user")
+	r.Token, r.RefreshToken, err = utils.GenerateTokens("user")
 	if err != nil {
 		return &pb.SignupRes{}, err
 	}
@@ -66,11 +65,9 @@ func (s *service) Signup(ctx context.Context, req *pb.SignupReq) (*pb.SignupRes,
 		return &pb.SignupRes{}, err
 	}
 
-	go func() {
-		if err = utils2.SendEmail(r.Email); err != nil {
-			log.Println("FAILED TO SEND EMAIL: ", err.Error())
-		}
-	}()
+	//if err = utils.SendEmail(r.Email); err != nil {
+	//	log.Println("FAILED TO SEND EMAIL: ", err.Error())
+	//}
 
 	return &pb.SignupRes{
 		Username:     r.Username,
@@ -92,7 +89,7 @@ func (s *service) Login(ctx context.Context, req *pb.LoginReq) (*pb.LoginRes, er
 		return nil, status.Error(http.StatusBadRequest, "invalid password")
 	}
 
-	token, rToken, err := utils2.GenerateTokens(user.Role)
+	token, rToken, err := utils.GenerateTokens(user.Role)
 	if err != nil {
 		return &pb.LoginRes{}, err
 	}
@@ -112,7 +109,7 @@ func (s *service) Login(ctx context.Context, req *pb.LoginReq) (*pb.LoginRes, er
 }
 
 func (s *service) AddToFavourite(ctx context.Context, req *pb.AddReq) (*emptypb.Empty, error) {
-	cl, cc, err := client.DialDevices(DEVICES_ADDR)
+	cl, cc, err := client.DialDevice(DEVICES_ADDR)
 	if err != nil {
 		return &emptypb.Empty{}, err
 	}
@@ -122,19 +119,19 @@ func (s *service) AddToFavourite(ctx context.Context, req *pb.AddReq) (*emptypb.
 		UUID: req.DeviceUUID,
 	}
 
-	device, err := cl.GetDeviceByUUID(ctx, getDeviceReq)
+	dvc, err := cl.GetDeviceByUUID(ctx, getDeviceReq)
 	if err != nil {
 		return &emptypb.Empty{}, err
 	}
 
 	r := &entity.AddReq{
 		UserUUID: req.UserUUID,
-		Device: &models.Device{
-			UUID:         device.UUID,
-			Title:        device.Title,
-			Manufacturer: device.Manufacturer,
-			Price:        device.Price,
-			Description:  device.Description,
+		Device: &device.Device{
+			UUID:         dvc.UUID,
+			Title:        dvc.Title,
+			Manufacturer: dvc.Manufacturer,
+			Price:        dvc.Price,
+			Description:  dvc.Description,
 		},
 	}
 
@@ -182,7 +179,7 @@ func (s *service) GetFavourite(ctx context.Context, req *pb.GetReq) (*pb.GetRes,
 }
 
 func (s *service) AddToCart(ctx context.Context, req *pb.AddReq) (*emptypb.Empty, error) {
-	cl, cc, err := client.DialDevices(DEVICES_ADDR)
+	cl, cc, err := client.DialDevice(DEVICES_ADDR)
 	if err != nil {
 		return &emptypb.Empty{}, err
 	}
@@ -192,19 +189,19 @@ func (s *service) AddToCart(ctx context.Context, req *pb.AddReq) (*emptypb.Empty
 		UUID: req.DeviceUUID,
 	}
 
-	device, err := cl.GetDeviceByUUID(ctx, getDeviceReq)
+	dvc, err := cl.GetDeviceByUUID(ctx, getDeviceReq)
 	if err != nil {
 		return &emptypb.Empty{}, err
 	}
 
 	r := &entity.AddReq{
 		UserUUID: req.UserUUID,
-		Device: &models.Device{
-			UUID:         device.UUID,
-			Title:        device.Title,
-			Manufacturer: device.Manufacturer,
-			Price:        device.Price,
-			Description:  device.Description,
+		Device: &device.Device{
+			UUID:         dvc.UUID,
+			Title:        dvc.Title,
+			Manufacturer: dvc.Manufacturer,
+			Price:        dvc.Price,
+			Description:  dvc.Description,
 		},
 	}
 

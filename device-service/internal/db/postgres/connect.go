@@ -16,6 +16,6 @@ func Connect(dsn string) (*sql.DB, error) {
 		return nil, err
 	}
 
-	log.Println("db connected")
+	log.Println("postgres connected")
 	return conn, nil
 }

@@ -1,7 +1,7 @@
 package entity
 
 import (
-	"github.com/alserov/device-shop/gateway/pkg/models"
+	device "github.com/alserov/device-shop/device-service/pkg/entity"
 	"golang.org/x/crypto/bcrypt"
 	"time"
 )
@@ -40,7 +40,7 @@ type RepoLoginReq struct {
 }
 
 type AddReq struct {
-	Device   *models.Device
+	Device   *device.Device
 	UserUUID string
 }
 

@@ -7,8 +7,21 @@ import (
 	"os"
 )
 
-func New() (*logrus.Logger, error) {
-	f, err := os.OpenFile("gateway/log/logs.txt", os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0644)
+func New(path string) (*logrus.Logger, error) {
+	_, err := os.Stat(path + "/log/logs.txt")
+	if os.IsNotExist(err) {
+		if err = os.MkdirAll(path+"/log", 0777); err != nil {
+			return nil, err
+		}
+
+		f, err := os.Create(path + "/log/logs.txt")
+		if err != nil {
+			return nil, err
+		}
+		defer f.Close()
+	}
+
+	f, err := os.OpenFile(path+"/log/logs.txt", os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0644)
 	if err != nil {
 		return nil, err
 	}

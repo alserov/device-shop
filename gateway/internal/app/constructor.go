@@ -5,6 +5,7 @@ import (
 	"github.com/alserov/device-shop/gateway/internal/controller"
 	"github.com/alserov/device-shop/gateway/pkg/logger"
 	"github.com/gin-gonic/gin"
+	"github.com/joho/godotenv"
 	"log"
 	"os"
 	"strconv"
@@ -25,28 +26,42 @@ const (
 )
 
 func New() (*App, error) {
+	var (
+		port    int
+		timeout int
+		err     error
+	)
+
+	if err = godotenv.Load(".env"); err != nil {
+		return nil, err
+	}
+
+	portString := os.Getenv("PORT")
+	if portString == "" {
+		log.Println("SET DEFAULT VALUE FOR PORT: ", DEFAULT_PORT)
+		port = DEFAULT_PORT
+	} else {
+		port, err = strconv.Atoi(portString)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	host := os.Getenv("HOST")
 	if host == "" {
 		log.Println("SET DEFAULT VALUE FOR HOST: ", DEFAULT_HOST)
 		host = DEFAULT_HOST
 	}
 
-	port, err := strconv.Atoi(os.Getenv("PORT"))
-	if err != nil {
-		return nil, err
-	}
-	if port == 0 {
-		log.Println("SET DEFAULT VALUE FOR PORT: ", DEFAULT_PORT)
-		port = DEFAULT_PORT
-	}
-
-	timeout, err := strconv.Atoi(os.Getenv("TIMEOUT"))
-	if err != nil {
-		return nil, err
-	}
-	if timeout == 0 {
+	timeoutString := os.Getenv("TIMEOUT")
+	if timeoutString == "" {
 		log.Println("SET DEFAULT VALUE FOR TIMEOUT: ", DEFAULT_TIMEOUT)
-		port = DEFAULT_PORT
+		timeout = DEFAULT_PORT
+	} else {
+		timeout, err = strconv.Atoi(timeoutString)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	cl, err := cache.Connect()
@@ -54,7 +69,7 @@ func New() (*App, error) {
 		return nil, err
 	}
 
-	l, err := logger.New()
+	l, err := logger.New("internal")
 	if err != nil {
 		log.Println("failed to initialize logger: ", err)
 		return nil, err

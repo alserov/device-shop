@@ -41,7 +41,12 @@ func CheckOrderToPB(str *order.CheckOrderReq) *pb.CheckOrderReq {
 }
 
 func CreateDeviceToPB(str *device.Device) *pb.CreateReq {
-	return &pb.CreateReq{}
+	return &pb.CreateReq{
+		Title:        str.Title,
+		Description:  str.Description,
+		Price:        str.Price,
+		Manufacturer: str.Manufacturer,
+	}
 }
 
 func UpdateDeviceToPB(str *device.UpdateDeviceReq) *pb.UpdateReq {
@@ -49,21 +54,28 @@ func UpdateDeviceToPB(str *device.UpdateDeviceReq) *pb.UpdateReq {
 }
 
 func SignupReqToPB(str *user.SignupReq) *pb.SignupReq {
-	return &pb.SignupReq{}
+	return &pb.SignupReq{
+		Username: str.Username,
+		Password: str.Password,
+		Email:    str.Email,
+	}
 }
 
 func LoginReqToPB(str *user.LoginReq) *pb.LoginReq {
-	return &pb.LoginReq{}
+	return &pb.LoginReq{
+		Username: str.Username,
+		Password: str.Password,
+	}
 }
 
 func AddReqToPB(str *user.AddToCollectionReq) *pb.AddReq {
 	return &pb.AddReq{}
 }
 
-func RemoveReqToPB(str *user.RemoveDeviceReq) *pb.RemoveReq {
+func RemoveReqToPB(str *device.RemoveDeviceReq) *pb.RemoveReq {
 	return &pb.RemoveReq{}
 }
 
-func GetAllReqToPB(str *user.GetAllDevicesReq) *pb.GetAllReq {
+func GetAllReqToPB(str *device.GetAllDevicesReq) *pb.GetAllReq {
 	return &pb.GetAllReq{}
 }

@@ -18,6 +18,6 @@ func Connect(ctx context.Context, uri string) (*mongo.Client, error) {
 		return nil, err
 	}
 
-	log.Println("postgres connected")
+	log.Println("mongo connected")
 	return cl, nil
 }

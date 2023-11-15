@@ -2,7 +2,7 @@ package mongo
 
 import (
 	"context"
-	"github.com/alserov/device-shop/gateway/pkg/models"
+	device "github.com/alserov/device-shop/device-service/pkg/entity"
 	"github.com/alserov/device-shop/user-service/internal/entity"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -11,11 +11,11 @@ import (
 type Repository interface {
 	AddToFavourite(ctx context.Context, req *entity.AddReq) error
 	RemoveFromFavourite(ctx context.Context, req *entity.RemoveReq) error
-	GetFavourite(ctx context.Context, userUUID string) ([]*models.Device, error)
+	GetFavourite(ctx context.Context, userUUID string) ([]*device.Device, error)
 
 	AddToCart(ctx context.Context, req *entity.AddReq) error
 	RemoveFromCart(ctx context.Context, req *entity.RemoveReq) error
-	GetCart(ctx context.Context, userUUID string) ([]*models.Device, error)
+	GetCart(ctx context.Context, userUUID string) ([]*device.Device, error)
 }
 
 type repo struct {
@@ -56,10 +56,10 @@ func (r repo) RemoveFromFavourite(ctx context.Context, req *entity.RemoveReq) er
 }
 
 type CollectionRes struct {
-	Device *models.Device `bson:"device"`
+	Device *device.Device `bson:"device"`
 }
 
-func (r repo) GetFavourite(ctx context.Context, userUUID string) ([]*models.Device, error) {
+func (r repo) GetFavourite(ctx context.Context, userUUID string) ([]*device.Device, error) {
 	coll := r.db.Database("collections").Collection("favourite")
 
 	cur, err := coll.Find(ctx, bson.D{{"userUUID", userUUID}})
@@ -72,7 +72,7 @@ func (r repo) GetFavourite(ctx context.Context, userUUID string) ([]*models.Devi
 		return nil, err
 	}
 
-	var devices []*models.Device
+	var devices []*device.Device
 
 	for _, v := range d {
 		devices = append(devices, v.Device)
@@ -108,7 +108,7 @@ func (r repo) RemoveFromCart(ctx context.Context, req *entity.RemoveReq) error {
 	return nil
 }
 
-func (r repo) GetCart(ctx context.Context, userUUID string) ([]*models.Device, error) {
+func (r repo) GetCart(ctx context.Context, userUUID string) ([]*device.Device, error) {
 	coll := r.db.Database("collections").Collection("cart")
 
 	cur, err := coll.Find(ctx, bson.D{{"userUUID", userUUID}})
@@ -121,7 +121,7 @@ func (r repo) GetCart(ctx context.Context, userUUID string) ([]*models.Device, e
 		return nil, err
 	}
 
-	var devices []*models.Device
+	var devices []*device.Device
 
 	for _, v := range d {
 		devices = append(devices, v.Device)
