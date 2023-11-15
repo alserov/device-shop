@@ -2,6 +2,7 @@ package controller
 
 import (
 	"context"
+	"github.com/alserov/device-shop/device-service/pkg/entity"
 	"github.com/alserov/device-shop/gateway/internal/utils"
 	"github.com/alserov/device-shop/gateway/pkg/client"
 	"github.com/alserov/device-shop/gateway/pkg/models"
@@ -20,15 +21,15 @@ type AdminHandler interface {
 }
 
 func (h *handler) CreateDevice(c *gin.Context) {
-	msg, err := utils.RequestToPBMessage[models.Device, pb.CreateReq](c.Request, utils.CreateDeviceToPB)
+	msg, err := utils.RequestToPBMessage[entity.Device, pb.CreateReq](c.Request, utils.CreateDeviceToPB)
 	if err != nil {
-		responser.ServerError(c.Writer, err)
+		responser.ServerError(c.Writer, h.logger, err)
 		return
 	}
 
 	cl, cc, err := client.DialDevice(DEVICE_ADDR)
 	if err != nil {
-		responser.ServerError(c.Writer, err)
+		responser.ServerError(c.Writer, h.logger, err)
 		return
 	}
 	defer cc.Close()
@@ -42,7 +43,7 @@ func (h *handler) CreateDevice(c *gin.Context) {
 			responser.UserError(c.Writer, st.Message())
 			return
 		}
-		responser.ServerError(c.Writer, err)
+		responser.ServerError(c.Writer, h.logger, err)
 		return
 	}
 
@@ -59,7 +60,7 @@ func (h *handler) DeleteDevice(c *gin.Context) {
 
 	cl, cc, err := client.DialDevice(DEVICE_ADDR)
 	if err != nil {
-		responser.ServerError(c.Writer, err)
+		responser.ServerError(c.Writer, h.logger, err)
 		return
 	}
 	defer cc.Close()
@@ -73,7 +74,7 @@ func (h *handler) DeleteDevice(c *gin.Context) {
 			responser.UserError(c.Writer, st.Message())
 			return
 		}
-		responser.ServerError(c.Writer, err)
+		responser.ServerError(c.Writer, h.logger, err)
 		return
 	}
 
@@ -83,13 +84,13 @@ func (h *handler) DeleteDevice(c *gin.Context) {
 func (h *handler) UpdateDevice(c *gin.Context) {
 	msg, err := utils.RequestToPBMessage[models.UpdateDeviceReq, pb.UpdateReq](c.Request, utils.UpdateDeviceToPB)
 	if err != nil {
-		responser.ServerError(c.Writer, err)
+		responser.ServerError(c.Writer, h.logger, err)
 		return
 	}
 
 	cl, cc, err := client.DialDevice(DEVICE_ADDR)
 	if err != nil {
-		responser.ServerError(c.Writer, err)
+		responser.ServerError(c.Writer, h.logger, err)
 		return
 	}
 	defer cc.Close()
@@ -103,7 +104,7 @@ func (h *handler) UpdateDevice(c *gin.Context) {
 			responser.UserError(c.Writer, st.Message())
 			return
 		}
-		responser.ServerError(c.Writer, err)
+		responser.ServerError(c.Writer, h.logger, err)
 		return
 	}
 

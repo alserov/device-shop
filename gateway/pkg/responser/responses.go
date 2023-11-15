@@ -2,7 +2,7 @@ package responser
 
 import (
 	"encoding/json"
-	"log"
+	"github.com/sirupsen/logrus"
 	"net/http"
 )
 
@@ -21,9 +21,9 @@ func NotAllowed(w http.ResponseWriter) {
 	w.WriteHeader(http.StatusMethodNotAllowed)
 }
 
-func ServerError(w http.ResponseWriter, err error) {
+func ServerError(w http.ResponseWriter, lg *logrus.Logger, err error) {
 	w.WriteHeader(http.StatusInternalServerError)
-	log.Printf("ERROR: %v \n", err)
+	lg.Error(err)
 }
 
 type H map[string]interface{}

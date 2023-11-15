@@ -2,7 +2,9 @@ package utils
 
 import (
 	"encoding/json"
+	device "github.com/alserov/device-shop/device-service/pkg/entity"
 	"github.com/alserov/device-shop/gateway/pkg/models"
+	order "github.com/alserov/device-shop/order-service/pkg/entity"
 	"github.com/alserov/device-shop/proto/gen"
 	"net/http"
 )
@@ -21,15 +23,15 @@ func RequestToPBMessage[T any, B any](r *http.Request, fn func(str *T) *B) (*B, 
 	return msg, nil
 }
 
-func DeviceToPB(str *models.Device) *pb.Device {
+func DeviceToPB(str *device.Device) *pb.Device {
 	return &pb.Device{}
 }
 
-func CreateOrderToPB(str *models.CreateOrderReq) *pb.CreateOrderReq {
+func CreateOrderToPB(str *order.CreateOrderReq) *pb.CreateOrderReq {
 	return &pb.CreateOrderReq{}
 }
 
-func UpdateOrderToPB(str *models.UpdateOrderReq) *pb.UpdateOrderReq {
+func UpdateOrderToPB(str *order.UpdateOrderReq) *pb.UpdateOrderReq {
 	return &pb.UpdateOrderReq{}
 }
 

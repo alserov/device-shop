@@ -10,6 +10,7 @@ service Devices {
   rpc CreateDevice(CreateReq) returns(google.protobuf.Empty);
   rpc DeleteDevice(DeleteReq) returns(google.protobuf.Empty);
   rpc UpdateDevice(UpdateReq) returns(google.protobuf.Empty);
+
   rpc GetAllDevices(GetAllReq) returns (DevicesRes);
   rpc GetDevicesByTitle(GetByTitleReq) returns (DevicesRes);
   rpc GetDevicesByManufacturer(GetByManufacturer) returns(DevicesRes);

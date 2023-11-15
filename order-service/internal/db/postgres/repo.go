@@ -3,16 +3,16 @@ package postgres
 import (
 	"context"
 	"database/sql"
-	"github.com/alserov/device-shop/order-service/internal/entity"
 	"github.com/alserov/device-shop/order-service/internal/utils"
+	"github.com/alserov/device-shop/order-service/pkg/entity"
 	"github.com/alserov/device-shop/proto/gen"
 	"sync"
 	"time"
 )
 
 type Repo interface {
-	CreateOrder(ctx context.Context, req *CreateOrderReq) error
-	CheckOrder(ctx context.Context, orderUUID string) (*CheckOrderRes, error)
+	CreateOrder(ctx context.Context, req *entity.CreateOrderReq) error
+	CheckOrder(ctx context.Context, orderUUID string) (*entity.CheckOrderRes, error)
 	UpdateOrder(ctx context.Context, status string, orderUUID string) error
 }
 
@@ -26,7 +26,7 @@ type repo struct {
 	db *sql.DB
 }
 
-func (r *repo) CreateOrder(ctx context.Context, req *CreateOrderReq) error {
+func (r *repo) CreateOrder(ctx context.Context, req *entity.CreateOrderReq) error {
 	query := `INSERT INTO orders (user_uuid,order_uuid,device_uuid,amount,status,created_at) VALUES($1,$2,$3,$4,$5,$6)`
 
 	tx, err := r.db.Begin()
@@ -81,7 +81,7 @@ func (r *repo) CreateOrder(ctx context.Context, req *CreateOrderReq) error {
 	return nil
 }
 
-func (r *repo) CheckOrder(ctx context.Context, orderUUID string) (*CheckOrderRes, error) {
+func (r *repo) CheckOrder(ctx context.Context, orderUUID string) (*entity.CheckOrderRes, error) {
 	query := `SELECT * FROM orders WHERE order_uuid = $1`
 
 	rows, err := r.db.Query(query, orderUUID)
@@ -113,7 +113,7 @@ func (r *repo) CheckOrder(ctx context.Context, orderUUID string) (*CheckOrderRes
 				statusCode = orderedDevice.Status
 			}
 			if createdAt == nil {
-				createdAt = &orderedDevice.CreatedAt
+				createdAt = orderedDevice.CreatedAt
 			}
 
 			query = `SELECT * FROM devices WHERE device_uuid = $1`
@@ -136,10 +136,10 @@ func (r *repo) CheckOrder(ctx context.Context, orderUUID string) (*CheckOrderRes
 	}()
 
 	for e := range chErr {
-		return &CheckOrderRes{}, e
+		return &entity.CheckOrderRes{}, e
 	}
 
-	return &CheckOrderRes{
+	return &entity.CheckOrderRes{
 		Devices:   devices,
 		Status:    statusCode,
 		CreatedAt: createdAt,
@@ -209,20 +209,4 @@ func (r *repo) UpdateOrder(ctx context.Context, status string, orderUUID string)
 	}
 
 	return nil
-}
-
-type CreateOrderReq struct {
-	UserUUID  string
-	OrderUUID string
-	Devices   []*pb.Device
-	Status    int32
-	CreatedAt *time.Time
-}
-
-type CheckOrderRes struct {
-	UserUUID  string
-	OrderUUID string
-	Devices   []*pb.Device
-	Status    int32
-	CreatedAt *time.Time
 }

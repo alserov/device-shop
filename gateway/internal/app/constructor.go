@@ -3,6 +3,7 @@ package app
 import (
 	"github.com/alserov/device-shop/gateway/internal/cache"
 	"github.com/alserov/device-shop/gateway/internal/controller"
+	"github.com/alserov/device-shop/gateway/pkg/logger"
 	"github.com/gin-gonic/gin"
 	"log"
 	"os"
@@ -53,11 +54,17 @@ func New() (*App, error) {
 		return nil, err
 	}
 
+	l, err := logger.New()
+	if err != nil {
+		log.Println("failed to initialize logger: ", err)
+		return nil, err
+	}
+
 	a := &App{
 		timeout: timeout,
 		//router:  gin.Default(),
 		router:  gin.New(),
-		handler: controller.NewHandler(cl),
+		handler: controller.NewHandler(cl, l),
 		port:    port,
 		host:    host,
 	}
