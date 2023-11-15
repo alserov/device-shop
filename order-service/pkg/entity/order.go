@@ -22,6 +22,9 @@ type CreateOrderReq struct {
 	CreatedAt *time.Time
 }
 
+type CheckOrderReq struct {
+}
+
 type CheckOrderRes struct {
 	UserUUID  string
 	OrderUUID string
@@ -35,4 +38,7 @@ type OrderedDevice struct {
 	CreatedAt  *time.Time
 	DeviceUUID string
 	UserUUID   string
+}
+
+type UpdateOrderReq struct {
 }

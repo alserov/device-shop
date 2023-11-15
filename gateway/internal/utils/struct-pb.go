@@ -6,6 +6,7 @@ import (
 	"github.com/alserov/device-shop/gateway/pkg/models"
 	order "github.com/alserov/device-shop/order-service/pkg/entity"
 	"github.com/alserov/device-shop/proto/gen"
+	user "github.com/alserov/device-shop/user-service/pkg/entity"
 	"net/http"
 )
 
@@ -35,34 +36,34 @@ func UpdateOrderToPB(str *order.UpdateOrderReq) *pb.UpdateOrderReq {
 	return &pb.UpdateOrderReq{}
 }
 
-func CheckOrderToPB(str *models.CheckOrderReq) *pb.CheckOrderReq {
+func CheckOrderToPB(str *order.CheckOrderReq) *pb.CheckOrderReq {
 	return &pb.CheckOrderReq{}
 }
 
-func CreateDeviceToPB(str *models.Device) *pb.CreateReq {
+func CreateDeviceToPB(str *device.Device) *pb.CreateReq {
 	return &pb.CreateReq{}
 }
 
-func UpdateDeviceToPB(str *models.UpdateDeviceReq) *pb.UpdateReq {
+func UpdateDeviceToPB(str *device.UpdateDeviceReq) *pb.UpdateReq {
 	return &pb.UpdateReq{}
 }
 
-func SignupReqToPB(str *models.SignupReq) *pb.SignupReq {
+func SignupReqToPB(str *user.SignupReq) *pb.SignupReq {
 	return &pb.SignupReq{}
 }
 
-func LoginReqToPB(str *models.LoginReq) *pb.LoginReq {
+func LoginReqToPB(str *user.LoginReq) *pb.LoginReq {
 	return &pb.LoginReq{}
 }
 
-func AddReqToPB(str *models.AddToCollectionReq) *pb.AddReq {
+func AddReqToPB(str *user.AddToCollectionReq) *pb.AddReq {
 	return &pb.AddReq{}
 }
 
-func RemoveReqToPB(str *models.RemoveDeviceReq) *pb.RemoveReq {
+func RemoveReqToPB(str *user.RemoveDeviceReq) *pb.RemoveReq {
 	return &pb.RemoveReq{}
 }
 
-func GetAllReqToPB(str *models.GetAllDevicesReq) *pb.GetAllReq {
+func GetAllReqToPB(str *user.GetAllDevicesReq) *pb.GetAllReq {
 	return &pb.GetAllReq{}
 }
