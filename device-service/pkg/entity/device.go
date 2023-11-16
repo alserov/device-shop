@@ -17,7 +17,7 @@ type UpdateDeviceReq struct {
 }
 
 type GetAllDevicesReq struct {
-	Index  int32 `json:"index,omitempty" validate:"required,gt=0"`
+	Index  int32 `json:"index,omitempty" validate:"required,gt=-1"`
 	Amount int32 `json:"amount,omitempty" validate:"required,gt=0"`
 }
 
