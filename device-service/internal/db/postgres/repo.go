@@ -8,14 +8,14 @@ import (
 )
 
 type Repository interface {
-	CreateDevice(ctx context.Context, device *entity.Device) error
-	DeleteDevice(ctx context.Context, uuid string) error
-	UpdateDevice(ctx context.Context, device *entity.UpdateDeviceReq) error
-	GetAllDevices(ctx context.Context, index uint32, amount uint32) ([]*entity.Device, error)
-	GetDevicesByTitle(ctx context.Context, title string) ([]*entity.Device, error)
-	GetDeviceByUUID(ctx context.Context, uuid string) (*entity.Device, error)
-	GetDevicesByManufacturer(ctx context.Context, manu string) ([]*entity.Device, error)
-	GetDevicesByPrice(ctx context.Context, min uint, max uint) ([]*entity.Device, error)
+	CreateDevice(context.Context, *entity.Device) error
+	DeleteDevice(context.Context, string) error
+	UpdateDevice(context.Context, *entity.UpdateDeviceReq) error
+	GetAllDevices(context.Context, uint32, uint32) ([]*entity.Device, error)
+	GetDevicesByTitle(context.Context, string) ([]*entity.Device, error)
+	GetDeviceByUUID(context.Context, string) (*entity.Device, error)
+	GetDevicesByManufacturer(context.Context, string) ([]*entity.Device, error)
+	GetDevicesByPrice(context.Context, uint, uint) ([]*entity.Device, error)
 }
 
 type repo struct {
@@ -29,9 +29,9 @@ func NewRepo(db *sql.DB) Repository {
 }
 
 func (r *repo) CreateDevice(ctx context.Context, device *entity.Device) error {
-	query := `INSERT INTO devices (uuid, title, description, price, manufacturer) VALUES($1,$2,$3,$4,$5)`
+	query := `INSERT INTO devices (uuid, title, description, price, manufacturer, amount) VALUES($1,$2,$3,$4,$5,$6)`
 
-	_, err := r.db.Exec(query, device.UUID, device.Title, device.Description, device.Price, device.Manufacturer)
+	_, err := r.db.Exec(query, device.UUID, device.Title, device.Description, device.Price, device.Manufacturer, device.Amount)
 	if err != nil {
 		return err
 	}
@@ -72,7 +72,7 @@ func (r *repo) GetAllDevices(ctx context.Context, index uint32, amount uint32) (
 	devices := make([]*entity.Device, 0, amount)
 	for rows.Next() {
 		d := entity.Device{}
-		if err = rows.Scan(&d.UUID, &d.Title, &d.Description, &d.Price, &d.Manufacturer); err != nil {
+		if err = rows.Scan(&d.UUID, &d.Title, &d.Description, &d.Price, &d.Manufacturer, &d.Amount); err != nil {
 			return nil, err
 		}
 		devices = append(devices, &d)
@@ -92,7 +92,7 @@ func (r *repo) GetDevicesByTitle(ctx context.Context, title string) ([]*entity.D
 	var devices []*entity.Device
 	for rows.Next() {
 		d := entity.Device{}
-		if err = rows.Scan(&d.UUID, &d.Title, &d.Description, &d.Price, &d.Manufacturer); err != nil {
+		if err = rows.Scan(&d.UUID, &d.Title, &d.Description, &d.Price, &d.Manufacturer, &d.Amount); err != nil {
 			return nil, err
 		}
 		devices = append(devices, &d)
@@ -106,7 +106,7 @@ func (r *repo) GetDeviceByUUID(ctx context.Context, uuid string) (*entity.Device
 
 	d := entity.Device{}
 
-	err := r.db.QueryRow(query, uuid).Scan(&d.UUID, &d.Title, &d.Description, &d.Price, &d.Manufacturer)
+	err := r.db.QueryRow(query, uuid).Scan(&d.UUID, &d.Title, &d.Description, &d.Price, &d.Manufacturer, &d.Amount)
 	if err != nil && !errors.Is(err, sql.ErrNoRows) {
 		return nil, err
 	}
@@ -125,7 +125,7 @@ func (r *repo) GetDevicesByManufacturer(ctx context.Context, manu string) ([]*en
 	var devices []*entity.Device
 	for rows.Next() {
 		d := entity.Device{}
-		if err = rows.Scan(&d.UUID, &d.Title, &d.Description, &d.Price, &d.Manufacturer); err != nil {
+		if err = rows.Scan(&d.UUID, &d.Title, &d.Description, &d.Price, &d.Manufacturer, &d.Amount); err != nil {
 			return nil, err
 		}
 		devices = append(devices, &d)
@@ -145,7 +145,7 @@ func (r *repo) GetDevicesByPrice(ctx context.Context, min uint, max uint) ([]*en
 	var devices []*entity.Device
 	for rows.Next() {
 		d := entity.Device{}
-		if err = rows.Scan(&d.UUID, &d.Title, &d.Description, &d.Price, &d.Manufacturer); err != nil {
+		if err = rows.Scan(&d.UUID, &d.Title, &d.Description, &d.Price, &d.Manufacturer, &d.Amount); err != nil {
 			return nil, err
 		}
 		devices = append(devices, &d)

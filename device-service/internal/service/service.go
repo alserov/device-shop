@@ -13,6 +13,7 @@ import (
 	mg "go.mongodb.org/mongo-driver/mongo"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
+	"log"
 	"net/http"
 	"strings"
 )
@@ -36,6 +37,7 @@ func (s *service) CreateDevice(ctx context.Context, req *pb.CreateReq) (*emptypb
 		Description:  req.Description,
 		Price:        req.Price,
 		Manufacturer: strings.ToLower(req.Manufacturer),
+		Amount:       req.Amount,
 	}
 
 	if err := postgres.NewRepo(s.postgres).CreateDevice(ctx, r); err != nil {
@@ -116,7 +118,7 @@ func (s *service) GetDevicesByTitle(ctx context.Context, req *pb.GetByTitleReq) 
 		}
 		devices = append(devices, pbDevice)
 	}
-
+	log.Println(devices, req.Title)
 	return &pb.DevicesRes{
 		Devices: devices,
 	}, nil

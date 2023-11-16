@@ -8,7 +8,7 @@ import (
 )
 
 type Repository interface {
-	DeleteWhereExists(ctx context.Context, deviceUUID string) error
+	DeleteWhereExists(context.Context, string) error
 }
 
 type repo struct {

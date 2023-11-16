@@ -13,6 +13,7 @@ const (
 	adminPath   = "/admin"
 	devicesPath = "/devices"
 	actionsPath = "/actions"
+	ordersPath  = "/orders"
 )
 
 func LoadRoutes(r *gin.Engine, h Handler) {
@@ -31,6 +32,12 @@ func LoadRoutes(r *gin.Engine, h Handler) {
 	userActions.POST("/new-cart", h.AddToCart)
 	userActions.DELETE("/delete-cart", h.RemoveFromCart)
 	userActions.GET("/cart/:userUUID", h.GetCart)
+
+	// ORDERS
+	order := r.Group(ordersPath).Use(middleware.CheckIfAuthorized())
+	order.POST("/new", h.CreateOrder)
+	order.PUT("/update", h.UpdateOrder)
+	order.GET("/:orderUUID", h.CheckOrder)
 
 	// ADMIN routes
 	admin := r.Group(adminPath).Use(middleware.CheckIfAllowed())

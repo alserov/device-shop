@@ -46,7 +46,7 @@ message Device {
 }
 
 message CreateReq {
-  string  Title = 1;
+  string Title = 1;
   string Description = 2;
   float Price = 3;
   string Manufacturer = 4;

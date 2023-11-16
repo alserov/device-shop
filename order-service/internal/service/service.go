@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"github.com/alserov/device-shop/order-service/internal/db/postgres"
 	"github.com/alserov/device-shop/order-service/internal/utils"
+	"github.com/alserov/device-shop/order-service/pkg/entity"
 	"github.com/alserov/device-shop/proto/gen"
 	"github.com/google/uuid"
 	"google.golang.org/protobuf/types/known/emptypb"
@@ -22,7 +23,7 @@ func New(db *sql.DB) pb.OrdersServer {
 }
 
 func (s service) CreateOrder(ctx context.Context, req *pb.CreateOrderReq) (*pb.CreateOrderRes, error) {
-	order := &postgres.CreateOrderReq{
+	order := &entity.CreateOrderReq{
 		OrderUUID: uuid.New().String(),
 		UserUUID:  req.UserUUID,
 		Status:    utils.StatusToCode(utils.CREATING),

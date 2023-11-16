@@ -29,10 +29,6 @@ type CreateOrderReq struct {
 	Devices   []*pb.Device `json:"devices,omitempty" validate:"min=1"`
 }
 
-type CheckOrderReq struct {
-	OrderUUID string `json:"orderUUID,omitempty" validate:"required"`
-}
-
 type CheckOrderRes struct {
 	UserUUID  string
 	OrderUUID string

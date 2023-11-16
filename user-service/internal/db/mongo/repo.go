@@ -9,13 +9,13 @@ import (
 )
 
 type Repository interface {
-	AddToFavourite(ctx context.Context, req *entity.AddReq) error
-	RemoveFromFavourite(ctx context.Context, req *entity.RemoveReq) error
-	GetFavourite(ctx context.Context, userUUID string) ([]*device.Device, error)
+	AddToFavourite(context.Context, *entity.AddReq) error
+	RemoveFromFavourite(context.Context, *entity.RemoveReq) error
+	GetFavourite(context.Context, string) ([]*device.Device, error)
 
-	AddToCart(ctx context.Context, req *entity.AddReq) error
-	RemoveFromCart(ctx context.Context, req *entity.RemoveReq) error
-	GetCart(ctx context.Context, userUUID string) ([]*device.Device, error)
+	AddToCart(context.Context, *entity.AddReq) error
+	RemoveFromCart(context.Context, *entity.RemoveReq) error
+	GetCart(context.Context, string) ([]*device.Device, error)
 }
 
 type repo struct {

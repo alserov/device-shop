@@ -6,6 +6,8 @@ require (
 	github.com/alserov/device-shop/device-service v0.0.0-20231114140915-98cfba2ff9c7
 	github.com/alserov/device-shop/proto v0.0.0-20231113153041-bdbc12b07083
 	github.com/google/uuid v1.4.0
+	github.com/joho/godotenv v1.5.1
+	github.com/lib/pq v1.10.9
 	google.golang.org/grpc v1.59.0
 	google.golang.org/protobuf v1.31.0
 )

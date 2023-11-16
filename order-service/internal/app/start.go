@@ -20,7 +20,7 @@ func (a *App) Start(ctx context.Context) error {
 
 	s := grpc.NewServer()
 
-	pg, err := postgres.Connect()
+	pg, err := postgres.Connect(a.postgresDsn)
 	if err != nil {
 		return err
 	}

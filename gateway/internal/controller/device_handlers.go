@@ -18,10 +18,10 @@ import (
 )
 
 type DeviceHandler interface {
-	GetAllDevices(c *gin.Context)
-	GetDevicesByTitle(c *gin.Context)
-	GetDevicesByManufacturer(c *gin.Context)
-	GetDevicesByPrice(c *gin.Context)
+	GetAllDevices(*gin.Context)
+	GetDevicesByTitle(*gin.Context)
+	GetDevicesByManufacturer(*gin.Context)
+	GetDevicesByPrice(*gin.Context)
 }
 
 func (h *handler) GetAllDevices(c *gin.Context) {
@@ -33,11 +33,20 @@ func (h *handler) GetAllDevices(c *gin.Context) {
 
 	val, err := h.cache.GetValue(c.Request.Context(), fmt.Sprintf("%d%d", msg.Index, msg.Amount))
 	if err == nil {
-		responser.Data(c.Writer, responser.H{
-			"data":   val,
-			"amount": len(val.([]interface{})),
-			"index":  msg.Index + 1,
-		})
+		devices, ok := val.([]interface{})
+		if ok {
+			responser.Data(c.Writer, responser.H{
+				"data":   val,
+				"amount": len(devices),
+				"index":  msg.Index + 1,
+			})
+		} else {
+			responser.Data(c.Writer, responser.H{
+				"data":   val,
+				"amount": 0,
+				"index":  msg.Index + 1,
+			})
+		}
 		return
 	}
 
@@ -81,10 +90,18 @@ func (h *handler) GetDevicesByTitle(c *gin.Context) {
 
 	val, err := h.cache.GetValue(c.Request.Context(), title)
 	if err == nil {
-		responser.Data(c.Writer, responser.H{
-			"data":   val,
-			"amount": len(val.([]interface{})),
-		})
+		devices, ok := val.([]interface{})
+		if ok {
+			responser.Data(c.Writer, responser.H{
+				"data":   val,
+				"amount": len(devices),
+			})
+		} else {
+			responser.Data(c.Writer, responser.H{
+				"data":   val,
+				"amount": 0,
+			})
+		}
 		return
 	}
 
@@ -104,15 +121,6 @@ func (h *handler) GetDevicesByTitle(c *gin.Context) {
 	defer cancel()
 
 	devices, err := cl.GetDevicesByTitle(ctx, &pb.GetByTitleReq{Title: title})
-
-	err = h.cache.SetValue(c.Request.Context(), &cache.Set{
-		Val: devices.Devices,
-		Key: title,
-	})
-	if err != nil {
-		log.Println("failed to cache: ", err)
-	}
-
 	if err != nil {
 		if st, ok := status.FromError(err); ok {
 			responser.UserError(c.Writer, st.Message())
@@ -120,6 +128,14 @@ func (h *handler) GetDevicesByTitle(c *gin.Context) {
 		}
 		responser.ServerError(c.Writer, h.logger, err)
 		return
+	}
+
+	err = h.cache.SetValue(c.Request.Context(), &cache.Set{
+		Val: devices.Devices,
+		Key: title,
+	})
+	if err != nil {
+		log.Println("failed to cache: ", err)
 	}
 
 	responser.Data(c.Writer, responser.H{

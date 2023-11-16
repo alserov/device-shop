@@ -11,9 +11,9 @@ import (
 )
 
 type Repo interface {
-	CreateOrder(ctx context.Context, req *entity.CreateOrderReq) error
-	CheckOrder(ctx context.Context, orderUUID string) (*entity.CheckOrderRes, error)
-	UpdateOrder(ctx context.Context, status string, orderUUID string) error
+	CreateOrder(context.Context, *entity.CreateOrderReq) error
+	CheckOrder(context.Context, string) (*entity.CheckOrderRes, error)
+	UpdateOrder(context.Context, string, string) error
 }
 
 func New(db *sql.DB) Repo {

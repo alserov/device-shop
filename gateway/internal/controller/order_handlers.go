@@ -82,9 +82,9 @@ func (h *handler) UpdateOrder(c *gin.Context) {
 }
 
 func (h *handler) CheckOrder(c *gin.Context) {
-	msg, err := utils.RequestToPBMessage[entity.CheckOrderReq, pb.CheckOrderReq](c.Request, utils.CheckOrderToPB)
-	if err != nil {
-		responser.ServerError(c.Writer, h.logger, err)
+	orderUUID := c.Param("orderUUID")
+	if orderUUID == "" {
+		responser.UserError(c.Writer, "invalid orderUUID param")
 		return
 	}
 
@@ -98,7 +98,7 @@ func (h *handler) CheckOrder(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
 	defer cancel()
 
-	_, err = cl.CheckOrder(ctx, msg)
+	_, err = cl.CheckOrder(ctx, &pb.CheckOrderReq{OrderUUID: orderUUID})
 	if err != nil {
 		if st, ok := status.FromError(err); ok {
 			responser.UserError(c.Writer, st.Message())

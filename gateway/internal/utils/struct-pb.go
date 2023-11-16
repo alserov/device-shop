@@ -25,19 +25,27 @@ func RequestToPBMessage[T any, B any](r *http.Request, fn func(str *T) *B) (*B, 
 }
 
 func DeviceToPB(str *device.Device) *pb.Device {
-	return &pb.Device{}
+	return &pb.Device{
+		UUID:         str.UUID,
+		Title:        str.Title,
+		Description:  str.Manufacturer,
+		Price:        str.Price,
+		Manufacturer: str.Manufacturer,
+		Amount:       str.Amount,
+	}
 }
 
 func CreateOrderToPB(str *order.CreateOrderReq) *pb.CreateOrderReq {
-	return &pb.CreateOrderReq{}
+	return &pb.CreateOrderReq{
+		UserUUID: str.UserUUID,
+	}
 }
 
 func UpdateOrderToPB(str *order.UpdateOrderReq) *pb.UpdateOrderReq {
-	return &pb.UpdateOrderReq{}
-}
-
-func CheckOrderToPB(str *order.CheckOrderReq) *pb.CheckOrderReq {
-	return &pb.CheckOrderReq{}
+	return &pb.UpdateOrderReq{
+		Status:    str.Status,
+		OrderUUID: str.OrderUUID,
+	}
 }
 
 func CreateDeviceToPB(str *device.Device) *pb.CreateReq {
@@ -50,7 +58,12 @@ func CreateDeviceToPB(str *device.Device) *pb.CreateReq {
 }
 
 func UpdateDeviceToPB(str *device.UpdateDeviceReq) *pb.UpdateReq {
-	return &pb.UpdateReq{}
+	return &pb.UpdateReq{
+		Title:       str.Title,
+		Description: str.Description,
+		Price:       str.Price,
+		UUID:        str.UUID,
+	}
 }
 
 func SignupReqToPB(str *user.SignupReq) *pb.SignupReq {
@@ -69,13 +82,22 @@ func LoginReqToPB(str *user.LoginReq) *pb.LoginReq {
 }
 
 func AddReqToPB(str *user.AddToCollectionReq) *pb.AddReq {
-	return &pb.AddReq{}
+	return &pb.AddReq{
+		DeviceUUID: str.DeviceUUID,
+		UserUUID:   str.UserUUID,
+	}
 }
 
 func RemoveReqToPB(str *device.RemoveDeviceReq) *pb.RemoveReq {
-	return &pb.RemoveReq{}
+	return &pb.RemoveReq{
+		DeviceUUID: str.DeviceUUID,
+		UserUUID:   str.UserUUID,
+	}
 }
 
 func GetAllReqToPB(str *device.GetAllDevicesReq) *pb.GetAllReq {
-	return &pb.GetAllReq{}
+	return &pb.GetAllReq{
+		Index:  uint32(str.Index),
+		Amount: uint32(str.Amount),
+	}
 }
