@@ -54,6 +54,7 @@ func CreateDeviceToPB(str *device.Device) *pb.CreateReq {
 		Description:  str.Description,
 		Price:        str.Price,
 		Manufacturer: str.Manufacturer,
+		Amount:       str.Amount,
 	}
 }
 

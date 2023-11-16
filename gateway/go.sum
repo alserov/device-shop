@@ -24,6 +24,8 @@ github.com/alserov/device-shop/order-service v0.0.0-20231115142127-20450a7d529f 
 github.com/alserov/device-shop/order-service v0.0.0-20231115142127-20450a7d529f/go.mod h1:RmZUfgATPu0RXXpr52Y6Pm+irpQdcvtWGzLc94Kffus=
 github.com/alserov/device-shop/proto v0.0.0-20231113153041-bdbc12b07083 h1:0FVm1htkb07ERLZzVLn7laQ265ZLBP3myooXAyTPMNg=
 github.com/alserov/device-shop/proto v0.0.0-20231113153041-bdbc12b07083/go.mod h1:jTRYFmTaJqxlcsigo+73JGY8OQJ0e5uTv1D3bTDAPV4=
+github.com/alserov/device-shop/proto v0.0.0-20231116155458-19e844d27fac h1:UYo8Q7zCLDC4NYcqWdgTUxCcLe5cjskFYB4FXBfE6H0=
+github.com/alserov/device-shop/proto v0.0.0-20231116155458-19e844d27fac/go.mod h1:jTRYFmTaJqxlcsigo+73JGY8OQJ0e5uTv1D3bTDAPV4=
 github.com/alserov/device-shop/user-service v0.0.0-20231115142127-20450a7d529f h1:5pgQeYKoPmnpyIaDBkdMpvCekqlR0sEZKee41y1H9Zk=
 github.com/alserov/device-shop/user-service v0.0.0-20231115142127-20450a7d529f/go.mod h1:xzht7WgPY2FufyNm1Q8dDrW94yEK1/3N9rX/4SK7S9g=
 github.com/asaskevich/govalidator v0.0.0-20230301143203-a9d515a09cc2 h1:DklsrG3dyBCFEj5IhUbnKptjxatkF07cF2ak3yi77so=

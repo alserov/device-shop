@@ -13,7 +13,6 @@ import (
 	mg "go.mongodb.org/mongo-driver/mongo"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
-	"log"
 	"net/http"
 	"strings"
 )
@@ -89,6 +88,7 @@ func (s *service) GetAllDevices(ctx context.Context, req *pb.GetAllReq) (*pb.Dev
 			Description:  dv.Description,
 			Manufacturer: dv.Manufacturer,
 			Price:        dv.Price,
+			Amount:       dv.Amount,
 		}
 		devices = append(devices, pbDevice)
 	}
@@ -115,27 +115,29 @@ func (s *service) GetDevicesByTitle(ctx context.Context, req *pb.GetByTitleReq) 
 			Description:  dv.Description,
 			Manufacturer: dv.Manufacturer,
 			Price:        dv.Price,
+			Amount:       dv.Amount,
 		}
 		devices = append(devices, pbDevice)
 	}
-	log.Println(devices, req.Title)
+
 	return &pb.DevicesRes{
 		Devices: devices,
 	}, nil
 }
 
 func (s *service) GetDeviceByUUID(ctx context.Context, req *pb.UUIDReq) (*pb.Device, error) {
-	d, err := postgres.NewRepo(s.postgres).GetDeviceByUUID(ctx, req.UUID)
+	dv, err := postgres.NewRepo(s.postgres).GetDeviceByUUID(ctx, req.UUID)
 	if err != nil {
 		return nil, err
 	}
 
 	device := &pb.Device{
-		UUID:         d.UUID,
-		Title:        d.Title,
-		Description:  d.Description,
-		Manufacturer: d.Manufacturer,
-		Price:        d.Price,
+		UUID:         dv.UUID,
+		Title:        dv.Title,
+		Description:  dv.Description,
+		Manufacturer: dv.Manufacturer,
+		Price:        dv.Price,
+		Amount:       dv.Amount,
 	}
 
 	return device, nil
@@ -158,6 +160,7 @@ func (s *service) GetDevicesByManufacturer(ctx context.Context, req *pb.GetByMan
 			Description:  dv.Description,
 			Manufacturer: dv.Manufacturer,
 			Price:        dv.Price,
+			Amount:       dv.Amount,
 		}
 		devices = append(devices, pbDevice)
 	}

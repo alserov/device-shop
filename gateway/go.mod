@@ -5,7 +5,7 @@ go 1.21.0
 require (
 	github.com/alserov/device-shop/device-service v0.0.0-20231116144431-722d556d6d67
 	github.com/alserov/device-shop/order-service v0.0.0-20231115142127-20450a7d529f
-	github.com/alserov/device-shop/proto v0.0.0-20231113153041-bdbc12b07083
+	github.com/alserov/device-shop/proto v0.0.0-20231116155458-19e844d27fac
 	github.com/alserov/device-shop/user-service v0.0.0-20231115142127-20450a7d529f
 	github.com/asaskevich/govalidator v0.0.0-20230301143203-a9d515a09cc2
 	github.com/gin-gonic/gin v1.9.1
