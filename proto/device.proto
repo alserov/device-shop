@@ -38,7 +38,7 @@ message DevicesRes {
 
 message Device {
   string UUID = 1;
-  string  Title = 2;
+  string Title = 2;
   string Description = 3;
   float Price = 4;
   string Manufacturer = 5;
@@ -50,6 +50,7 @@ message CreateReq {
   string Description = 2;
   float Price = 3;
   string Manufacturer = 4;
+  int64 Amount = 5;
 }
 
 message DeleteReq {
@@ -57,7 +58,7 @@ message DeleteReq {
 }
 
 message UpdateReq {
-  string  Title = 1;
+  string Title = 1;
   string Description = 2;
   float Price = 3;
   string UUID = 4;
