@@ -50,7 +50,7 @@ message CreateReq {
   string Description = 2;
   float Price = 3;
   string Manufacturer = 4;
-  int64 Amount = 5;
+  int32 Amount = 5;
 }
 
 message DeleteReq {
