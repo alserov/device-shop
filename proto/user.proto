@@ -20,6 +20,7 @@ service Users {
   rpc GetCart(GetReq) returns(GetRes);
 
   rpc TopUpBalance(TopUpBalanceReq) returns(TopUpBalanceRes);
+  rpc DebitBalance(DebitBalanceReq) returns(DebitBalanceRes);
 }
 
 message GetReq {
@@ -71,5 +72,14 @@ message TopUpBalanceReq {
 }
 
 message TopUpBalanceRes {
+  float Cash = 1;
+}
+
+message DebitBalanceReq {
+  float Cash = 1;
+  string UserUUID = 2;
+}
+
+message DebitBalanceRes {
   float Cash = 1;
 }
