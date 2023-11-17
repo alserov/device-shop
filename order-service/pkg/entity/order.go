@@ -29,6 +29,14 @@ type CreateOrderReq struct {
 	Devices   []string `json:"devices,omitempty" validate:"min=1"`
 }
 
+type CreateOrderReqWithDevices struct {
+	UserUUID  string `json:"userUUID,omitempty" validate:"required"`
+	OrderUUID string `json:"orderUUID,omitempty" validate:"required"`
+	Status    int32  `json:"status,omitempty" validate:"required"`
+	CreatedAt *time.Time
+	Devices   []*pb.Device `json:"devices,omitempty" validate:"min=1"`
+}
+
 type CheckOrderRes struct {
 	UserUUID  string
 	OrderUUID string
