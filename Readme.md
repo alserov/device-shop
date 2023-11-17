@@ -7,4 +7,4 @@
 4. Redis
 5. Docker
 
-![Alt text](docs/schema.png)
+![Image not found](github.com/alserov/device-shop/docs/schema.png)
