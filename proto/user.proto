@@ -18,6 +18,8 @@ service Users {
   rpc AddToCart(AddReq) returns (google.protobuf.Empty);
   rpc RemoveFromCart(RemoveReq) returns (google.protobuf.Empty);
   rpc GetCart(GetReq) returns(GetRes);
+
+  rpc TopUpBalance(TopUpBalanceReq) returns(TopUpBalanceRes);
 }
 
 message GetReq {
@@ -42,7 +44,7 @@ message SignupRes {
   string Username = 1;
   string Email = 2;
   string UUID = 3;
-  int32 Cash = 4;
+  float  Cash = 4;
   string RefreshToken = 5;
   string Token = 6;
 }
@@ -61,4 +63,13 @@ message LoginRes {
 message LoginReq {
   string Username = 1;
   string Password = 2;
+}
+
+message TopUpBalanceReq {
+  uint32 Amount = 1;
+  string UserUUID = 2;
+}
+
+message TopUpBalanceRes {
+  float Cash = 1;
 }

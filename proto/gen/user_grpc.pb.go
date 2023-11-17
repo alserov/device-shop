@@ -31,6 +31,7 @@ type UsersClient interface {
 	AddToCart(ctx context.Context, in *AddReq, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	RemoveFromCart(ctx context.Context, in *RemoveReq, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	GetCart(ctx context.Context, in *GetReq, opts ...grpc.CallOption) (*GetRes, error)
+	TopUpBalance(ctx context.Context, in *TopUpBalanceReq, opts ...grpc.CallOption) (*TopUpBalanceRes, error)
 }
 
 type usersClient struct {
@@ -113,6 +114,15 @@ func (c *usersClient) GetCart(ctx context.Context, in *GetReq, opts ...grpc.Call
 	return out, nil
 }
 
+func (c *usersClient) TopUpBalance(ctx context.Context, in *TopUpBalanceReq, opts ...grpc.CallOption) (*TopUpBalanceRes, error) {
+	out := new(TopUpBalanceRes)
+	err := c.cc.Invoke(ctx, "/user.Users/TopUpBalance", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // UsersServer is the server API for Users service.
 // All implementations must embed UnimplementedUsersServer
 // for forward compatibility
@@ -125,6 +135,7 @@ type UsersServer interface {
 	AddToCart(context.Context, *AddReq) (*emptypb.Empty, error)
 	RemoveFromCart(context.Context, *RemoveReq) (*emptypb.Empty, error)
 	GetCart(context.Context, *GetReq) (*GetRes, error)
+	TopUpBalance(context.Context, *TopUpBalanceReq) (*TopUpBalanceRes, error)
 }
 
 // UnimplementedUsersServer must be embedded to have forward compatible implementations.
@@ -154,6 +165,9 @@ func (UnimplementedUsersServer) RemoveFromCart(context.Context, *RemoveReq) (*em
 }
 func (UnimplementedUsersServer) GetCart(context.Context, *GetReq) (*GetRes, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetCart not implemented")
+}
+func (UnimplementedUsersServer) TopUpBalance(context.Context, *TopUpBalanceReq) (*TopUpBalanceRes, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method TopUpBalance not implemented")
 }
 func (UnimplementedUsersServer) mustEmbedUnimplementedUsersServer() {}
 
@@ -312,6 +326,24 @@ func _Users_GetCart_Handler(srv interface{}, ctx context.Context, dec func(inter
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Users_TopUpBalance_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(TopUpBalanceReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UsersServer).TopUpBalance(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/user.Users/TopUpBalance",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UsersServer).TopUpBalance(ctx, req.(*TopUpBalanceReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Users_ServiceDesc is the grpc.ServiceDesc for Users service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -350,6 +382,10 @@ var Users_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetCart",
 			Handler:    _Users_GetCart_Handler,
+		},
+		{
+			MethodName: "TopUpBalance",
+			Handler:    _Users_TopUpBalance_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
