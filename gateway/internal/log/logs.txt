@@ -9,3 +9,4 @@
 [ERROR]: 2023-11-17 23:00:54 - failed to build resolver: passthrough: received empty target in Build()
 [ERROR]: 2023-11-17 23:00:56 - failed to build resolver: passthrough: received empty target in Build()
 [ERROR]: 2023-11-17 23:00:57 - failed to build resolver: passthrough: received empty target in Build()
+[INFO]: 2023-11-17 23:01:38 - logger initialized

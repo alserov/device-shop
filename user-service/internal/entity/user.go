@@ -53,3 +53,8 @@ type TopUpBalanceReq struct {
 	Cash     float32
 	UserUUID string
 }
+
+type DebitBalanceReq struct {
+	Cash     float32
+	UserUUID string
+}

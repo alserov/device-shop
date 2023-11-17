@@ -122,6 +122,20 @@ func (s *service) TopUpBalance(ctx context.Context, req *pb.TopUpBalanceReq) (*p
 	}, nil
 }
 
+func (s *service) DebitBalance(ctx context.Context, req *pb.DebitBalanceReq) (*pb.DebitBalanceRes, error) {
+	cash, err := postgres.NewRepo(s.postgres).DebitBalance(ctx, &entity.DebitBalanceReq{
+		Cash:     req.Cash,
+		UserUUID: req.UserUUID,
+	})
+	if err != nil {
+		return &pb.DebitBalanceRes{}, err
+	}
+
+	return &pb.DebitBalanceRes{
+		Cash: cash,
+	}, nil
+}
+
 func (s *service) AddToFavourite(ctx context.Context, req *pb.AddReq) (*emptypb.Empty, error) {
 	cl, cc, err := client.DialDevice(s.deviceAddr)
 	if err != nil {

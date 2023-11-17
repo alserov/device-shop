@@ -13,6 +13,7 @@ type Repository interface {
 	Signup(context.Context, *entity.User) error
 	Login(context.Context, *entity.RepoLoginReq) error
 	TopUpBalance(context.Context, *entity.TopUpBalanceReq) (float32, error)
+	DebitBalance(context.Context, *entity.DebitBalanceReq) (float32, error)
 	CheckIfExistsByUsername(context.Context, string) (bool, error)
 	FindByUsername(context.Context, string) (*entity.User, error)
 }
@@ -51,6 +52,16 @@ func (r *repo) Login(ctx context.Context, req *entity.RepoLoginReq) error {
 func (r *repo) TopUpBalance(ctx context.Context, req *entity.TopUpBalanceReq) (float32, error) {
 	query := `UPDATE users SET cash = cash + $1 WHERE uuid = $2 RETURNING cash`
 
+	var cash float32
+	if err := r.db.QueryRow(query, req.Cash, req.UserUUID).Scan(&cash); err != nil {
+		return 0, err
+	}
+
+	return cash, nil
+}
+
+func (r *repo) DebitBalance(ctx context.Context, req *entity.DebitBalanceReq) (float32, error) {
+	query := `UPDATE users SET cash = cash - $1 WHERE user_uuid = $2 RETURNING cash`
 	var cash float32
 	if err := r.db.QueryRow(query, req.Cash, req.UserUUID).Scan(&cash); err != nil {
 		return 0, err

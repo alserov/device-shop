@@ -3,8 +3,8 @@ module github.com/alserov/device-shop/order-service
 go 1.21.0
 
 require (
-	github.com/alserov/device-shop/gateway v0.0.0-20231117174402-2b5000e25a07
-	github.com/alserov/device-shop/proto v0.0.0-20231117174402-2b5000e25a07
+	github.com/alserov/device-shop/gateway v0.0.0-20231117195810-bcee519fc64c
+	github.com/alserov/device-shop/proto v0.0.0-20231117204359-0daab35b0f00
 	github.com/golang-migrate/migrate/v4 v4.16.2
 	github.com/google/uuid v1.4.0
 	github.com/joho/godotenv v1.5.1

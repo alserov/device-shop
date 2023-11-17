@@ -35,16 +35,16 @@ func (s service) CreateOrder(ctx context.Context, req *pb.CreateOrderReq) (*pb.C
 		OrderUUID: uuid.New().String(),
 		UserUUID:  req.UserUUID,
 		Status:    utils.StatusToCode(utils.CREATING),
-		Devices:   make([]*pb.Device, 0, len(req.DevicesUUIDs)),
+		Devices:   make([]*pb.Device, 0, len(req.DeviceUUIDs)),
 		CreatedAt: time.Now().UTC(),
 	}
 
 	var (
 		wg        = &sync.WaitGroup{}
 		chErr     = make(chan error)
-		chDevices = make(chan *pb.Device, len(req.DevicesUUIDs))
+		chDevices = make(chan *pb.Device, len(req.DeviceUUIDs))
 	)
-	wg.Add(len(req.DevicesUUIDs))
+	wg.Add(len(req.DeviceUUIDs))
 	{
 		cl, cc, err := client.DialDevice(s.deviceAddr)
 		if err != nil {
@@ -52,7 +52,7 @@ func (s service) CreateOrder(ctx context.Context, req *pb.CreateOrderReq) (*pb.C
 		}
 		defer cc.Close()
 
-		for _, v := range req.DevicesUUIDs {
+		for _, v := range req.DeviceUUIDs {
 			v := v
 			go func() {
 				defer wg.Done()
@@ -83,19 +83,42 @@ func (s service) CreateOrder(ctx context.Context, req *pb.CreateOrderReq) (*pb.C
 		return &pb.CreateOrderRes{}, err
 	}
 
-
+	tx, err := s.db.GetDB().Begin()
+	if err != nil {
+		return &pb.CreateOrderRes{}, err
+	}
 	chRPCErr := make(chan error)
+	wg.Add(2)
 	go func() {
+		defer wg.Done()
 		cl, cc, err := client.DialUser(s.userAddr)
 		if err != nil {
 			chRPCErr <- err
 		}
 		defer cc.Close()
 
-		_, err := cl.
+		_, err = cl.DebitBalance(ctx, &pb.DebitBalanceReq{
+			Cash:     float32(utils.CountOrderPrice(order.Devices)),
+			UserUUID: order.UserUUID,
+		})
+		if err != nil {
+			chErr <- err
+		}
 	}()
 
-	if err := s.db.CreateOrder(ctx, order); err != nil {
+	go func() {
+		defer wg.Done()
+		if err = s.db.CreateOrder(ctx, order, tx); err != nil {
+			chErr <- err
+		}
+	}()
+
+	go func() {
+		wg.Wait()
+		close(chRPCErr)
+	}()
+	for err = range chRPCErr {
+		tx.Rollback()
 		return &pb.CreateOrderRes{}, err
 	}
 
