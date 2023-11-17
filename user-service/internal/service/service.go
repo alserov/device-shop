@@ -73,7 +73,7 @@ func (s *service) Signup(ctx context.Context, req *pb.SignupReq) (*pb.SignupRes,
 		Username:     r.Username,
 		Email:        r.Email,
 		UUID:         r.UUID,
-		Cash:         int32(r.Cash),
+		Cash:         r.Cash,
 		RefreshToken: r.RefreshToken,
 		Token:        r.Token,
 	}, nil
@@ -109,7 +109,10 @@ func (s *service) Login(ctx context.Context, req *pb.LoginReq) (*pb.LoginRes, er
 }
 
 func (s *service) TopUpBalance(ctx context.Context, req *pb.TopUpBalanceReq) (*pb.TopUpBalanceRes, error) {
-	cash, err := postgres.NewRepo(s.postgres).TopUpBalance(ctx, req.Amount)
+	cash, err := postgres.NewRepo(s.postgres).TopUpBalance(ctx, &entity.TopUpBalanceReq{
+		Cash:     req.Cash,
+		UserUUID: req.UserUUID,
+	})
 	if err != nil {
 		return &pb.TopUpBalanceRes{}, err
 	}

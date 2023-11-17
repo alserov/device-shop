@@ -26,6 +26,7 @@ func LoadRoutes(r *gin.Engine, h Handler) {
 
 	// USER ACTIONS
 	userActions := r.Group(actionsPath).Use(middleware.CheckIfAuthorized())
+	userActions.PUT("/balance", h.TopUpBalance)
 	userActions.POST("/new-favourite", h.AddToFavourite)
 	userActions.DELETE("/delete-favourite", h.RemoveFromFavourite)
 	userActions.GET("/favourite/:userUUID", h.GetFavourite)

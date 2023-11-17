@@ -17,7 +17,7 @@ import (
 	"time"
 )
 
-type DeviceHandler interface {
+type Devicer interface {
 	GetAllDevices(*gin.Context)
 	GetDevicesByTitle(*gin.Context)
 	GetDevicesByManufacturer(*gin.Context)

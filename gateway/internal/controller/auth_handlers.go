@@ -13,7 +13,7 @@ import (
 	"time"
 )
 
-type AuthHandler interface {
+type Auther interface {
 	Signup(c *gin.Context)
 	Login(c *gin.Context)
 }

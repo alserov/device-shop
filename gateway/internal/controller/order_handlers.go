@@ -13,7 +13,7 @@ import (
 	"time"
 )
 
-type OrderHandler interface {
+type Orderer interface {
 	CreateOrder(c *gin.Context)
 	UpdateOrder(c *gin.Context)
 	CheckOrder(c *gin.Context)

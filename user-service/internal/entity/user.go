@@ -12,7 +12,7 @@ type User struct {
 	Password     string
 	Role         string
 	Email        string
-	Cash         int
+	Cash         float32
 	RefreshToken string
 	Token        string
 	CreatedAt    time.Time

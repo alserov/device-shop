@@ -35,5 +35,7 @@ func New(path string) (*logrus.Logger, error) {
 		},
 	}
 
+	log.Info("logger initialized")
+
 	return log, nil
 }

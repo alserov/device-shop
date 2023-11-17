@@ -13,7 +13,7 @@ import (
 	"time"
 )
 
-type AdminHandler interface {
+type Adminer interface {
 	CreateDevice(c *gin.Context)
 	DeleteDevice(c *gin.Context)
 	UpdateDevice(c *gin.Context)

@@ -14,7 +14,7 @@ import (
 	"time"
 )
 
-type CollectionsHandler interface {
+type Collectioner interface {
 	AddToFavourite(c *gin.Context)
 	RemoveFromFavourite(c *gin.Context)
 	GetFavourite(c *gin.Context)

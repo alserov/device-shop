@@ -26,8 +26,16 @@ github.com/alserov/device-shop/proto v0.0.0-20231113153041-bdbc12b07083 h1:0FVm1
 github.com/alserov/device-shop/proto v0.0.0-20231113153041-bdbc12b07083/go.mod h1:jTRYFmTaJqxlcsigo+73JGY8OQJ0e5uTv1D3bTDAPV4=
 github.com/alserov/device-shop/proto v0.0.0-20231116155458-19e844d27fac h1:UYo8Q7zCLDC4NYcqWdgTUxCcLe5cjskFYB4FXBfE6H0=
 github.com/alserov/device-shop/proto v0.0.0-20231116155458-19e844d27fac/go.mod h1:jTRYFmTaJqxlcsigo+73JGY8OQJ0e5uTv1D3bTDAPV4=
+github.com/alserov/device-shop/proto v0.0.0-20231117134243-edab92bb7b3c h1:5S/g5+s1/UxIoVt/oH7pkyBUcgvhvj1UwEi5dRfAhhA=
+github.com/alserov/device-shop/proto v0.0.0-20231117134243-edab92bb7b3c/go.mod h1:jTRYFmTaJqxlcsigo+73JGY8OQJ0e5uTv1D3bTDAPV4=
+github.com/alserov/device-shop/proto v0.0.0-20231117140344-1d6df73a4916 h1:qG4WomQVFPi5YrHZ+o0sJ6JBJjbGy3ud96IdSuUFqTc=
+github.com/alserov/device-shop/proto v0.0.0-20231117140344-1d6df73a4916/go.mod h1:jTRYFmTaJqxlcsigo+73JGY8OQJ0e5uTv1D3bTDAPV4=
 github.com/alserov/device-shop/user-service v0.0.0-20231115142127-20450a7d529f h1:5pgQeYKoPmnpyIaDBkdMpvCekqlR0sEZKee41y1H9Zk=
 github.com/alserov/device-shop/user-service v0.0.0-20231115142127-20450a7d529f/go.mod h1:xzht7WgPY2FufyNm1Q8dDrW94yEK1/3N9rX/4SK7S9g=
+github.com/alserov/device-shop/user-service v0.0.0-20231117134243-edab92bb7b3c h1:aP8exZjlNN+bc0QAF6AKL8fZPElESRSv3bDaxZQoenE=
+github.com/alserov/device-shop/user-service v0.0.0-20231117134243-edab92bb7b3c/go.mod h1:du9bnA++3IpBiV/LCBKgE8nn3iiUTczm2l+Nt36JBLk=
+github.com/alserov/device-shop/user-service v0.0.0-20231117140344-1d6df73a4916 h1:B+IUwoF/gh6DXOPQIydGoEvyvNyCErEOu6Ph1DS8Inc=
+github.com/alserov/device-shop/user-service v0.0.0-20231117140344-1d6df73a4916/go.mod h1:1CHgBjFrFerunAi33QfEiVyKpI6QxmknN6QZdHnT5Hc=
 github.com/asaskevich/govalidator v0.0.0-20230301143203-a9d515a09cc2 h1:DklsrG3dyBCFEj5IhUbnKptjxatkF07cF2ak3yi77so=
 github.com/asaskevich/govalidator v0.0.0-20230301143203-a9d515a09cc2/go.mod h1:WaHUgvxTVq04UNunO+XhnAqY/wQc+bxr74GqbsZ/Jqw=
 github.com/bytedance/sonic v1.5.0/go.mod h1:ED5hyg4y6t3/9Ku1R6dU/4KyJ48DZ4jPhfY1O2AihPM=

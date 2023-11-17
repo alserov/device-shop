@@ -16,7 +16,7 @@ service Orders {
 
 message CreateOrderReq {
   string UserUUID = 1;
-  repeated device.Device Devices = 2;
+  repeated string DevicesUUIDs = 2;
 }
 
 message CreateOrderRes {
@@ -28,10 +28,9 @@ message CheckOrderReq {
 }
 
 message CheckOrderRes {
-  repeated device.Device Devices = 1;
-  string Status = 2;
-  float Price = 3;
-  google.protobuf.Timestamp CreatedAt = 4;
+  string Status = 1;
+  float Price = 2;
+  google.protobuf.Timestamp CreatedAt = 3;
 }
 
 message UpdateOrderReq {

@@ -102,3 +102,10 @@ func GetAllReqToPB(str *device.GetAllDevicesReq) *pb.GetAllReq {
 		Amount: uint32(str.Amount),
 	}
 }
+
+func TopUpBalanceReqToPB(str *user.TopUpBalanceReq) *pb.TopUpBalanceReq {
+	return &pb.TopUpBalanceReq{
+		Cash:     str.Cash,
+		UserUUID: str.UserUUID,
+	}
+}

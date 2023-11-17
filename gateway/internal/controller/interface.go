@@ -8,11 +8,12 @@ import (
 )
 
 type Handler interface {
-	CollectionsHandler
-	DeviceHandler
-	AdminHandler
-	AuthHandler
-	OrderHandler
+	Collectioner
+	Devicer
+	Adminer
+	Auther
+	Orderer
+	Balancer
 }
 
 type handler struct {
