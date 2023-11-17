@@ -16,7 +16,7 @@ service Orders {
 
 message CreateOrderReq {
   string UserUUID = 1;
-  repeated string DevicesUUIDs = 2;
+  repeated string DeviceUUIDs = 2;
 }
 
 message CreateOrderRes {
