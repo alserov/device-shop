@@ -26,7 +26,7 @@ type CreateOrderReq struct {
 	OrderUUID string `json:"orderUUID,omitempty" validate:"required"`
 	Status    int32  `json:"status,omitempty" validate:"required"`
 	CreatedAt *time.Time
-	Devices   []*pb.Device `json:"devices,omitempty" validate:"min=1"`
+	Devices   []string `json:"devices,omitempty" validate:"min=1"`
 }
 
 type CheckOrderRes struct {
