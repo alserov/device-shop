@@ -6,3 +6,5 @@
 3. Postgresql
 4. Redis
 5. Docker
+
+![Alt text](docs/schema.png)
