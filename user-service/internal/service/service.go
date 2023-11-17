@@ -108,6 +108,17 @@ func (s *service) Login(ctx context.Context, req *pb.LoginReq) (*pb.LoginRes, er
 	}, nil
 }
 
+func (s *service) TopUpBalance(ctx context.Context, req *pb.TopUpBalanceReq) (*pb.TopUpBalanceRes, error) {
+	cash, err := postgres.NewRepo(s.postgres).TopUpBalance(ctx, req.Amount)
+	if err != nil {
+		return &pb.TopUpBalanceRes{}, err
+	}
+
+	return &pb.TopUpBalanceRes{
+		Cash: cash,
+	}, nil
+}
+
 func (s *service) AddToFavourite(ctx context.Context, req *pb.AddReq) (*emptypb.Empty, error) {
 	cl, cc, err := client.DialDevice(DEVICES_ADDR)
 	if err != nil {

@@ -5,7 +5,7 @@ go 1.21.0
 require (
 	github.com/alserov/device-shop/device-service v0.0.0-20231115142127-20450a7d529f
 	github.com/alserov/device-shop/gateway v0.0.0-20231115142127-20450a7d529f
-	github.com/alserov/device-shop/proto v0.0.0-20231113153041-bdbc12b07083
+	github.com/alserov/device-shop/proto v0.0.0-20231117134243-edab92bb7b3c
 	github.com/golang-jwt/jwt/v4 v4.5.0
 	github.com/golang-migrate/migrate/v4 v4.16.2
 	github.com/google/uuid v1.4.0

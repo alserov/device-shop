@@ -10,10 +10,11 @@ import (
 )
 
 type Repository interface {
-	Signup(ctx context.Context, req *entity.User) error
-	Login(ctx context.Context, req *entity.RepoLoginReq) error
-	CheckIfExistsByUsername(ctx context.Context, req string) (bool, error)
-	FindByUsername(ctx context.Context, req string) (*entity.User, error)
+	Signup(context.Context, *entity.User) error
+	Login(context.Context, *entity.RepoLoginReq) error
+	TopUpBalance(context.Context, *entity.TopUpBalanceReq) (float32, error)
+	CheckIfExistsByUsername(context.Context, string) (bool, error)
+	FindByUsername(context.Context, string) (*entity.User, error)
 }
 
 func NewRepo(db *sql.DB) Repository {
@@ -45,6 +46,17 @@ func (r *repo) Login(ctx context.Context, req *entity.RepoLoginReq) error {
 	}
 
 	return nil
+}
+
+func (r *repo) TopUpBalance(ctx context.Context, req *entity.TopUpBalanceReq) (float32, error) {
+	query := `UPDATE users SET cash = cash + $1 WHERE uuid = $2 RETURNING cash`
+
+	var cash float32
+	if err := r.db.QueryRow(query, req.Cash, req.UserUUID).Scan(&cash); err != nil {
+		return 0, err
+	}
+
+	return cash, nil
 }
 
 func (r *repo) FindByUsername(ctx context.Context, uname string) (*entity.User, error) {

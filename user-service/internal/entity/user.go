@@ -48,3 +48,8 @@ type RemoveReq struct {
 	DeviceUUID string
 	UserUUID   string
 }
+
+type TopUpBalanceReq struct {
+	Cash     float32
+	UserUUID string
+}
