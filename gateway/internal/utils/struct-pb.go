@@ -37,7 +37,8 @@ func DeviceToPB(str *device.Device) *pb.Device {
 
 func CreateOrderToPB(str *order.CreateOrderReq) *pb.CreateOrderReq {
 	return &pb.CreateOrderReq{
-		UserUUID: str.UserUUID,
+		UserUUID:    str.UserUUID,
+		DeviceUUIDs: str.DeviceUUIDs,
 	}
 }
 

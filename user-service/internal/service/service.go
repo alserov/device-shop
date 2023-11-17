@@ -20,18 +20,18 @@ import (
 )
 
 type service struct {
-	postgres *sql.DB
-	mongo    *mg.Client
+	postgres   *sql.DB
+	mongo      *mg.Client
+	deviceAddr string
 }
 
 func New(pg *sql.DB, mg *mg.Client) pb.UsersServer {
 	return &service{
-		postgres: pg,
-		mongo:    mg,
+		postgres:   pg,
+		mongo:      mg,
+		deviceAddr: os.Getenv("DEVICE_ADDR"),
 	}
 }
-
-var DEVICES_ADDR = os.Getenv("DEVICE_ADDR")
 
 func (s *service) Signup(ctx context.Context, req *pb.SignupReq) (*pb.SignupRes, error) {
 	exists, err := postgres.NewRepo(s.postgres).CheckIfExistsByUsername(ctx, req.Username)
@@ -123,7 +123,7 @@ func (s *service) TopUpBalance(ctx context.Context, req *pb.TopUpBalanceReq) (*p
 }
 
 func (s *service) AddToFavourite(ctx context.Context, req *pb.AddReq) (*emptypb.Empty, error) {
-	cl, cc, err := client.DialDevice(DEVICES_ADDR)
+	cl, cc, err := client.DialDevice(s.deviceAddr)
 	if err != nil {
 		return &emptypb.Empty{}, err
 	}
@@ -193,7 +193,7 @@ func (s *service) GetFavourite(ctx context.Context, req *pb.GetReq) (*pb.GetRes,
 }
 
 func (s *service) AddToCart(ctx context.Context, req *pb.AddReq) (*emptypb.Empty, error) {
-	cl, cc, err := client.DialDevice(DEVICES_ADDR)
+	cl, cc, err := client.DialDevice(s.deviceAddr)
 	if err != nil {
 		return &emptypb.Empty{}, err
 	}

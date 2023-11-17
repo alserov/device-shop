@@ -3,8 +3,8 @@ module github.com/alserov/device-shop/user-service
 go 1.21.0
 
 require (
-	github.com/alserov/device-shop/device-service v0.0.0-20231115142127-20450a7d529f
-	github.com/alserov/device-shop/gateway v0.0.0-20231115142127-20450a7d529f
+	github.com/alserov/device-shop/device-service v0.0.0-20231116144431-722d556d6d67
+	github.com/alserov/device-shop/gateway v0.0.0-20231117183329-6c90d6422f13
 	github.com/alserov/device-shop/proto v0.0.0-20231117140344-1d6df73a4916
 	github.com/golang-jwt/jwt/v4 v4.5.0
 	github.com/golang-migrate/migrate/v4 v4.16.2

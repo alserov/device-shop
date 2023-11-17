@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"database/sql"
+	"github.com/alserov/device-shop/gateway/pkg/client"
 	"github.com/alserov/device-shop/order-service/internal/db/postgres"
 	"github.com/alserov/device-shop/order-service/internal/utils"
 	"github.com/alserov/device-shop/order-service/pkg/entity"
@@ -10,25 +11,89 @@ import (
 	"github.com/google/uuid"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/timestamppb"
+	"os"
+	"sync"
+	"time"
 )
 
 type service struct {
-	db postgres.Repo
+	db         postgres.Repo
+	deviceAddr string
+	userAddr   string
 }
 
 func New(db *sql.DB) pb.OrdersServer {
 	return &service{
-		db: postgres.New(db),
+		db:         postgres.New(db),
+		deviceAddr: os.Getenv("DEVICE_ADDR"),
+		userAddr:   os.Getenv("USER_ADDR"),
 	}
 }
 
 func (s service) CreateOrder(ctx context.Context, req *pb.CreateOrderReq) (*pb.CreateOrderRes, error) {
-	order := &entity.CreateOrderReq{
+	order := &entity.CreateOrderReqWithDevices{
 		OrderUUID: uuid.New().String(),
 		UserUUID:  req.UserUUID,
 		Status:    utils.StatusToCode(utils.CREATING),
-		Devices:   req.Devices,
+		Devices:   make([]*pb.Device, 0, len(req.DevicesUUIDs)),
+		CreatedAt: time.Now().UTC(),
 	}
+
+	var (
+		wg        = &sync.WaitGroup{}
+		chErr     = make(chan error)
+		chDevices = make(chan *pb.Device, len(req.DevicesUUIDs))
+	)
+	wg.Add(len(req.DevicesUUIDs))
+	{
+		cl, cc, err := client.DialDevice(s.deviceAddr)
+		if err != nil {
+			chErr <- err
+		}
+		defer cc.Close()
+
+		for _, v := range req.DevicesUUIDs {
+			v := v
+			go func() {
+				defer wg.Done()
+				device, err := cl.GetDeviceByUUID(ctx, &pb.UUIDReq{
+					UUID: v,
+				})
+				if err != nil {
+					chErr <- err
+				}
+				chDevices <- device
+			}()
+		}
+	}
+
+	go func() {
+		wg.Wait()
+		close(chDevices)
+		close(chErr)
+	}()
+
+	go func() {
+		for device := range chDevices {
+			order.Devices = append(order.Devices, device)
+		}
+	}()
+
+	for err := range chErr {
+		return &pb.CreateOrderRes{}, err
+	}
+
+
+	chRPCErr := make(chan error)
+	go func() {
+		cl, cc, err := client.DialUser(s.userAddr)
+		if err != nil {
+			chRPCErr <- err
+		}
+		defer cc.Close()
+
+		_, err := cl.
+	}()
 
 	if err := s.db.CreateOrder(ctx, order); err != nil {
 		return &pb.CreateOrderRes{}, err

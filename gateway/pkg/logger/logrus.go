@@ -25,17 +25,16 @@ func New(path string) (*logrus.Logger, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer f.Close()
 
-	log := &logrus.Logger{
-		Out: io.MultiWriter(f, os.Stdout),
-		Formatter: &easy.Formatter{
-			TimestampFormat: "2006-01-02 15:04:05",
-			LogFormat:       "[%lvl%]: %time% - %msg%\n",
-		},
-	}
+	l := logrus.New()
+	l.SetOutput(io.MultiWriter(f, os.Stdout))
+	l.SetReportCaller(true)
+	l.SetFormatter(&easy.Formatter{
+		TimestampFormat: "2006-01-02 15:04:05",
+		LogFormat:       "[%lvl%]: %time% - %msg%\n",
+	})
 
-	log.Info("logger initialized")
+	l.Info("logger initialized")
 
-	return log, nil
+	return l, nil
 }

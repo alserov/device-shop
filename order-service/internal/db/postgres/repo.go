@@ -11,7 +11,7 @@ import (
 )
 
 type Repo interface {
-	CreateOrder(context.Context, *entity.CreateOrderReq) error
+	CreateOrder(context.Context, *entity.CreateOrderReqWithDevices) error
 	CheckOrder(context.Context, string) (*entity.CheckOrderRes, error)
 	UpdateOrder(context.Context, string, string) error
 }
@@ -26,7 +26,7 @@ type repo struct {
 	db *sql.DB
 }
 
-func (r *repo) CreateOrder(ctx context.Context, req *entity.CreateOrderReq) error {
+func (r *repo) CreateOrder(ctx context.Context, req *entity.CreateOrderReqWithDevices) error {
 	query := `INSERT INTO orders (user_uuid,order_uuid,device_uuid,amount,status,created_at) VALUES($1,$2,$3,$4,$5,$6)`
 
 	tx, err := r.db.Begin()
@@ -35,18 +35,18 @@ func (r *repo) CreateOrder(ctx context.Context, req *entity.CreateOrderReq) erro
 	}
 
 	wg := &sync.WaitGroup{}
-	wg.Add(len(req.Devices) + 1)
+	wg.Add(len(req.Devices))
 
 	chErr := make(chan error)
 
-	go func() {
-		defer wg.Done()
-		query = `UPDATE users SET cash = cash - $1 WHERE user_uuid = $2`
-		_, err = tx.Exec(query, utils.CountOrderPrice(req.Devices), req.UserUUID)
-		if err != nil {
-			chErr <- err
-		}
-	}()
+	//go func() {
+	//	defer wg.Done()
+	//	query = `UPDATE users SET cash = cash - $1 WHERE user_uuid = $2`
+	//	_, err = tx.Exec(query, utils.CountOrderPrice(req.Devices), req.UserUUID)
+	//	if err != nil {
+	//		chErr <- err
+	//	}
+	//}()
 
 	for _, device := range req.Devices {
 		device := device

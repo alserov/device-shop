@@ -22,7 +22,7 @@ type Orderer interface {
 func (h *handler) CreateOrder(c *gin.Context) {
 	msg, err := utils.RequestToPBMessage[entity.CreateOrderReq, pb.CreateOrderReq](c.Request, utils.CreateOrderToPB)
 	if err != nil {
-		responser.ServerError(c.Writer, h.logger, err)
+		responser.UserError(c.Writer, err.Error())
 		return
 	}
 

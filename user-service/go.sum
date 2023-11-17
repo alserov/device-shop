@@ -4,8 +4,12 @@ github.com/Microsoft/go-winio v0.6.1 h1:9/kr64B9VUZrLm5YYwbGtUJnMgqWVOdUAXu6Migc
 github.com/Microsoft/go-winio v0.6.1/go.mod h1:LRdKpFKfdobln8UmuiYcKPot9D2v6svN5+sAH+4kjUM=
 github.com/alserov/device-shop/device-service v0.0.0-20231115142127-20450a7d529f h1:ImD4/GSA0kHWBiR+Ho2V/m3brLhtXrJJ7WmbmyeMUwI=
 github.com/alserov/device-shop/device-service v0.0.0-20231115142127-20450a7d529f/go.mod h1:pU4EvUCCxOrXofEEeyw+4yVqVzfbhxNEAk5iFj29JgM=
+github.com/alserov/device-shop/device-service v0.0.0-20231116144431-722d556d6d67 h1:dqJMJ2zjnqIyg2cs5c/669yZ+uOIYBo+1k31cFXjzS0=
+github.com/alserov/device-shop/device-service v0.0.0-20231116144431-722d556d6d67/go.mod h1:R6QWadzUS0s6DSo9Oyq6sBvx8lT1wlEEK5ZfGuKcai8=
 github.com/alserov/device-shop/gateway v0.0.0-20231115142127-20450a7d529f h1:i0TRONJP3ilS+nBSmfgYU9+tPvS0VMAfydyLuHOV/nY=
 github.com/alserov/device-shop/gateway v0.0.0-20231115142127-20450a7d529f/go.mod h1:VUqnXnXt4h1bKcFhU16ayGu0yxkiXQcAWsDz5kSe194=
+github.com/alserov/device-shop/gateway v0.0.0-20231117183329-6c90d6422f13 h1:C6P7UD7WPKdNBTJ6GEydANtKnnBrCkFNuvWxfBuwRnU=
+github.com/alserov/device-shop/gateway v0.0.0-20231117183329-6c90d6422f13/go.mod h1:IKPpvsWh0NLJBMUTqWuv7e60BFoGrZyj8N6TstmabXU=
 github.com/alserov/device-shop/proto v0.0.0-20231113153041-bdbc12b07083 h1:0FVm1htkb07ERLZzVLn7laQ265ZLBP3myooXAyTPMNg=
 github.com/alserov/device-shop/proto v0.0.0-20231113153041-bdbc12b07083/go.mod h1:jTRYFmTaJqxlcsigo+73JGY8OQJ0e5uTv1D3bTDAPV4=
 github.com/alserov/device-shop/proto v0.0.0-20231116171502-2d04422bf0ee h1:cAzP1q3U9o0jiJtGjhZ1FPr0WzkoYDtwcjJEtUFQfUY=
