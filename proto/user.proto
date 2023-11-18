@@ -21,6 +21,8 @@ service Users {
 
   rpc TopUpBalance(TopUpBalanceReq) returns(TopUpBalanceRes);
   rpc DebitBalance(DebitBalanceReq) returns(DebitBalanceRes);
+
+  rpc RemoveDeviceFromCollections(RemoveDeviceReq) returns(google.protobuf.Empty);
 }
 
 message GetReq {
@@ -82,4 +84,8 @@ message DebitBalanceReq {
 
 message DebitBalanceRes {
   float Cash = 1;
+}
+
+message RemoveDeviceReq {
+  string DeviceUUID = 1;
 }

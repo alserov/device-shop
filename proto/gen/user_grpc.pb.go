@@ -33,6 +33,7 @@ type UsersClient interface {
 	GetCart(ctx context.Context, in *GetReq, opts ...grpc.CallOption) (*GetRes, error)
 	TopUpBalance(ctx context.Context, in *TopUpBalanceReq, opts ...grpc.CallOption) (*TopUpBalanceRes, error)
 	DebitBalance(ctx context.Context, in *DebitBalanceReq, opts ...grpc.CallOption) (*DebitBalanceRes, error)
+	RemoveDeviceFromCollections(ctx context.Context, in *RemoveDeviceReq, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
 
 type usersClient struct {
@@ -133,6 +134,15 @@ func (c *usersClient) DebitBalance(ctx context.Context, in *DebitBalanceReq, opt
 	return out, nil
 }
 
+func (c *usersClient) RemoveDeviceFromCollections(ctx context.Context, in *RemoveDeviceReq, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, "/user.Users/RemoveDeviceFromCollections", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // UsersServer is the server API for Users service.
 // All implementations must embed UnimplementedUsersServer
 // for forward compatibility
@@ -147,6 +157,7 @@ type UsersServer interface {
 	GetCart(context.Context, *GetReq) (*GetRes, error)
 	TopUpBalance(context.Context, *TopUpBalanceReq) (*TopUpBalanceRes, error)
 	DebitBalance(context.Context, *DebitBalanceReq) (*DebitBalanceRes, error)
+	RemoveDeviceFromCollections(context.Context, *RemoveDeviceReq) (*emptypb.Empty, error)
 }
 
 // UnimplementedUsersServer must be embedded to have forward compatible implementations.
@@ -182,6 +193,9 @@ func (UnimplementedUsersServer) TopUpBalance(context.Context, *TopUpBalanceReq) 
 }
 func (UnimplementedUsersServer) DebitBalance(context.Context, *DebitBalanceReq) (*DebitBalanceRes, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DebitBalance not implemented")
+}
+func (UnimplementedUsersServer) RemoveDeviceFromCollections(context.Context, *RemoveDeviceReq) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method RemoveDeviceFromCollections not implemented")
 }
 func (UnimplementedUsersServer) mustEmbedUnimplementedUsersServer() {}
 
@@ -376,6 +390,24 @@ func _Users_DebitBalance_Handler(srv interface{}, ctx context.Context, dec func(
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Users_RemoveDeviceFromCollections_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RemoveDeviceReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UsersServer).RemoveDeviceFromCollections(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/user.Users/RemoveDeviceFromCollections",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UsersServer).RemoveDeviceFromCollections(ctx, req.(*RemoveDeviceReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Users_ServiceDesc is the grpc.ServiceDesc for Users service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -422,6 +454,10 @@ var Users_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "DebitBalance",
 			Handler:    _Users_DebitBalance_Handler,
+		},
+		{
+			MethodName: "RemoveDeviceFromCollections",
+			Handler:    _Users_RemoveDeviceFromCollections_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
