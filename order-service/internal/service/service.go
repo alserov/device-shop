@@ -5,13 +5,13 @@ import (
 	"database/sql"
 	"github.com/alserov/device-shop/gateway/pkg/client"
 	"github.com/alserov/device-shop/order-service/internal/db/postgres"
+	"github.com/alserov/device-shop/order-service/internal/helpers"
 	"github.com/alserov/device-shop/order-service/internal/utils"
 	"github.com/alserov/device-shop/order-service/pkg/entity"
 	"github.com/alserov/device-shop/proto/gen"
 	"github.com/google/uuid"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/timestamppb"
-	"log"
 	"os"
 	"sync"
 	"time"
@@ -45,79 +45,41 @@ func (s service) CreateOrder(ctx context.Context, req *pb.CreateOrderReq) (*pb.C
 		chErr     = make(chan error)
 		chDevices = make(chan *pb.Device, len(req.DeviceUUIDs))
 	)
+
 	wg.Add(len(req.DeviceUUIDs))
-	{
-		cl, cc, err := client.DialDevice(s.deviceAddr)
-		if err != nil {
-			chErr <- err
-		}
-		defer cc.Close()
-		for _, v := range req.DeviceUUIDs {
-			v := v
-			go func() {
-				defer wg.Done()
-				device, err := cl.GetDeviceByUUID(ctx, &pb.UUIDReq{
-					UUID: v,
-				})
-				if err != nil {
-					chErr <- err
-				}
-				chDevices <- device
-			}()
-		}
-	}
-
-	go func() {
-		wg.Wait()
-		close(chDevices)
-		close(chErr)
-	}()
-
+	go helpers.FetchDevices(ctx, chDevices, chErr, wg, s.deviceAddr, req.DeviceUUIDs)
 	for device := range chDevices {
 		order.Devices = append(order.Devices, device)
 	}
 
-	for err := range chErr {
-		return &pb.CreateOrderRes{}, err
-	}
+	wg.Add(1)
+	go helpers.ChangeBalance(ctx, chErr, s.userAddr, order)
 
-	tx, err := s.db.GetDB().Begin()
-	if err != nil {
-		return &pb.CreateOrderRes{}, err
-	}
-	chRPCErr := make(chan error)
-	wg.Add(2)
-	cl, cc, err := client.DialUser(s.userAddr)
-	if err != nil {
-		chRPCErr <- err
-	}
-	defer cc.Close()
-
+	wg.Add(1)
 	go func() {
-		defer wg.Done()
-		_, err = cl.DebitBalance(ctx, &pb.DebitBalanceReq{
-			Cash:     float32(utils.CountOrderPrice(order.Devices)),
-			UserUUID: order.UserUUID,
-		})
+		tx, err := s.db.GetDB().Begin()
 		if err != nil {
-			chRPCErr <- err
+			chErr <- err
 		}
-	}()
-
-	go func() {
-		defer wg.Done()
 		if err = s.db.CreateOrder(ctx, order, tx); err != nil {
-			log.Println(err)
-			chRPCErr <- err
+			tx.Rollback()
+			chErr <- err
 		}
 	}()
 
 	go func() {
 		wg.Wait()
-		close(chRPCErr)
+		close(chErr)
 	}()
-	for err = range chRPCErr {
-		tx.Rollback()
+
+	// TODO : FINISH ROLLBACK IF ERROR
+	for err = range chErr {
+		cl, cc, err := client.DialUser(s.userAddr)
+		if err != nil {
+			chErr <- err
+		}
+		defer cc.Close()
+
 		_, err = cl.TopUpBalance(ctx, &pb.TopUpBalanceReq{
 			Cash:     float32(utils.CountOrderPrice(order.Devices)),
 			UserUUID: order.UserUUID,

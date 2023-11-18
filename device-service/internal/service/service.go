@@ -18,13 +18,13 @@ import (
 )
 
 type service struct {
-	postgres *sql.DB
+	postgres postgres.Repository
 	userAddr string
 }
 
 func New(pg *sql.DB) pb.DevicesServer {
 	return &service{
-		postgres: pg,
+		postgres: postgres.NewRepo(pg),
 		userAddr: os.Getenv("USER_ADDR"),
 	}
 }
@@ -39,7 +39,7 @@ func (s *service) CreateDevice(ctx context.Context, req *pb.CreateReq) (*emptypb
 		Amount:       req.Amount,
 	}
 
-	if err := postgres.NewRepo(s.postgres).CreateDevice(ctx, r); err != nil {
+	if err := s.postgres.CreateDevice(ctx, r); err != nil {
 		return &emptypb.Empty{}, err
 	}
 
@@ -64,7 +64,7 @@ func (s *service) DeleteDevice(ctx context.Context, req *pb.DeleteReq) (*emptypb
 		}
 	}()
 
-	if err := postgres.NewRepo(s.postgres).DeleteDevice(ctx, req.UUID); err != nil {
+	if err := s.postgres.DeleteDevice(ctx, req.UUID); err != nil {
 		return &emptypb.Empty{}, err
 	}
 
@@ -83,7 +83,7 @@ func (s *service) UpdateDevice(ctx context.Context, req *pb.UpdateReq) (*emptypb
 		UUID:        req.UUID,
 	}
 
-	if err := postgres.NewRepo(s.postgres).UpdateDevice(ctx, r); err != nil {
+	if err := s.postgres.UpdateDevice(ctx, r); err != nil {
 		return &emptypb.Empty{}, err
 	}
 
@@ -91,7 +91,7 @@ func (s *service) UpdateDevice(ctx context.Context, req *pb.UpdateReq) (*emptypb
 }
 
 func (s *service) GetAllDevices(ctx context.Context, req *pb.GetAllReq) (*pb.DevicesRes, error) {
-	d, err := postgres.NewRepo(s.postgres).GetAllDevices(ctx, req.Index, req.Amount)
+	d, err := s.postgres.GetAllDevices(ctx, req.Index, req.Amount)
 	if err != nil {
 		return &pb.DevicesRes{}, err
 	}
@@ -115,7 +115,7 @@ func (s *service) GetAllDevices(ctx context.Context, req *pb.GetAllReq) (*pb.Dev
 }
 
 func (s *service) GetDevicesByTitle(ctx context.Context, req *pb.GetByTitleReq) (*pb.DevicesRes, error) {
-	d, err := postgres.NewRepo(s.postgres).GetDevicesByTitle(ctx, strings.ToLower(req.Title))
+	d, err := s.postgres.GetDevicesByTitle(ctx, strings.ToLower(req.Title))
 	if errors.Is(err, sql.ErrNoRows) {
 		return &pb.DevicesRes{}, status.Error(http.StatusBadRequest, fmt.Sprintf("Nothing found by %s", req.Title))
 	}
@@ -142,7 +142,7 @@ func (s *service) GetDevicesByTitle(ctx context.Context, req *pb.GetByTitleReq) 
 }
 
 func (s *service) GetDeviceByUUID(ctx context.Context, req *pb.UUIDReq) (*pb.Device, error) {
-	dv, err := postgres.NewRepo(s.postgres).GetDeviceByUUID(ctx, req.UUID)
+	dv, err := s.postgres.GetDeviceByUUID(ctx, req.UUID)
 	if err != nil {
 		return nil, err
 	}
@@ -160,7 +160,7 @@ func (s *service) GetDeviceByUUID(ctx context.Context, req *pb.UUIDReq) (*pb.Dev
 }
 
 func (s *service) GetDevicesByManufacturer(ctx context.Context, req *pb.GetByManufacturer) (*pb.DevicesRes, error) {
-	d, err := postgres.NewRepo(s.postgres).GetDevicesByManufacturer(ctx, req.Manufacturer)
+	d, err := s.postgres.GetDevicesByManufacturer(ctx, req.Manufacturer)
 	if errors.Is(err, sql.ErrNoRows) {
 		return &pb.DevicesRes{}, status.Error(http.StatusBadRequest, fmt.Sprintf("Nothing found by %s", req.Manufacturer))
 	}
@@ -187,7 +187,7 @@ func (s *service) GetDevicesByManufacturer(ctx context.Context, req *pb.GetByMan
 }
 
 func (s *service) GetDevicesByPrice(ctx context.Context, req *pb.GetByPrice) (*pb.DevicesRes, error) {
-	d, err := postgres.NewRepo(s.postgres).GetDevicesByPrice(ctx, uint(req.Min), uint(req.Max))
+	d, err := s.postgres.GetDevicesByPrice(ctx, uint(req.Min), uint(req.Max))
 	if errors.Is(err, sql.ErrNoRows) {
 		return &pb.DevicesRes{}, status.Error(http.StatusBadRequest, fmt.Sprintf("Nothing found by price > %d and price < %d", req.Min, req.Max))
 	}
@@ -210,4 +210,11 @@ func (s *service) GetDevicesByPrice(ctx context.Context, req *pb.GetByPrice) (*p
 	return &pb.DevicesRes{
 		Devices: devices,
 	}, nil
+}
+
+func (s *service) ChangeAmount(ctx context.Context, req *pb.ChangeAmountReq) (*emptypb.Empty, error) {
+	if err := s.postgres.ChangeAmount(ctx, req.DeviceUUID, req.Amount); err != nil {
+		return &emptypb.Empty{}, err
+	}
+	return &emptypb.Empty{}, nil
 }

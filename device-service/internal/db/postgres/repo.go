@@ -16,6 +16,7 @@ type Repository interface {
 	GetDeviceByUUID(context.Context, string) (*entity.Device, error)
 	GetDevicesByManufacturer(context.Context, string) ([]*entity.Device, error)
 	GetDevicesByPrice(context.Context, uint, uint) ([]*entity.Device, error)
+	ChangeAmount(context.Context, string, int32) error
 }
 
 type repo struct {
@@ -152,4 +153,13 @@ func (r *repo) GetDevicesByPrice(ctx context.Context, min uint, max uint) ([]*en
 	}
 
 	return devices, nil
+}
+
+func (r *repo) ChangeAmount(ctx context.Context, deviceUUID string, amount int) error {
+	query := `UPDATE devices SET amount = amount - $1 WHERE uuid = $2`
+	_, err := r.db.Exec(query, amount, deviceUUID)
+	if err != nil {
+		return err
+	}
+	return nil
 }

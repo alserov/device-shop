@@ -48,17 +48,10 @@ func (r *repo) CreateOrder(ctx context.Context, req *entity.CreateOrderReqWithDe
 		device := device
 		go func() {
 			defer wg.Done()
-
 			_, err = tx.Exec(query, req.UserUUID, req.OrderUUID, device.UUID, device.Amount, req.Status, req.CreatedAt)
 			if err != nil {
 				chErr <- err
 				return
-			}
-
-			query = `UPDATE devices SET amount = amount - $1 WHERE uuid = $2`
-			_, err = tx.Exec(query, device.Amount, device.UUID)
-			if err != nil {
-				chErr <- err
 			}
 		}()
 	}
