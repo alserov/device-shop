@@ -11,7 +11,8 @@ import (
 
 type Repository interface {
 	Signup(context.Context, *entity.User) error
-	Login(context.Context, *entity.RepoLoginReq) error
+	Login(context.Context, *entity.RepoLoginReq) (*entity.RepoLoginRes, error)
+	GetInfo(context.Context, string) (*entity.RepoGetInfoRes, error)
 	TopUpBalance(context.Context, *entity.TopUpBalanceReq) (float32, error)
 	DebitBalance(context.Context, *entity.DebitBalanceReq) (float32, error)
 	CheckIfExistsByUsername(context.Context, string) (bool, error)
@@ -39,14 +40,30 @@ func (r *repo) Signup(ctx context.Context, req *entity.User) error {
 	return nil
 }
 
-func (r *repo) Login(ctx context.Context, req *entity.RepoLoginReq) error {
-	query := `UPDATE users SET refresh_token = $1 WHERE username = $2`
+func (r *repo) Login(ctx context.Context, req *entity.RepoLoginReq) (*entity.RepoLoginRes, error) {
+	query := `UPDATE users SET refresh_token = $1 WHERE username = $2 RETURNING uuid`
 
-	if _, err := r.db.Exec(query, req.RefreshToken, req.Username); err != nil {
-		return err
+	var (
+		uuid string
+	)
+	if err := r.db.QueryRow(query, req.RefreshToken, req.Username).Scan(&uuid); err != nil {
+		return &entity.RepoLoginRes{}, err
 	}
 
-	return nil
+	return &entity.RepoLoginRes{
+		UUID: uuid,
+	}, nil
+}
+
+func (r *repo) GetInfo(ctx context.Context, userUUID string) (*entity.RepoGetInfoRes, error) {
+	query := `SELECT username,email,uuid,cash FROM users WHERE uuid = $1`
+
+	var info entity.RepoGetInfoRes
+	if err := r.db.QueryRow(query, userUUID).Scan(&info.Username, &info.Email, &info.UUID, &info.Cash); err != nil {
+		return nil, err
+	}
+
+	return &info, nil
 }
 
 func (r *repo) TopUpBalance(ctx context.Context, req *entity.TopUpBalanceReq) (float32, error) {

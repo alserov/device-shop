@@ -5,27 +5,27 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"github.com/alserov/device-shop/device-service/internal/db/mongo"
 	"github.com/alserov/device-shop/device-service/internal/db/postgres"
 	"github.com/alserov/device-shop/device-service/pkg/entity"
+	"github.com/alserov/device-shop/gateway/pkg/client"
 	"github.com/alserov/device-shop/proto/gen"
 	"github.com/google/uuid"
-	mg "go.mongodb.org/mongo-driver/mongo"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"net/http"
+	"os"
 	"strings"
 )
 
 type service struct {
 	postgres *sql.DB
-	mongo    *mg.Client
+	userAddr string
 }
 
-func New(pg *sql.DB, mg *mg.Client) pb.DevicesServer {
+func New(pg *sql.DB) pb.DevicesServer {
 	return &service{
 		postgres: pg,
-		mongo:    mg,
+		userAddr: os.Getenv("USER_ADDR"),
 	}
 }
 
@@ -47,12 +47,28 @@ func (s *service) CreateDevice(ctx context.Context, req *pb.CreateReq) (*emptypb
 }
 
 func (s *service) DeleteDevice(ctx context.Context, req *pb.DeleteReq) (*emptypb.Empty, error) {
+	chErr := make(chan error)
+	go func() {
+		defer close(chErr)
+		cl, cc, err := client.DialUser(s.userAddr)
+		if err != nil {
+			chErr <- err
+		}
+		defer cc.Close()
+
+		_, err = cl.RemoveDeviceFromCollections(ctx, &pb.RemoveDeviceReq{
+			DeviceUUID: req.UUID,
+		})
+		if err != nil {
+			chErr <- err
+		}
+	}()
 
 	if err := postgres.NewRepo(s.postgres).DeleteDevice(ctx, req.UUID); err != nil {
 		return &emptypb.Empty{}, err
 	}
 
-	if err := mongo.NewRepo(s.mongo).DeleteWhereExists(ctx, req.UUID); err != nil {
+	for err := range chErr {
 		return &emptypb.Empty{}, err
 	}
 

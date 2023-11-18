@@ -13,7 +13,6 @@ type App struct {
 	host        string
 	connType    string
 	postgresDsn string
-	mongoUri    string
 }
 
 const (
@@ -60,7 +59,6 @@ func New() (*App, error) {
 			os.Getenv("DB_NAME"),
 			os.Getenv("DB_SSLMODE"),
 		),
-		mongoUri: os.Getenv("MONGO_URI"),
 	}
 
 	return a, nil

@@ -7,13 +7,6 @@ import (
 	"os/signal"
 )
 
-// @title Device Shop
-// @version 1.0
-// @description API Gateway for Device Shop
-
-// @host localhost:8001
-// @BasePath /
-
 func main() {
 	a, err := app.New()
 	if err != nil {

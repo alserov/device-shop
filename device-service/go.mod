@@ -3,7 +3,8 @@ module github.com/alserov/device-shop/device-service
 go 1.21.0
 
 require (
-	github.com/alserov/device-shop/proto v0.0.0-20231116155458-19e844d27fac
+	github.com/alserov/device-shop/gateway v0.0.0-20231117205336-1d5d065a66ee
+	github.com/alserov/device-shop/proto v0.0.0-20231118092614-d044d5cff193
 	github.com/golang-migrate/migrate/v4 v4.16.2
 	github.com/google/uuid v1.4.0
 	github.com/joho/godotenv v1.5.1

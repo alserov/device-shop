@@ -3,7 +3,6 @@ package app
 import (
 	"context"
 	"fmt"
-	"github.com/alserov/device-shop/device-service/internal/db/mongo"
 	"github.com/alserov/device-shop/device-service/internal/db/postgres"
 	"github.com/alserov/device-shop/device-service/internal/service"
 	"github.com/alserov/device-shop/proto/gen"
@@ -26,12 +25,7 @@ func (a *App) Start(ctx context.Context) error {
 		return err
 	}
 
-	mg, err := mongo.Connect(ctx, a.mongoUri)
-	if err != nil {
-		return err
-	}
-
-	pb.RegisterDevicesServer(s, service.New(pg, mg))
+	pb.RegisterDevicesServer(s, service.New(pg))
 
 	chErr := make(chan error, 1)
 	go func() {

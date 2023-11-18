@@ -12,8 +12,9 @@ import (
 	"time"
 )
 
-type Balancer interface {
+type Userer interface {
 	TopUpBalance(ctx *gin.Context)
+	GetInfo(ctx *gin.Context)
 }
 
 func (h *handler) TopUpBalance(c *gin.Context) {
@@ -46,4 +47,37 @@ func (h *handler) TopUpBalance(c *gin.Context) {
 	responser.Data(c.Writer, responser.H{
 		"cash": res.Cash,
 	})
+}
+
+func (h *handler) GetInfo(c *gin.Context) {
+	userUUID := c.Param("userUUID")
+
+	if userUUID == "" {
+		responser.UserError(c.Writer, "userUUID cannot be empty")
+		return
+	}
+
+	cl, cc, err := client.DialUser(h.userAddr)
+	if err != nil {
+		responser.ServerError(c.Writer, h.logger, err)
+		return
+	}
+	defer cc.Close()
+
+	ctx, cancel := context.WithTimeout(c.Request.Context(), time.Second)
+	defer cancel()
+
+	res, err := cl.GetInfo(ctx, &pb.GetInfoReq{
+		UserUUID: userUUID,
+	})
+	if err != nil {
+		if st, ok := status.FromError(err); ok {
+			responser.UserError(c.Writer, st.Message())
+			return
+		}
+		responser.ServerError(c.Writer, h.logger, err)
+		return
+	}
+
+	responser.Value(c.Writer, res)
 }

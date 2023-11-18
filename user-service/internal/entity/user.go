@@ -39,6 +39,17 @@ type RepoLoginReq struct {
 	Username     string
 }
 
+type RepoLoginRes struct {
+	UUID string
+}
+
+type RepoGetInfoRes struct {
+	Username string
+	Email    string
+	UUID     string
+	Cash     float32
+}
+
 type AddReq struct {
 	Device   *device.Device
 	UserUUID string

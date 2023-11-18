@@ -18,18 +18,6 @@ type Auther interface {
 	Login(c *gin.Context)
 }
 
-// @Summary Signup
-// @Tags auth
-// @Description Creates new user
-// @ID create-user
-// @Accept json
-// @Produce json
-// @Param input body models.SignupReq true "user credentials"
-// @Success 200
-// @Failure 400 {object} responser.WithError
-// @Failure 500
-// @Router /auth/signup [post]
-
 func (h *handler) Signup(c *gin.Context) {
 	msg, err := utils.RequestToPBMessage[user.SignupReq, pb.SignupReq](c.Request, utils.SignupReqToPB)
 	if err != nil {
@@ -83,7 +71,7 @@ func (h *handler) Login(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), time.Second)
 	defer cancel()
 
-	tokens, err := cl.Login(ctx, msg)
+	res, err := cl.Login(ctx, msg)
 	if err != nil {
 		if st, ok := status.FromError(err); ok {
 			responser.UserError(c.Writer, st.Message())
@@ -93,9 +81,10 @@ func (h *handler) Login(c *gin.Context) {
 		return
 	}
 
-	c.SetCookie("token", tokens.Token, 604800, "/", "localhost", false, true)
+	c.SetCookie("token", res.Token, 604800, "/", "localhost", false, true)
 
 	responser.Data(c.Writer, responser.H{
-		"refreshToken": tokens.RefreshToken,
+		"refreshToken": res.RefreshToken,
+		"userUUID":     res.UUID,
 	})
 }

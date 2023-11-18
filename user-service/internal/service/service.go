@@ -20,21 +20,21 @@ import (
 )
 
 type service struct {
-	postgres   *sql.DB
-	mongo      *mg.Client
+	postgres   postgres.Repository
+	mongo      mongo.Repository
 	deviceAddr string
 }
 
 func New(pg *sql.DB, mg *mg.Client) pb.UsersServer {
 	return &service{
-		postgres:   pg,
-		mongo:      mg,
+		postgres:   postgres.NewRepo(pg),
+		mongo:      mongo.NewRepo(mg),
 		deviceAddr: os.Getenv("DEVICE_ADDR"),
 	}
 }
 
 func (s *service) Signup(ctx context.Context, req *pb.SignupReq) (*pb.SignupRes, error) {
-	exists, err := postgres.NewRepo(s.postgres).CheckIfExistsByUsername(ctx, req.Username)
+	exists, err := s.postgres.CheckIfExistsByUsername(ctx, req.Username)
 	if err != nil {
 		return &pb.SignupRes{}, err
 	}
@@ -61,7 +61,7 @@ func (s *service) Signup(ctx context.Context, req *pb.SignupReq) (*pb.SignupRes,
 		return &pb.SignupRes{}, err
 	}
 
-	if err = postgres.NewRepo(s.postgres).Signup(ctx, r); err != nil {
+	if err = s.postgres.Signup(ctx, r); err != nil {
 		return &pb.SignupRes{}, err
 	}
 
@@ -80,7 +80,7 @@ func (s *service) Signup(ctx context.Context, req *pb.SignupReq) (*pb.SignupRes,
 }
 
 func (s *service) Login(ctx context.Context, req *pb.LoginReq) (*pb.LoginRes, error) {
-	user, err := postgres.NewRepo(s.postgres).FindByUsername(ctx, req.Username)
+	user, err := s.postgres.FindByUsername(ctx, req.Username)
 	if err != nil {
 		return &pb.LoginRes{}, err
 	}
@@ -98,18 +98,34 @@ func (s *service) Login(ctx context.Context, req *pb.LoginReq) (*pb.LoginRes, er
 		RefreshToken: rToken,
 		Username:     user.Username,
 	}
-	if err = postgres.NewRepo(s.postgres).Login(ctx, r); err != nil {
+	res, err := s.postgres.Login(ctx, r)
+	if err != nil {
 		return &pb.LoginRes{}, err
 	}
 
 	return &pb.LoginRes{
 		RefreshToken: rToken,
 		Token:        token,
+		UUID:         res.UUID,
+	}, nil
+}
+
+func (s *service) GetInfo(ctx context.Context, req *pb.GetInfoReq) (*pb.GetInfoRes, error) {
+	info, err := s.postgres.GetInfo(ctx, req.UserUUID)
+	if err != nil {
+		return &pb.GetInfoRes{}, err
+	}
+
+	return &pb.GetInfoRes{
+		Cash:     info.Cash,
+		Username: info.Username,
+		Email:    info.Email,
+		UUID:     info.UUID,
 	}, nil
 }
 
 func (s *service) TopUpBalance(ctx context.Context, req *pb.TopUpBalanceReq) (*pb.TopUpBalanceRes, error) {
-	cash, err := postgres.NewRepo(s.postgres).TopUpBalance(ctx, &entity.TopUpBalanceReq{
+	cash, err := s.postgres.TopUpBalance(ctx, &entity.TopUpBalanceReq{
 		Cash:     req.Cash,
 		UserUUID: req.UserUUID,
 	})
@@ -123,7 +139,7 @@ func (s *service) TopUpBalance(ctx context.Context, req *pb.TopUpBalanceReq) (*p
 }
 
 func (s *service) DebitBalance(ctx context.Context, req *pb.DebitBalanceReq) (*pb.DebitBalanceRes, error) {
-	cash, err := postgres.NewRepo(s.postgres).DebitBalance(ctx, &entity.DebitBalanceReq{
+	cash, err := s.postgres.DebitBalance(ctx, &entity.DebitBalanceReq{
 		Cash:     req.Cash,
 		UserUUID: req.UserUUID,
 	})
@@ -163,7 +179,7 @@ func (s *service) AddToFavourite(ctx context.Context, req *pb.AddReq) (*emptypb.
 		},
 	}
 
-	if err = mongo.NewRepo(s.mongo).AddToFavourite(ctx, r); err != nil {
+	if err = s.mongo.AddToFavourite(ctx, r); err != nil {
 		return &emptypb.Empty{}, err
 	}
 
@@ -171,7 +187,7 @@ func (s *service) AddToFavourite(ctx context.Context, req *pb.AddReq) (*emptypb.
 }
 
 func (s *service) RemoveFromFavourite(ctx context.Context, req *pb.RemoveReq) (*emptypb.Empty, error) {
-	err := mongo.NewRepo(s.mongo).RemoveFromFavourite(ctx, &entity.RemoveReq{
+	err := s.mongo.RemoveFromFavourite(ctx, &entity.RemoveReq{
 		UserUUID:   req.UserUUID,
 		DeviceUUID: req.DeviceUUID,
 	})
@@ -183,7 +199,7 @@ func (s *service) RemoveFromFavourite(ctx context.Context, req *pb.RemoveReq) (*
 }
 
 func (s *service) GetFavourite(ctx context.Context, req *pb.GetReq) (*pb.GetRes, error) {
-	coll, err := mongo.NewRepo(s.mongo).GetFavourite(ctx, req.UserUUID)
+	coll, err := s.mongo.GetFavourite(ctx, req.UserUUID)
 	if err != nil {
 		return &pb.GetRes{}, err
 	}
@@ -233,7 +249,7 @@ func (s *service) AddToCart(ctx context.Context, req *pb.AddReq) (*emptypb.Empty
 		},
 	}
 
-	if err = mongo.NewRepo(s.mongo).AddToCart(ctx, r); err != nil {
+	if err = s.mongo.AddToCart(ctx, r); err != nil {
 		return &emptypb.Empty{}, err
 	}
 
@@ -241,7 +257,7 @@ func (s *service) AddToCart(ctx context.Context, req *pb.AddReq) (*emptypb.Empty
 }
 
 func (s *service) RemoveFromCart(ctx context.Context, req *pb.RemoveReq) (*emptypb.Empty, error) {
-	err := mongo.NewRepo(s.mongo).RemoveFromCart(ctx, &entity.RemoveReq{
+	err := s.mongo.RemoveFromCart(ctx, &entity.RemoveReq{
 		UserUUID:   req.UserUUID,
 		DeviceUUID: req.GetDeviceUUID(),
 	})
@@ -253,7 +269,7 @@ func (s *service) RemoveFromCart(ctx context.Context, req *pb.RemoveReq) (*empty
 }
 
 func (s *service) GetCart(ctx context.Context, req *pb.GetReq) (*pb.GetRes, error) {
-	coll, err := mongo.NewRepo(s.mongo).GetCart(ctx, req.UserUUID)
+	coll, err := s.mongo.GetCart(ctx, req.UserUUID)
 	if err != nil {
 		return &pb.GetRes{}, err
 	}
@@ -274,4 +290,11 @@ func (s *service) GetCart(ctx context.Context, req *pb.GetReq) (*pb.GetRes, erro
 	return &pb.GetRes{
 		Devices: devices,
 	}, nil
+}
+
+func (s *service) RemoveDeviceFromCollections(ctx context.Context, req *pb.RemoveDeviceReq) (*emptypb.Empty, error) {
+	if err := s.mongo.RemoveDeviceFromCollections(ctx, req.DeviceUUID); err != nil {
+		return &emptypb.Empty{}, err
+	}
+	return &emptypb.Empty{}, nil
 }

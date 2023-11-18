@@ -99,7 +99,7 @@ func RemoveReqToPB(str *device.RemoveDeviceReq) *pb.RemoveReq {
 
 func GetAllReqToPB(str *device.GetAllDevicesReq) *pb.GetAllReq {
 	return &pb.GetAllReq{
-		Index:  uint32(str.Index),
+		Index:  uint32(*str.Index),
 		Amount: uint32(str.Amount),
 	}
 }

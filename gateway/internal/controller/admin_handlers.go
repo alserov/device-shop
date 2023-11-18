@@ -57,7 +57,7 @@ func (h *handler) DeleteDevice(c *gin.Context) {
 		return
 	}
 
-	cl, cc, err := client.DialDevice(h.userAddr)
+	cl, cc, err := client.DialDevice(h.deviceAddr)
 	if err != nil {
 		responser.ServerError(c.Writer, h.logger, err)
 		return

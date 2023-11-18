@@ -31,6 +31,7 @@ type DevicesClient interface {
 	GetDevicesByManufacturer(ctx context.Context, in *GetByManufacturer, opts ...grpc.CallOption) (*DevicesRes, error)
 	GetDevicesByPrice(ctx context.Context, in *GetByPrice, opts ...grpc.CallOption) (*DevicesRes, error)
 	GetDeviceByUUID(ctx context.Context, in *UUIDReq, opts ...grpc.CallOption) (*Device, error)
+	ChangeAmount(ctx context.Context, in *ChangeAmountReq, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
 
 type devicesClient struct {
@@ -113,6 +114,15 @@ func (c *devicesClient) GetDeviceByUUID(ctx context.Context, in *UUIDReq, opts .
 	return out, nil
 }
 
+func (c *devicesClient) ChangeAmount(ctx context.Context, in *ChangeAmountReq, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, "/device.Devices/ChangeAmount", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // DevicesServer is the server API for Devices service.
 // All implementations must embed UnimplementedDevicesServer
 // for forward compatibility
@@ -125,6 +135,7 @@ type DevicesServer interface {
 	GetDevicesByManufacturer(context.Context, *GetByManufacturer) (*DevicesRes, error)
 	GetDevicesByPrice(context.Context, *GetByPrice) (*DevicesRes, error)
 	GetDeviceByUUID(context.Context, *UUIDReq) (*Device, error)
+	ChangeAmount(context.Context, *ChangeAmountReq) (*emptypb.Empty, error)
 }
 
 // UnimplementedDevicesServer must be embedded to have forward compatible implementations.
@@ -154,6 +165,9 @@ func (UnimplementedDevicesServer) GetDevicesByPrice(context.Context, *GetByPrice
 }
 func (UnimplementedDevicesServer) GetDeviceByUUID(context.Context, *UUIDReq) (*Device, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetDeviceByUUID not implemented")
+}
+func (UnimplementedDevicesServer) ChangeAmount(context.Context, *ChangeAmountReq) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ChangeAmount not implemented")
 }
 func (UnimplementedDevicesServer) mustEmbedUnimplementedDevicesServer() {}
 
@@ -312,6 +326,24 @@ func _Devices_GetDeviceByUUID_Handler(srv interface{}, ctx context.Context, dec 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Devices_ChangeAmount_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ChangeAmountReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DevicesServer).ChangeAmount(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/device.Devices/ChangeAmount",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DevicesServer).ChangeAmount(ctx, req.(*ChangeAmountReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Devices_ServiceDesc is the grpc.ServiceDesc for Devices service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -350,6 +382,10 @@ var Devices_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetDeviceByUUID",
 			Handler:    _Devices_GetDeviceByUUID_Handler,
+		},
+		{
+			MethodName: "ChangeAmount",
+			Handler:    _Devices_ChangeAmount_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

@@ -11,6 +11,7 @@ import (
 	"github.com/google/uuid"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/timestamppb"
+	"log"
 	"os"
 	"sync"
 	"time"
@@ -51,7 +52,6 @@ func (s service) CreateOrder(ctx context.Context, req *pb.CreateOrderReq) (*pb.C
 			chErr <- err
 		}
 		defer cc.Close()
-
 		for _, v := range req.DeviceUUIDs {
 			v := v
 			go func() {
@@ -73,11 +73,9 @@ func (s service) CreateOrder(ctx context.Context, req *pb.CreateOrderReq) (*pb.C
 		close(chErr)
 	}()
 
-	go func() {
-		for device := range chDevices {
-			order.Devices = append(order.Devices, device)
-		}
-	}()
+	for device := range chDevices {
+		order.Devices = append(order.Devices, device)
+	}
 
 	for err := range chErr {
 		return &pb.CreateOrderRes{}, err
@@ -89,27 +87,28 @@ func (s service) CreateOrder(ctx context.Context, req *pb.CreateOrderReq) (*pb.C
 	}
 	chRPCErr := make(chan error)
 	wg.Add(2)
+	cl, cc, err := client.DialUser(s.userAddr)
+	if err != nil {
+		chRPCErr <- err
+	}
+	defer cc.Close()
+
 	go func() {
 		defer wg.Done()
-		cl, cc, err := client.DialUser(s.userAddr)
-		if err != nil {
-			chRPCErr <- err
-		}
-		defer cc.Close()
-
 		_, err = cl.DebitBalance(ctx, &pb.DebitBalanceReq{
 			Cash:     float32(utils.CountOrderPrice(order.Devices)),
 			UserUUID: order.UserUUID,
 		})
 		if err != nil {
-			chErr <- err
+			chRPCErr <- err
 		}
 	}()
 
 	go func() {
 		defer wg.Done()
 		if err = s.db.CreateOrder(ctx, order, tx); err != nil {
-			chErr <- err
+			log.Println(err)
+			chRPCErr <- err
 		}
 	}()
 
@@ -119,6 +118,10 @@ func (s service) CreateOrder(ctx context.Context, req *pb.CreateOrderReq) (*pb.C
 	}()
 	for err = range chRPCErr {
 		tx.Rollback()
+		_, err = cl.TopUpBalance(ctx, &pb.TopUpBalanceReq{
+			Cash:     float32(utils.CountOrderPrice(order.Devices)),
+			UserUUID: order.UserUUID,
+		})
 		return &pb.CreateOrderRes{}, err
 	}
 

@@ -32,6 +32,7 @@ func LoadRoutes(r *gin.Engine, h Handler) {
 	userActions.POST("/new-cart", h.AddToCart)
 	userActions.DELETE("/delete-cart", h.RemoveFromCart)
 	userActions.GET("/cart/:userUUID", h.GetCart)
+	userActions.GET("/info/:userUUID", h.GetInfo)
 
 	// ORDERS
 	order := r.Group(ordersPath).Use(middleware.CheckIfAuthorized())
