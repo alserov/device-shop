@@ -61,6 +61,7 @@ message SignupReq {
 message LoginRes {
   string RefreshToken = 1;
   string Token = 2;
+  string UUID = 3;
 }
 
 message LoginReq {
