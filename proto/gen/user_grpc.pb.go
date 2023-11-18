@@ -25,6 +25,7 @@ const _ = grpc.SupportPackageIsVersion7
 type UsersClient interface {
 	Signup(ctx context.Context, in *SignupReq, opts ...grpc.CallOption) (*SignupRes, error)
 	Login(ctx context.Context, in *LoginReq, opts ...grpc.CallOption) (*LoginRes, error)
+	GetInfo(ctx context.Context, in *GetInfoReq, opts ...grpc.CallOption) (*GetInfoRes, error)
 	AddToFavourite(ctx context.Context, in *AddReq, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	RemoveFromFavourite(ctx context.Context, in *RemoveReq, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	GetFavourite(ctx context.Context, in *GetReq, opts ...grpc.CallOption) (*GetRes, error)
@@ -56,6 +57,15 @@ func (c *usersClient) Signup(ctx context.Context, in *SignupReq, opts ...grpc.Ca
 func (c *usersClient) Login(ctx context.Context, in *LoginReq, opts ...grpc.CallOption) (*LoginRes, error) {
 	out := new(LoginRes)
 	err := c.cc.Invoke(ctx, "/user.Users/Login", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *usersClient) GetInfo(ctx context.Context, in *GetInfoReq, opts ...grpc.CallOption) (*GetInfoRes, error) {
+	out := new(GetInfoRes)
+	err := c.cc.Invoke(ctx, "/user.Users/GetInfo", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -149,6 +159,7 @@ func (c *usersClient) RemoveDeviceFromCollections(ctx context.Context, in *Remov
 type UsersServer interface {
 	Signup(context.Context, *SignupReq) (*SignupRes, error)
 	Login(context.Context, *LoginReq) (*LoginRes, error)
+	GetInfo(context.Context, *GetInfoReq) (*GetInfoRes, error)
 	AddToFavourite(context.Context, *AddReq) (*emptypb.Empty, error)
 	RemoveFromFavourite(context.Context, *RemoveReq) (*emptypb.Empty, error)
 	GetFavourite(context.Context, *GetReq) (*GetRes, error)
@@ -169,6 +180,9 @@ func (UnimplementedUsersServer) Signup(context.Context, *SignupReq) (*SignupRes,
 }
 func (UnimplementedUsersServer) Login(context.Context, *LoginReq) (*LoginRes, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Login not implemented")
+}
+func (UnimplementedUsersServer) GetInfo(context.Context, *GetInfoReq) (*GetInfoRes, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetInfo not implemented")
 }
 func (UnimplementedUsersServer) AddToFavourite(context.Context, *AddReq) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method AddToFavourite not implemented")
@@ -242,6 +256,24 @@ func _Users_Login_Handler(srv interface{}, ctx context.Context, dec func(interfa
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(UsersServer).Login(ctx, req.(*LoginReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Users_GetInfo_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetInfoReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UsersServer).GetInfo(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/user.Users/GetInfo",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UsersServer).GetInfo(ctx, req.(*GetInfoReq))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -422,6 +454,10 @@ var Users_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Login",
 			Handler:    _Users_Login_Handler,
+		},
+		{
+			MethodName: "GetInfo",
+			Handler:    _Users_GetInfo_Handler,
 		},
 		{
 			MethodName: "AddToFavourite",
