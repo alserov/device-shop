@@ -12,6 +12,11 @@ type OrderedDevice struct {
 	UserUUID   string
 }
 
+type OrderDevice struct {
+	DeviceUUID string `json:"deviceUUID,omitempty" validate:"required"`
+	Amount     uint32 `json:"amount,omitempty" validate:"required"`
+}
+
 type CreateOrderReq struct {
 	UserUUID  string `json:"userUUID,omitempty" validate:"required"`
 	OrderUUID string
