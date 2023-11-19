@@ -16,7 +16,8 @@ type Repository interface {
 	GetDeviceByUUID(context.Context, string) (*entity.Device, error)
 	GetDevicesByManufacturer(context.Context, string) ([]*entity.Device, error)
 	GetDevicesByPrice(context.Context, uint, uint) ([]*entity.Device, error)
-	GetDeviceByUUIDWithAmount(context.Context, string, int32) (*entity.Device, error)
+	GetDeviceByUUIDWithAmount(context.Context, string, uint32) (*entity.Device, error)
+	IncreaseDeviceAmountByUUID(ctx context.Context, deviceUUID string, amount uint32) error
 }
 
 type repo struct {
@@ -155,14 +156,25 @@ func (r *repo) GetDevicesByPrice(ctx context.Context, min uint, max uint) ([]*en
 	return devices, nil
 }
 
-func (r *repo) GetDeviceByUUIDWithAmount(ctx context.Context, deviceUUID string, amount int32) (*entity.Device, error) {
+func (r *repo) GetDeviceByUUIDWithAmount(ctx context.Context, deviceUUID string, amount uint32) (*entity.Device, error) {
 	query := `UPDATE devices SET amount = amount - $1 WHERE uuid = $2 RETURNING *`
 
 	var device entity.Device
 
-	if err := r.db.QueryRow(query, amount, deviceUUID).Scan(&device); err != nil {
+	if err := r.db.QueryRow(query, amount, deviceUUID).Scan(&device.UUID, &device.Title, &device.Description, &device.Price, &device.Manufacturer, &device.Amount); err != nil {
 		return nil, err
 	}
 
 	return &device, nil
+}
+
+func (r *repo) IncreaseDeviceAmountByUUID(ctx context.Context, deviceUUID string, amount uint32) error {
+	query := `UPDATE devices SET amount = amount + $1 WHERE uuid = $2`
+
+	_, err := r.db.Exec(query, amount, deviceUUID)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

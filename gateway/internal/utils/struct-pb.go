@@ -36,9 +36,17 @@ func DeviceToPB(str *device.Device) *pb.Device {
 }
 
 func CreateOrderToPB(str *order.CreateOrderReq) *pb.CreateOrderReq {
+	var devices []*pb.OrderDevice
+	for _, v := range str.Devices {
+		d := &pb.OrderDevice{
+			DeviceUUID: v.DeviceUUID,
+			Amount:     v.Amount,
+		}
+		devices = append(devices, d)
+	}
 	return &pb.CreateOrderReq{
 		UserUUID: str.UserUUID,
-		Devices:  str.Devices,
+		Devices:  devices,
 	}
 }
 

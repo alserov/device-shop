@@ -9,7 +9,6 @@ import (
 	pb "github.com/alserov/device-shop/proto/gen"
 	"github.com/gin-gonic/gin"
 	"google.golang.org/grpc/status"
-	"log"
 	"net/http"
 	"time"
 )
@@ -37,7 +36,6 @@ func (h *handler) CreateOrder(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
 	defer cancel()
 
-	log.Println(msg)
 	res, err := cl.CreateOrder(ctx, msg)
 	if err != nil {
 		if st, ok := status.FromError(err); ok {
@@ -100,7 +98,7 @@ func (h *handler) CheckOrder(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
 	defer cancel()
 
-	_, err = cl.CheckOrder(ctx, &pb.CheckOrderReq{OrderUUID: orderUUID})
+	order, err := cl.CheckOrder(ctx, &pb.CheckOrderReq{OrderUUID: orderUUID})
 	if err != nil {
 		if st, ok := status.FromError(err); ok {
 			responser.UserError(c.Writer, st.Message())
@@ -110,5 +108,10 @@ func (h *handler) CheckOrder(c *gin.Context) {
 		return
 	}
 
-	c.Status(http.StatusOK)
+	responser.Data(c.Writer, responser.H{
+		"status":    order.Status,
+		"price":     order.Price,
+		"createdAt": order.CreatedAt.AsTime(),
+		"devices":   order.Devices,
+	})
 }

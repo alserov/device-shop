@@ -10,6 +10,8 @@ type OrderedDevice struct {
 	CreatedAt  *time.Time
 	DeviceUUID string
 	UserUUID   string
+	OrderUUID  string
+	Amount     uint32
 }
 
 type OrderDevice struct {
@@ -36,7 +38,7 @@ type CreateOrderReqWithDevices struct {
 type CheckOrderRes struct {
 	UserUUID  string
 	OrderUUID string
-	Devices   []*pb.Device
+	Devices   []*OrderDevice
 	Status    int32
 	CreatedAt *time.Time
 }

@@ -224,8 +224,15 @@ func (s *service) GetDeviceByUUIDWithAmount(ctx context.Context, req *pb.GetDevi
 		Description:  device.Description,
 		Price:        device.Price,
 		Manufacturer: device.Manufacturer,
-		Amount:       device.Amount,
+		Amount:       req.Amount,
 	}
 
 	return pbDevice, nil
+}
+
+func (s *service) IncreaseDeviceAmountByUUID(ctx context.Context, req *pb.IncreaseDeviceAmountByUUIDReq) (*emptypb.Empty, error) {
+	if err := s.postgres.IncreaseDeviceAmountByUUID(ctx, req.DeviceUUID, req.Amount); err != nil {
+		return &emptypb.Empty{}, err
+	}
+	return &emptypb.Empty{}, nil
 }

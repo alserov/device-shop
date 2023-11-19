@@ -78,16 +78,10 @@ func (r *repo) TopUpBalance(ctx context.Context, req *entity.TopUpBalanceReq) (f
 }
 
 func (r *repo) DebitBalance(ctx context.Context, req *entity.DebitBalanceReq) (float32, error) {
-	query := `UPDATE users SET cash = cash - $1 WHERE user_uuid = $2 RETURNING cash`
-
-	tx, err := r.db.Begin()
-	if err != nil {
-		return 0, err
-	}
+	query := `UPDATE users SET cash = cash - $1 WHERE uuid = $2 RETURNING cash`
 
 	var cash float32
-	if err = tx.QueryRow(query, req.Cash, req.UserUUID).Scan(&cash); err != nil {
-		tx.Rollback()
+	if err := r.db.QueryRow(query, req.Cash, req.UserUUID).Scan(&cash); err != nil {
 		return 0, err
 	}
 

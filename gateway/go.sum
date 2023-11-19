@@ -38,6 +38,8 @@ github.com/alserov/device-shop/order-service v0.0.0-20231119101018-de979c7b6ae7 
 github.com/alserov/device-shop/order-service v0.0.0-20231119101018-de979c7b6ae7/go.mod h1:qQ9jMbt7d79jT2o2OreFz0I3g8dMeS4yScYX7nJfA/k=
 github.com/alserov/device-shop/order-service v0.0.0-20231119103756-187a7a434a2f h1:8kKFlryBjLZF9eWldZDSGuSdYRcPFtlORNaV8OEI3GE=
 github.com/alserov/device-shop/order-service v0.0.0-20231119103756-187a7a434a2f/go.mod h1:qQ9jMbt7d79jT2o2OreFz0I3g8dMeS4yScYX7nJfA/k=
+github.com/alserov/device-shop/order-service v0.0.0-20231119112527-f2d8be1567f0 h1:tdq7FHDsMTTOkOSIWb6/2qtMqQx7SnIJfu4tUWlvMNE=
+github.com/alserov/device-shop/order-service v0.0.0-20231119112527-f2d8be1567f0/go.mod h1:isB1UAGhW3oivq5O9Jnti7NtRybRMevee2T9O41P+Ro=
 github.com/alserov/device-shop/proto v0.0.0-20231113153041-bdbc12b07083 h1:0FVm1htkb07ERLZzVLn7laQ265ZLBP3myooXAyTPMNg=
 github.com/alserov/device-shop/proto v0.0.0-20231113153041-bdbc12b07083/go.mod h1:jTRYFmTaJqxlcsigo+73JGY8OQJ0e5uTv1D3bTDAPV4=
 github.com/alserov/device-shop/proto v0.0.0-20231116155458-19e844d27fac h1:UYo8Q7zCLDC4NYcqWdgTUxCcLe5cjskFYB4FXBfE6H0=
@@ -60,6 +62,8 @@ github.com/alserov/device-shop/proto v0.0.0-20231118142552-8c56c8457251 h1:m7Ws2
 github.com/alserov/device-shop/proto v0.0.0-20231118142552-8c56c8457251/go.mod h1:jTRYFmTaJqxlcsigo+73JGY8OQJ0e5uTv1D3bTDAPV4=
 github.com/alserov/device-shop/proto v0.0.0-20231119091335-c1195fca3e84 h1:zpU2R6u3IMJGbrUUAc8vTb+GKTMR3Ggc53UY1BC1yd8=
 github.com/alserov/device-shop/proto v0.0.0-20231119091335-c1195fca3e84/go.mod h1:jTRYFmTaJqxlcsigo+73JGY8OQJ0e5uTv1D3bTDAPV4=
+github.com/alserov/device-shop/proto v0.0.0-20231119103756-187a7a434a2f h1:70nrmGNrgU/UTdOZPSkEC9pqz3OjP3jmHFNNJuxhKFU=
+github.com/alserov/device-shop/proto v0.0.0-20231119103756-187a7a434a2f/go.mod h1:jTRYFmTaJqxlcsigo+73JGY8OQJ0e5uTv1D3bTDAPV4=
 github.com/alserov/device-shop/user-service v0.0.0-20231115142127-20450a7d529f h1:5pgQeYKoPmnpyIaDBkdMpvCekqlR0sEZKee41y1H9Zk=
 github.com/alserov/device-shop/user-service v0.0.0-20231115142127-20450a7d529f/go.mod h1:xzht7WgPY2FufyNm1Q8dDrW94yEK1/3N9rX/4SK7S9g=
 github.com/alserov/device-shop/user-service v0.0.0-20231117134243-edab92bb7b3c h1:aP8exZjlNN+bc0QAF6AKL8fZPElESRSv3bDaxZQoenE=

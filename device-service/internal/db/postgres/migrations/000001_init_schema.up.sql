@@ -5,5 +5,5 @@ CREATE TABLE devices
     Description  TEXT,
     Price        float8 CHECK (Price > 0),
     Manufacturer TEXT,
-    Amount       int CHECK (Amount > 0)
+    Amount       int CHECK (Amount >= 0)
 )

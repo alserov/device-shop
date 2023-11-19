@@ -2,21 +2,12 @@ package utils
 
 import (
 	pb "github.com/alserov/device-shop/proto/gen"
-	"sync"
-	"sync/atomic"
 )
 
 func CountOrderPrice(items []*pb.Device) float32 {
-	var price uint32
-	wg := &sync.WaitGroup{}
-	wg.Add(len(items))
+	var price float32
 	for _, v := range items {
-		v := v
-		go func() {
-			atomic.AddUint32(&price, uint32(v.Price))
-			wg.Done()
-		}()
+		price += v.Price * float32(v.Amount)
 	}
-	wg.Wait()
-	return float32(price)
+	return price
 }

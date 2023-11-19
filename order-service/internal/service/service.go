@@ -3,8 +3,8 @@ package service
 import (
 	"context"
 	"database/sql"
+	"github.com/alserov/device-shop/gateway/pkg/client"
 	"github.com/alserov/device-shop/order-service/internal/db/postgres"
-	"github.com/alserov/device-shop/order-service/internal/helpers"
 	"github.com/alserov/device-shop/order-service/internal/utils"
 	"github.com/alserov/device-shop/order-service/pkg/entity"
 	"github.com/alserov/device-shop/proto/gen"
@@ -39,29 +39,18 @@ func (s service) CreateOrder(ctx context.Context, req *pb.CreateOrderReq) (*pb.C
 		CreatedAt: time.Now().UTC(),
 	}
 
-	var (
-		wg    = &sync.WaitGroup{}
-		chErr = make(chan *utils.RequestError, 2)
-	)
+	if err := utils.FetchDevices(ctx, s.deviceAddr, req.Devices, order); err != nil {
+		return &pb.CreateOrderRes{}, err
+	}
 
-	wg.Add(1)
-	// RequestID = 1
-	go helpers.FetchDevices(ctx, chErr, wg, s.deviceAddr, req.Devices, order.Devices)
-
-	wg.Add(1)
-	// RequestID = 2
-	go helpers.ChangeBalance(ctx, chErr, wg, s.userAddr, order)
-
-	go func() {
-		wg.Wait()
-		close(chErr)
-	}()
-
-	for err := range chErr {
-		return &pb.CreateOrderRes{}, err.Handle(ctx, order, s.deviceAddr, s.userAddr)
+	if err := utils.ChangeBalance(ctx, s.userAddr, order); err != nil {
+		utils.RollbackDeviceAmountPB(order.Devices, s.deviceAddr)
+		return &pb.CreateOrderRes{}, err
 	}
 
 	if err := s.db.CreateOrder(ctx, order); err != nil {
+		utils.RollbackDeviceAmountPB(order.Devices, s.deviceAddr)
+		utils.RollBackBalance(order.UserUUID, utils.CountOrderPrice(order.Devices), s.userAddr)
 		return &pb.CreateOrderRes{}, err
 	}
 
@@ -76,20 +65,53 @@ func (s service) CheckOrder(ctx context.Context, req *pb.CheckOrderReq) (*pb.Che
 		return &pb.CheckOrderRes{}, err
 	}
 
-	devices := make([]*pb.Device, 0, len(order.Devices))
-	price := float32(0)
+	var (
+		devices = make([]*pb.Device, 0, len(order.Devices))
+		price   = float32(0)
+		wg      = &sync.WaitGroup{}
+		mu      = &sync.Mutex{}
+		chErr   = make(chan error)
+	)
 
-	for _, d := range order.Devices {
-		device := &pb.Device{
-			UUID:         d.UUID,
-			Title:        d.UUID,
-			Description:  d.Description,
-			Price:        d.Price,
-			Manufacturer: d.Manufacturer,
-			Amount:       d.Amount,
-		}
-		price += d.Price
-		devices = append(devices, device)
+	cl, cc, err := client.DialDevice(s.deviceAddr)
+	if err != nil {
+		return &pb.CheckOrderRes{}, err
+	}
+	defer cc.Close()
+
+	wg.Add(len(order.Devices))
+
+	for _, device := range order.Devices {
+		device := device
+		go func() {
+			defer wg.Done()
+			d, err := cl.GetDeviceByUUID(ctx, &pb.UUIDReq{UUID: device.DeviceUUID})
+			if err != nil {
+				chErr <- err
+			}
+			device := &pb.Device{
+				UUID:         d.UUID,
+				Title:        d.Title,
+				Description:  d.Description,
+				Price:        d.Price,
+				Manufacturer: d.Manufacturer,
+				Amount:       device.Amount,
+			}
+
+			mu.Lock()
+			defer mu.Unlock()
+			price += d.Price * float32(device.Amount)
+			devices = append(devices, device)
+		}()
+	}
+
+	go func() {
+		wg.Wait()
+		close(chErr)
+	}()
+
+	for err = range chErr {
+		return &pb.CheckOrderRes{}, err
 	}
 
 	return &pb.CheckOrderRes{
@@ -103,9 +125,57 @@ func (s service) CheckOrder(ctx context.Context, req *pb.CheckOrderReq) (*pb.Che
 	}, nil
 }
 
+// TODO: finish cancel order and fix incorrect order status
+
 func (s service) UpdateOrder(ctx context.Context, req *pb.UpdateOrderReq) (*emptypb.Empty, error) {
 	if err := s.db.UpdateOrder(ctx, req.Status, req.OrderUUID); err != nil {
 		return &emptypb.Empty{}, err
+	}
+	if utils.StatusToCode(req.Status) == utils.CANCELED_CODE {
+		order, err := s.db.CheckOrder(ctx, req.OrderUUID)
+		if err != nil {
+			return &emptypb.Empty{}, err
+		}
+
+		var (
+			wg    = &sync.WaitGroup{}
+			mu    = &sync.Mutex{}
+			chErr = make(chan error)
+			price = float32(0)
+		)
+
+		cl, cc, err := client.DialDevice(s.deviceAddr)
+		if err != nil {
+			return &emptypb.Empty{}, err
+		}
+		defer cc.Close()
+
+		wg.Add(len(order.Devices))
+
+		for _, device := range order.Devices {
+			device := device
+			go func() {
+				defer wg.Done()
+				d, err := cl.GetDeviceByUUID(ctx, &pb.UUIDReq{UUID: device.DeviceUUID})
+				if err != nil {
+					chErr <- err
+				}
+				mu.Lock()
+				defer mu.Unlock()
+				price += d.Price
+			}()
+		}
+
+		go func() {
+			wg.Wait()
+			close(chErr)
+		}()
+
+		for err = range chErr {
+			return &emptypb.Empty{}, err
+		}
+		utils.RollBackBalance(order.UserUUID, price, s.deviceAddr)
+		utils.RollbackDeviceAmount(order.Devices, s.deviceAddr)
 	}
 	return &emptypb.Empty{}, nil
 }
