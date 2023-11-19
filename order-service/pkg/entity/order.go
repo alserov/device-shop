@@ -13,11 +13,11 @@ type OrderedDevice struct {
 }
 
 type CreateOrderReq struct {
-	UserUUID    string `json:"userUUID,omitempty" validate:"required"`
-	OrderUUID   string
-	Status      int32
-	CreatedAt   *time.Time
-	DeviceUUIDs []*OrderedDevice `json:"devices,omitempty" validate:"required"`
+	UserUUID  string `json:"userUUID,omitempty" validate:"required"`
+	OrderUUID string
+	Status    int32
+	CreatedAt *time.Time
+	Devices   []*pb.OrderDevice `json:"devices,omitempty" validate:"required"`
 }
 
 type CreateOrderReqWithDevices struct {
