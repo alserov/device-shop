@@ -14,9 +14,14 @@ service Orders {
   rpc UpdateOrder(UpdateOrderReq) returns(google.protobuf.Empty);
 }
 
+message OrderDevice {
+  string DeviceUUID = 1;
+  int32 Amount = 2;
+}
+
 message CreateOrderReq {
   string UserUUID = 1;
-  repeated string DeviceUUIDs = 2;
+  repeated OrderDevice Devices = 2;
 }
 
 message CreateOrderRes {

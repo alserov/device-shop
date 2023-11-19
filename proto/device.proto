@@ -17,10 +17,10 @@ service Devices {
   rpc GetDevicesByPrice(GetByPrice) returns(DevicesRes);
 
   rpc GetDeviceByUUID(UUIDReq) returns(Device);
-  rpc ChangeAmount(ChangeAmountReq) returns (google.protobuf.Empty);
+  rpc GetDeviceByUUIDWithAmount(GetDeviceByUUIDWithAmountReq) returns (google.protobuf.Empty);
 }
 
-message ChangeAmountReq {
+message GetDeviceByUUIDWithAmountReq {
   string DeviceUUID = 1;
   int32 Amount = 2;
 }
