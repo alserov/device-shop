@@ -16,7 +16,7 @@ service Orders {
 
 message OrderDevice {
   string DeviceUUID = 1;
-  int32 Amount = 2;
+  uint32 Amount = 2;
 }
 
 message CreateOrderReq {
