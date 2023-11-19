@@ -22,7 +22,7 @@ type CreateOrderReq struct {
 	OrderUUID string
 	Status    int32
 	CreatedAt *time.Time
-	Devices   []*pb.OrderDevice `json:"devices,omitempty" validate:"required"`
+	Devices   []*OrderDevice `json:"devices,omitempty" validate:"required"`
 }
 
 type CreateOrderReqWithDevices struct {
