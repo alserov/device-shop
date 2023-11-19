@@ -18,6 +18,12 @@ service Devices {
 
   rpc GetDeviceByUUID(UUIDReq) returns(Device);
   rpc GetDeviceByUUIDWithAmount(GetDeviceByUUIDWithAmountReq) returns (Device);
+  rpc IncreaseDeviceAmountByUUID(IncreaseDeviceAmountByUUIDReq) returns(google.protobuf.Empty);
+}
+
+message IncreaseDeviceAmountByUUIDReq {
+  string DeviceUUID = 1;
+  int32 Amount = 2;
 }
 
 message GetDeviceByUUIDWithAmountReq {
