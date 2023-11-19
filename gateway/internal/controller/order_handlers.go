@@ -9,6 +9,7 @@ import (
 	pb "github.com/alserov/device-shop/proto/gen"
 	"github.com/gin-gonic/gin"
 	"google.golang.org/grpc/status"
+	"log"
 	"net/http"
 	"time"
 )
@@ -36,6 +37,7 @@ func (h *handler) CreateOrder(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
 	defer cancel()
 
+	log.Println(msg)
 	res, err := cl.CreateOrder(ctx, msg)
 	if err != nil {
 		if st, ok := status.FromError(err); ok {

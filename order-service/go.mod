@@ -4,7 +4,7 @@ go 1.21.0
 
 require (
 	github.com/alserov/device-shop/gateway v0.0.0-20231117195810-bcee519fc64c
-	github.com/alserov/device-shop/proto v0.0.0-20231117204359-0daab35b0f00
+	github.com/alserov/device-shop/proto v0.0.0-20231119103756-187a7a434a2f
 	github.com/golang-migrate/migrate/v4 v4.16.2
 	github.com/google/uuid v1.4.0
 	github.com/joho/godotenv v1.5.1

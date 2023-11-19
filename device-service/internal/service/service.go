@@ -212,9 +212,20 @@ func (s *service) GetDevicesByPrice(ctx context.Context, req *pb.GetByPrice) (*p
 	}, nil
 }
 
-func (s *service) ChangeAmount(ctx context.Context, req *pb.ChangeAmountReq) (*emptypb.Empty, error) {
-	if err := s.postgres.ChangeAmount(ctx, req.DeviceUUID, req.Amount); err != nil {
-		return &emptypb.Empty{}, err
+func (s *service) GetDeviceByUUIDWithAmount(ctx context.Context, req *pb.GetDeviceByUUIDWithAmountReq) (*pb.Device, error) {
+	device, err := s.postgres.GetDeviceByUUIDWithAmount(ctx, req.DeviceUUID, req.Amount)
+	if err != nil {
+		return &pb.Device{}, err
 	}
-	return &emptypb.Empty{}, nil
+
+	pbDevice := &pb.Device{
+		UUID:         device.UUID,
+		Title:        device.Title,
+		Description:  device.Description,
+		Price:        device.Price,
+		Manufacturer: device.Manufacturer,
+		Amount:       device.Amount,
+	}
+
+	return pbDevice, nil
 }

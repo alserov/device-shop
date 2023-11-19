@@ -51,3 +51,21 @@ func FetchDevices(ctx context.Context, chErr chan<- *entity.RequestError, wg *sy
 		target = append(target, device)
 	}
 }
+
+func RollBackDeviceAmount(ctx context.Context, deviceUUID string, amount uint32, deviceAddr string) error {
+	cl, cc, err := client.DialDevice(deviceAddr)
+	if err != nil {
+		return err
+	}
+	defer cc.Close()
+
+	_, err = cl.IncreaseDeviceAmountByUUID(ctx, &pb.IncreaseDeviceAmountByUUIDReq{
+		DeviceUUID: deviceUUID,
+		Amount:     amount,
+	})
+	if err != nil {
+		return err
+	}
+
+	return nil
+}

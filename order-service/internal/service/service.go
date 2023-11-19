@@ -3,7 +3,6 @@ package service
 import (
 	"context"
 	"database/sql"
-	"github.com/alserov/device-shop/gateway/pkg/client"
 	"github.com/alserov/device-shop/order-service/internal/db/postgres"
 	"github.com/alserov/device-shop/order-service/internal/helpers"
 	"github.com/alserov/device-shop/order-service/internal/utils"
@@ -36,54 +35,33 @@ func (s service) CreateOrder(ctx context.Context, req *pb.CreateOrderReq) (*pb.C
 		OrderUUID: uuid.New().String(),
 		UserUUID:  req.UserUUID,
 		Status:    utils.StatusToCode(utils.CREATING),
-		Devices:   make([]*pb.Device, 0, len(req.DeviceUUIDs)),
+		Devices:   make([]*pb.Device, 0, len(req.Devices)),
 		CreatedAt: time.Now().UTC(),
 	}
 
 	var (
-		wg        = &sync.WaitGroup{}
-		chErr     = make(chan error)
-		chDevices = make(chan *pb.Device, len(req.DeviceUUIDs))
+		wg    = &sync.WaitGroup{}
+		chErr = make(chan *entity.RequestError, 2)
 	)
 
-	wg.Add(len(req.DeviceUUIDs))
-	go helpers.FetchDevices(ctx, chDevices, chErr, wg, s.deviceAddr, req.DeviceUUIDs)
-	for device := range chDevices {
-		order.Devices = append(order.Devices, device)
-	}
+	wg.Add(1)
+	// RequestID = 1
+	go helpers.FetchDevices(ctx, chErr, wg, s.deviceAddr, req.Devices, order.Devices)
 
 	wg.Add(1)
-	go helpers.ChangeBalance(ctx, chErr, s.userAddr, order)
-
-	wg.Add(1)
-	go func() {
-		tx, err := s.db.GetDB().Begin()
-		if err != nil {
-			chErr <- err
-		}
-		if err = s.db.CreateOrder(ctx, order, tx); err != nil {
-			tx.Rollback()
-			chErr <- err
-		}
-	}()
+	// RequestID = 2
+	go helpers.ChangeBalance(ctx, chErr, wg, s.userAddr, order)
 
 	go func() {
 		wg.Wait()
 		close(chErr)
 	}()
 
-	// TODO : FINISH ROLLBACK IF ERROR
-	for err = range chErr {
-		cl, cc, err := client.DialUser(s.userAddr)
-		if err != nil {
-			chErr <- err
-		}
-		defer cc.Close()
+	for err := range chErr {
+		return &pb.CreateOrderRes{}, err.Handle(ctx, order, s.deviceAddr, s.userAddr)
+	}
 
-		_, err = cl.TopUpBalance(ctx, &pb.TopUpBalanceReq{
-			Cash:     float32(utils.CountOrderPrice(order.Devices)),
-			UserUUID: order.UserUUID,
-		})
+	if err := s.db.CreateOrder(ctx, order); err != nil {
 		return &pb.CreateOrderRes{}, err
 	}
 

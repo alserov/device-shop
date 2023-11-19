@@ -6,7 +6,7 @@ import (
 	"sync/atomic"
 )
 
-func CountOrderPrice(items []*pb.Device) uint {
+func CountOrderPrice(items []*pb.Device) float32 {
 	var price uint32
 	wg := &sync.WaitGroup{}
 	wg.Add(len(items))
@@ -18,5 +18,5 @@ func CountOrderPrice(items []*pb.Device) uint {
 		}()
 	}
 	wg.Wait()
-	return uint(price)
+	return float32(price)
 }

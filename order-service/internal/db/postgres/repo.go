@@ -11,7 +11,7 @@ import (
 )
 
 type Repo interface {
-	CreateOrder(context.Context, *entity.CreateOrderReqWithDevices, *sql.Tx) error
+	CreateOrder(context.Context, *entity.CreateOrderReqWithDevices) error
 	CheckOrder(context.Context, string) (*entity.CheckOrderRes, error)
 	UpdateOrder(context.Context, string, string) error
 	GetDB() *sql.DB
@@ -31,11 +31,12 @@ func (r *repo) GetDB() *sql.DB {
 	return r.db
 }
 
-func (r *repo) CreateOrder(ctx context.Context, req *entity.CreateOrderReqWithDevices, tx *sql.Tx) error {
+func (r *repo) CreateOrder(ctx context.Context, req *entity.CreateOrderReqWithDevices) error {
 	query := `INSERT INTO orders (user_uuid,order_uuid,device_uuid,amount,status,created_at) VALUES($1,$2,$3,$4,$5,$6)`
 
 	tx, err := r.db.Begin()
 	if err != nil {
+		tx.Rollback()
 		return err
 	}
 
@@ -51,7 +52,6 @@ func (r *repo) CreateOrder(ctx context.Context, req *entity.CreateOrderReqWithDe
 			_, err = tx.Exec(query, req.UserUUID, req.OrderUUID, device.UUID, device.Amount, req.Status, req.CreatedAt)
 			if err != nil {
 				chErr <- err
-				return
 			}
 		}()
 	}

@@ -9,11 +9,11 @@ import (
 	"sync"
 )
 
-func ChangeBalance(ctx context.Context, chErr chan<- *entity.RequestError, wg *sync.WaitGroup, userAddr string, order *entity.CreateOrderReqWithDevices) {
+func ChangeBalance(ctx context.Context, chErr chan<- *utils.RequestError, wg *sync.WaitGroup, userAddr string, order *entity.CreateOrderReqWithDevices) {
 	defer wg.Done()
 	cl, cc, err := client.DialUser(userAddr)
 	if err != nil {
-		chErr <- &entity.RequestError{
+		chErr <- &utils.RequestError{
 			RequestID: 2,
 			Err:       err,
 		}
@@ -25,7 +25,7 @@ func ChangeBalance(ctx context.Context, chErr chan<- *entity.RequestError, wg *s
 		UserUUID: order.UserUUID,
 	})
 	if err != nil {
-		chErr <- &entity.RequestError{
+		chErr <- &utils.RequestError{
 			RequestID: 2,
 			Err:       err,
 		}
