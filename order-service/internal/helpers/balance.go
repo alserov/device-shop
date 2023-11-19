@@ -31,3 +31,8 @@ func ChangeBalance(ctx context.Context, chErr chan<- *utils.RequestError, wg *sy
 		}
 	}
 }
+
+// TODO: finish rollback balance
+func RollBackBalance(ctx context.Context, userUUID string, cash float32, userAddr string) error {
+
+}
