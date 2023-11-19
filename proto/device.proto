@@ -23,12 +23,12 @@ service Devices {
 
 message IncreaseDeviceAmountByUUIDReq {
   string DeviceUUID = 1;
-  int32 Amount = 2;
+  uint32 Amount = 2;
 }
 
 message GetDeviceByUUIDWithAmountReq {
   string DeviceUUID = 1;
-  int32 Amount = 2;
+  uint32 Amount = 2;
 }
 
 message GetByPrice {
