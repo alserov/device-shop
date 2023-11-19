@@ -17,7 +17,7 @@ service Devices {
   rpc GetDevicesByPrice(GetByPrice) returns(DevicesRes);
 
   rpc GetDeviceByUUID(UUIDReq) returns(Device);
-  rpc GetDeviceByUUIDWithAmount(GetDeviceByUUIDWithAmountReq) returns (google.protobuf.Empty);
+  rpc GetDeviceByUUIDWithAmount(GetDeviceByUUIDWithAmountReq) returns (Device);
 }
 
 message GetDeviceByUUIDWithAmountReq {

@@ -31,7 +31,7 @@ type DevicesClient interface {
 	GetDevicesByManufacturer(ctx context.Context, in *GetByManufacturer, opts ...grpc.CallOption) (*DevicesRes, error)
 	GetDevicesByPrice(ctx context.Context, in *GetByPrice, opts ...grpc.CallOption) (*DevicesRes, error)
 	GetDeviceByUUID(ctx context.Context, in *UUIDReq, opts ...grpc.CallOption) (*Device, error)
-	GetDeviceByUUIDWithAmount(ctx context.Context, in *GetDeviceByUUIDWithAmountReq, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	GetDeviceByUUIDWithAmount(ctx context.Context, in *GetDeviceByUUIDWithAmountReq, opts ...grpc.CallOption) (*Device, error)
 }
 
 type devicesClient struct {
@@ -114,8 +114,8 @@ func (c *devicesClient) GetDeviceByUUID(ctx context.Context, in *UUIDReq, opts .
 	return out, nil
 }
 
-func (c *devicesClient) GetDeviceByUUIDWithAmount(ctx context.Context, in *GetDeviceByUUIDWithAmountReq, opts ...grpc.CallOption) (*emptypb.Empty, error) {
-	out := new(emptypb.Empty)
+func (c *devicesClient) GetDeviceByUUIDWithAmount(ctx context.Context, in *GetDeviceByUUIDWithAmountReq, opts ...grpc.CallOption) (*Device, error) {
+	out := new(Device)
 	err := c.cc.Invoke(ctx, "/device.Devices/GetDeviceByUUIDWithAmount", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -135,7 +135,7 @@ type DevicesServer interface {
 	GetDevicesByManufacturer(context.Context, *GetByManufacturer) (*DevicesRes, error)
 	GetDevicesByPrice(context.Context, *GetByPrice) (*DevicesRes, error)
 	GetDeviceByUUID(context.Context, *UUIDReq) (*Device, error)
-	GetDeviceByUUIDWithAmount(context.Context, *GetDeviceByUUIDWithAmountReq) (*emptypb.Empty, error)
+	GetDeviceByUUIDWithAmount(context.Context, *GetDeviceByUUIDWithAmountReq) (*Device, error)
 }
 
 // UnimplementedDevicesServer must be embedded to have forward compatible implementations.
@@ -166,7 +166,7 @@ func (UnimplementedDevicesServer) GetDevicesByPrice(context.Context, *GetByPrice
 func (UnimplementedDevicesServer) GetDeviceByUUID(context.Context, *UUIDReq) (*Device, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetDeviceByUUID not implemented")
 }
-func (UnimplementedDevicesServer) GetDeviceByUUIDWithAmount(context.Context, *GetDeviceByUUIDWithAmountReq) (*emptypb.Empty, error) {
+func (UnimplementedDevicesServer) GetDeviceByUUIDWithAmount(context.Context, *GetDeviceByUUIDWithAmountReq) (*Device, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetDeviceByUUIDWithAmount not implemented")
 }
 func (UnimplementedDevicesServer) mustEmbedUnimplementedDevicesServer() {}
