@@ -41,7 +41,7 @@ func (s service) CreateOrder(ctx context.Context, req *pb.CreateOrderReq) (*pb.C
 
 	var (
 		wg    = &sync.WaitGroup{}
-		chErr = make(chan *entity.RequestError, 2)
+		chErr = make(chan *utils.RequestError, 2)
 	)
 
 	wg.Add(1)

@@ -3,16 +3,16 @@ package helpers
 import (
 	"context"
 	"github.com/alserov/device-shop/gateway/pkg/client"
-	"github.com/alserov/device-shop/order-service/pkg/entity"
+	"github.com/alserov/device-shop/order-service/internal/utils"
 	pb "github.com/alserov/device-shop/proto/gen"
 	"sync"
 )
 
-func FetchDevices(ctx context.Context, chErr chan<- *entity.RequestError, wg *sync.WaitGroup, deviceAddr string, devices []*pb.OrderDevice, target []*pb.Device) {
+func FetchDevices(ctx context.Context, chErr chan<- *utils.RequestError, wg *sync.WaitGroup, deviceAddr string, devices []*pb.OrderDevice, target []*pb.Device) {
 	defer wg.Done()
 	cl, cc, err := client.DialDevice(deviceAddr)
 	if err != nil {
-		chErr <- &entity.RequestError{
+		chErr <- &utils.RequestError{
 			RequestID: 1,
 			Err:       err,
 		}
@@ -33,7 +33,7 @@ func FetchDevices(ctx context.Context, chErr chan<- *entity.RequestError, wg *sy
 				Amount:     d.Amount,
 			})
 			if err != nil {
-				chErr <- &entity.RequestError{
+				chErr <- &utils.RequestError{
 					RequestID: 1,
 					Err:       err,
 				}
