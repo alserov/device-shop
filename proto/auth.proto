@@ -1,0 +1,36 @@
+syntax="proto3";
+
+option go_package = "/";
+
+package auth;
+
+service Auth {
+  rpc Signup(SignupReq) returns (SignupRes);
+  rpc Login(LoginReq) returns (LoginRes);
+}
+
+message SignupRes {
+  string Username = 1;
+  string Email = 2;
+  string UUID = 3;
+  float  Cash = 4;
+  string RefreshToken = 5;
+  string Token = 6;
+}
+
+message SignupReq {
+  string Username = 1;
+  string Password = 2;
+  string Email = 3;
+}
+
+message LoginRes {
+  string RefreshToken = 1;
+  string Token = 2;
+  string UUID = 3;
+}
+
+message LoginReq {
+  string Username = 1;
+  string Password = 2;
+}

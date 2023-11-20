@@ -23,18 +23,16 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type UsersClient interface {
-	Signup(ctx context.Context, in *SignupReq, opts ...grpc.CallOption) (*SignupRes, error)
-	Login(ctx context.Context, in *LoginReq, opts ...grpc.CallOption) (*LoginRes, error)
-	GetInfo(ctx context.Context, in *GetInfoReq, opts ...grpc.CallOption) (*GetInfoRes, error)
-	AddToFavourite(ctx context.Context, in *AddReq, opts ...grpc.CallOption) (*emptypb.Empty, error)
-	RemoveFromFavourite(ctx context.Context, in *RemoveReq, opts ...grpc.CallOption) (*emptypb.Empty, error)
-	GetFavourite(ctx context.Context, in *GetReq, opts ...grpc.CallOption) (*GetRes, error)
-	AddToCart(ctx context.Context, in *AddReq, opts ...grpc.CallOption) (*emptypb.Empty, error)
-	RemoveFromCart(ctx context.Context, in *RemoveReq, opts ...grpc.CallOption) (*emptypb.Empty, error)
-	GetCart(ctx context.Context, in *GetReq, opts ...grpc.CallOption) (*GetRes, error)
-	TopUpBalance(ctx context.Context, in *TopUpBalanceReq, opts ...grpc.CallOption) (*TopUpBalanceRes, error)
-	DebitBalance(ctx context.Context, in *DebitBalanceReq, opts ...grpc.CallOption) (*DebitBalanceRes, error)
-	RemoveDeviceFromCollections(ctx context.Context, in *RemoveDeviceReq, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	GetUserInfo(ctx context.Context, in *GetUserInfoReq, opts ...grpc.CallOption) (*GetUserInfoRes, error)
+	AddToFavourite(ctx context.Context, in *AddToCollectionReq, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	RemoveFromFavourite(ctx context.Context, in *RemoveFromCollectionReq, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	GetFavourite(ctx context.Context, in *GetCollectionReq, opts ...grpc.CallOption) (*GetCollectionRes, error)
+	AddToCart(ctx context.Context, in *AddToCollectionReq, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	RemoveFromCart(ctx context.Context, in *RemoveFromCollectionReq, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	GetCart(ctx context.Context, in *GetCollectionReq, opts ...grpc.CallOption) (*GetCollectionRes, error)
+	TopUpBalance(ctx context.Context, in *BalanceReq, opts ...grpc.CallOption) (*BalanceRes, error)
+	DebitBalance(ctx context.Context, in *BalanceReq, opts ...grpc.CallOption) (*BalanceRes, error)
+	RemoveDeviceFromCollections(ctx context.Context, in *RemoveDeletedDeviceReq, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
 
 type usersClient struct {
@@ -45,34 +43,16 @@ func NewUsersClient(cc grpc.ClientConnInterface) UsersClient {
 	return &usersClient{cc}
 }
 
-func (c *usersClient) Signup(ctx context.Context, in *SignupReq, opts ...grpc.CallOption) (*SignupRes, error) {
-	out := new(SignupRes)
-	err := c.cc.Invoke(ctx, "/user.Users/Signup", in, out, opts...)
+func (c *usersClient) GetUserInfo(ctx context.Context, in *GetUserInfoReq, opts ...grpc.CallOption) (*GetUserInfoRes, error) {
+	out := new(GetUserInfoRes)
+	err := c.cc.Invoke(ctx, "/user.Users/GetUserInfo", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *usersClient) Login(ctx context.Context, in *LoginReq, opts ...grpc.CallOption) (*LoginRes, error) {
-	out := new(LoginRes)
-	err := c.cc.Invoke(ctx, "/user.Users/Login", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *usersClient) GetInfo(ctx context.Context, in *GetInfoReq, opts ...grpc.CallOption) (*GetInfoRes, error) {
-	out := new(GetInfoRes)
-	err := c.cc.Invoke(ctx, "/user.Users/GetInfo", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *usersClient) AddToFavourite(ctx context.Context, in *AddReq, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *usersClient) AddToFavourite(ctx context.Context, in *AddToCollectionReq, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, "/user.Users/AddToFavourite", in, out, opts...)
 	if err != nil {
@@ -81,7 +61,7 @@ func (c *usersClient) AddToFavourite(ctx context.Context, in *AddReq, opts ...gr
 	return out, nil
 }
 
-func (c *usersClient) RemoveFromFavourite(ctx context.Context, in *RemoveReq, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *usersClient) RemoveFromFavourite(ctx context.Context, in *RemoveFromCollectionReq, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, "/user.Users/RemoveFromFavourite", in, out, opts...)
 	if err != nil {
@@ -90,8 +70,8 @@ func (c *usersClient) RemoveFromFavourite(ctx context.Context, in *RemoveReq, op
 	return out, nil
 }
 
-func (c *usersClient) GetFavourite(ctx context.Context, in *GetReq, opts ...grpc.CallOption) (*GetRes, error) {
-	out := new(GetRes)
+func (c *usersClient) GetFavourite(ctx context.Context, in *GetCollectionReq, opts ...grpc.CallOption) (*GetCollectionRes, error) {
+	out := new(GetCollectionRes)
 	err := c.cc.Invoke(ctx, "/user.Users/GetFavourite", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -99,7 +79,7 @@ func (c *usersClient) GetFavourite(ctx context.Context, in *GetReq, opts ...grpc
 	return out, nil
 }
 
-func (c *usersClient) AddToCart(ctx context.Context, in *AddReq, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *usersClient) AddToCart(ctx context.Context, in *AddToCollectionReq, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, "/user.Users/AddToCart", in, out, opts...)
 	if err != nil {
@@ -108,7 +88,7 @@ func (c *usersClient) AddToCart(ctx context.Context, in *AddReq, opts ...grpc.Ca
 	return out, nil
 }
 
-func (c *usersClient) RemoveFromCart(ctx context.Context, in *RemoveReq, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *usersClient) RemoveFromCart(ctx context.Context, in *RemoveFromCollectionReq, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, "/user.Users/RemoveFromCart", in, out, opts...)
 	if err != nil {
@@ -117,8 +97,8 @@ func (c *usersClient) RemoveFromCart(ctx context.Context, in *RemoveReq, opts ..
 	return out, nil
 }
 
-func (c *usersClient) GetCart(ctx context.Context, in *GetReq, opts ...grpc.CallOption) (*GetRes, error) {
-	out := new(GetRes)
+func (c *usersClient) GetCart(ctx context.Context, in *GetCollectionReq, opts ...grpc.CallOption) (*GetCollectionRes, error) {
+	out := new(GetCollectionRes)
 	err := c.cc.Invoke(ctx, "/user.Users/GetCart", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -126,8 +106,8 @@ func (c *usersClient) GetCart(ctx context.Context, in *GetReq, opts ...grpc.Call
 	return out, nil
 }
 
-func (c *usersClient) TopUpBalance(ctx context.Context, in *TopUpBalanceReq, opts ...grpc.CallOption) (*TopUpBalanceRes, error) {
-	out := new(TopUpBalanceRes)
+func (c *usersClient) TopUpBalance(ctx context.Context, in *BalanceReq, opts ...grpc.CallOption) (*BalanceRes, error) {
+	out := new(BalanceRes)
 	err := c.cc.Invoke(ctx, "/user.Users/TopUpBalance", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -135,8 +115,8 @@ func (c *usersClient) TopUpBalance(ctx context.Context, in *TopUpBalanceReq, opt
 	return out, nil
 }
 
-func (c *usersClient) DebitBalance(ctx context.Context, in *DebitBalanceReq, opts ...grpc.CallOption) (*DebitBalanceRes, error) {
-	out := new(DebitBalanceRes)
+func (c *usersClient) DebitBalance(ctx context.Context, in *BalanceReq, opts ...grpc.CallOption) (*BalanceRes, error) {
+	out := new(BalanceRes)
 	err := c.cc.Invoke(ctx, "/user.Users/DebitBalance", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -144,7 +124,7 @@ func (c *usersClient) DebitBalance(ctx context.Context, in *DebitBalanceReq, opt
 	return out, nil
 }
 
-func (c *usersClient) RemoveDeviceFromCollections(ctx context.Context, in *RemoveDeviceReq, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *usersClient) RemoveDeviceFromCollections(ctx context.Context, in *RemoveDeletedDeviceReq, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, "/user.Users/RemoveDeviceFromCollections", in, out, opts...)
 	if err != nil {
@@ -157,58 +137,50 @@ func (c *usersClient) RemoveDeviceFromCollections(ctx context.Context, in *Remov
 // All implementations must embed UnimplementedUsersServer
 // for forward compatibility
 type UsersServer interface {
-	Signup(context.Context, *SignupReq) (*SignupRes, error)
-	Login(context.Context, *LoginReq) (*LoginRes, error)
-	GetInfo(context.Context, *GetInfoReq) (*GetInfoRes, error)
-	AddToFavourite(context.Context, *AddReq) (*emptypb.Empty, error)
-	RemoveFromFavourite(context.Context, *RemoveReq) (*emptypb.Empty, error)
-	GetFavourite(context.Context, *GetReq) (*GetRes, error)
-	AddToCart(context.Context, *AddReq) (*emptypb.Empty, error)
-	RemoveFromCart(context.Context, *RemoveReq) (*emptypb.Empty, error)
-	GetCart(context.Context, *GetReq) (*GetRes, error)
-	TopUpBalance(context.Context, *TopUpBalanceReq) (*TopUpBalanceRes, error)
-	DebitBalance(context.Context, *DebitBalanceReq) (*DebitBalanceRes, error)
-	RemoveDeviceFromCollections(context.Context, *RemoveDeviceReq) (*emptypb.Empty, error)
+	GetUserInfo(context.Context, *GetUserInfoReq) (*GetUserInfoRes, error)
+	AddToFavourite(context.Context, *AddToCollectionReq) (*emptypb.Empty, error)
+	RemoveFromFavourite(context.Context, *RemoveFromCollectionReq) (*emptypb.Empty, error)
+	GetFavourite(context.Context, *GetCollectionReq) (*GetCollectionRes, error)
+	AddToCart(context.Context, *AddToCollectionReq) (*emptypb.Empty, error)
+	RemoveFromCart(context.Context, *RemoveFromCollectionReq) (*emptypb.Empty, error)
+	GetCart(context.Context, *GetCollectionReq) (*GetCollectionRes, error)
+	TopUpBalance(context.Context, *BalanceReq) (*BalanceRes, error)
+	DebitBalance(context.Context, *BalanceReq) (*BalanceRes, error)
+	RemoveDeviceFromCollections(context.Context, *RemoveDeletedDeviceReq) (*emptypb.Empty, error)
 }
 
 // UnimplementedUsersServer must be embedded to have forward compatible implementations.
 type UnimplementedUsersServer struct {
 }
 
-func (UnimplementedUsersServer) Signup(context.Context, *SignupReq) (*SignupRes, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Signup not implemented")
+func (UnimplementedUsersServer) GetUserInfo(context.Context, *GetUserInfoReq) (*GetUserInfoRes, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetUserInfo not implemented")
 }
-func (UnimplementedUsersServer) Login(context.Context, *LoginReq) (*LoginRes, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Login not implemented")
-}
-func (UnimplementedUsersServer) GetInfo(context.Context, *GetInfoReq) (*GetInfoRes, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetInfo not implemented")
-}
-func (UnimplementedUsersServer) AddToFavourite(context.Context, *AddReq) (*emptypb.Empty, error) {
+func (UnimplementedUsersServer) AddToFavourite(context.Context, *AddToCollectionReq) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method AddToFavourite not implemented")
 }
-func (UnimplementedUsersServer) RemoveFromFavourite(context.Context, *RemoveReq) (*emptypb.Empty, error) {
+func (UnimplementedUsersServer) RemoveFromFavourite(context.Context, *RemoveFromCollectionReq) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RemoveFromFavourite not implemented")
 }
-func (UnimplementedUsersServer) GetFavourite(context.Context, *GetReq) (*GetRes, error) {
+func (UnimplementedUsersServer) GetFavourite(context.Context, *GetCollectionReq) (*GetCollectionRes, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetFavourite not implemented")
 }
-func (UnimplementedUsersServer) AddToCart(context.Context, *AddReq) (*emptypb.Empty, error) {
+func (UnimplementedUsersServer) AddToCart(context.Context, *AddToCollectionReq) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method AddToCart not implemented")
 }
-func (UnimplementedUsersServer) RemoveFromCart(context.Context, *RemoveReq) (*emptypb.Empty, error) {
+func (UnimplementedUsersServer) RemoveFromCart(context.Context, *RemoveFromCollectionReq) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RemoveFromCart not implemented")
 }
-func (UnimplementedUsersServer) GetCart(context.Context, *GetReq) (*GetRes, error) {
+func (UnimplementedUsersServer) GetCart(context.Context, *GetCollectionReq) (*GetCollectionRes, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetCart not implemented")
 }
-func (UnimplementedUsersServer) TopUpBalance(context.Context, *TopUpBalanceReq) (*TopUpBalanceRes, error) {
+func (UnimplementedUsersServer) TopUpBalance(context.Context, *BalanceReq) (*BalanceRes, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method TopUpBalance not implemented")
 }
-func (UnimplementedUsersServer) DebitBalance(context.Context, *DebitBalanceReq) (*DebitBalanceRes, error) {
+func (UnimplementedUsersServer) DebitBalance(context.Context, *BalanceReq) (*BalanceRes, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DebitBalance not implemented")
 }
-func (UnimplementedUsersServer) RemoveDeviceFromCollections(context.Context, *RemoveDeviceReq) (*emptypb.Empty, error) {
+func (UnimplementedUsersServer) RemoveDeviceFromCollections(context.Context, *RemoveDeletedDeviceReq) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RemoveDeviceFromCollections not implemented")
 }
 func (UnimplementedUsersServer) mustEmbedUnimplementedUsersServer() {}
@@ -224,62 +196,26 @@ func RegisterUsersServer(s grpc.ServiceRegistrar, srv UsersServer) {
 	s.RegisterService(&Users_ServiceDesc, srv)
 }
 
-func _Users_Signup_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(SignupReq)
+func _Users_GetUserInfo_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetUserInfoReq)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(UsersServer).Signup(ctx, in)
+		return srv.(UsersServer).GetUserInfo(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/user.Users/Signup",
+		FullMethod: "/user.Users/GetUserInfo",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(UsersServer).Signup(ctx, req.(*SignupReq))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _Users_Login_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(LoginReq)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(UsersServer).Login(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/user.Users/Login",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(UsersServer).Login(ctx, req.(*LoginReq))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _Users_GetInfo_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetInfoReq)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(UsersServer).GetInfo(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/user.Users/GetInfo",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(UsersServer).GetInfo(ctx, req.(*GetInfoReq))
+		return srv.(UsersServer).GetUserInfo(ctx, req.(*GetUserInfoReq))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
 func _Users_AddToFavourite_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(AddReq)
+	in := new(AddToCollectionReq)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -291,13 +227,13 @@ func _Users_AddToFavourite_Handler(srv interface{}, ctx context.Context, dec fun
 		FullMethod: "/user.Users/AddToFavourite",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(UsersServer).AddToFavourite(ctx, req.(*AddReq))
+		return srv.(UsersServer).AddToFavourite(ctx, req.(*AddToCollectionReq))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
 func _Users_RemoveFromFavourite_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(RemoveReq)
+	in := new(RemoveFromCollectionReq)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -309,13 +245,13 @@ func _Users_RemoveFromFavourite_Handler(srv interface{}, ctx context.Context, de
 		FullMethod: "/user.Users/RemoveFromFavourite",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(UsersServer).RemoveFromFavourite(ctx, req.(*RemoveReq))
+		return srv.(UsersServer).RemoveFromFavourite(ctx, req.(*RemoveFromCollectionReq))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
 func _Users_GetFavourite_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetReq)
+	in := new(GetCollectionReq)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -327,13 +263,13 @@ func _Users_GetFavourite_Handler(srv interface{}, ctx context.Context, dec func(
 		FullMethod: "/user.Users/GetFavourite",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(UsersServer).GetFavourite(ctx, req.(*GetReq))
+		return srv.(UsersServer).GetFavourite(ctx, req.(*GetCollectionReq))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
 func _Users_AddToCart_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(AddReq)
+	in := new(AddToCollectionReq)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -345,13 +281,13 @@ func _Users_AddToCart_Handler(srv interface{}, ctx context.Context, dec func(int
 		FullMethod: "/user.Users/AddToCart",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(UsersServer).AddToCart(ctx, req.(*AddReq))
+		return srv.(UsersServer).AddToCart(ctx, req.(*AddToCollectionReq))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
 func _Users_RemoveFromCart_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(RemoveReq)
+	in := new(RemoveFromCollectionReq)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -363,13 +299,13 @@ func _Users_RemoveFromCart_Handler(srv interface{}, ctx context.Context, dec fun
 		FullMethod: "/user.Users/RemoveFromCart",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(UsersServer).RemoveFromCart(ctx, req.(*RemoveReq))
+		return srv.(UsersServer).RemoveFromCart(ctx, req.(*RemoveFromCollectionReq))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
 func _Users_GetCart_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetReq)
+	in := new(GetCollectionReq)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -381,13 +317,13 @@ func _Users_GetCart_Handler(srv interface{}, ctx context.Context, dec func(inter
 		FullMethod: "/user.Users/GetCart",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(UsersServer).GetCart(ctx, req.(*GetReq))
+		return srv.(UsersServer).GetCart(ctx, req.(*GetCollectionReq))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
 func _Users_TopUpBalance_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(TopUpBalanceReq)
+	in := new(BalanceReq)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -399,13 +335,13 @@ func _Users_TopUpBalance_Handler(srv interface{}, ctx context.Context, dec func(
 		FullMethod: "/user.Users/TopUpBalance",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(UsersServer).TopUpBalance(ctx, req.(*TopUpBalanceReq))
+		return srv.(UsersServer).TopUpBalance(ctx, req.(*BalanceReq))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
 func _Users_DebitBalance_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(DebitBalanceReq)
+	in := new(BalanceReq)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -417,13 +353,13 @@ func _Users_DebitBalance_Handler(srv interface{}, ctx context.Context, dec func(
 		FullMethod: "/user.Users/DebitBalance",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(UsersServer).DebitBalance(ctx, req.(*DebitBalanceReq))
+		return srv.(UsersServer).DebitBalance(ctx, req.(*BalanceReq))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
 func _Users_RemoveDeviceFromCollections_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(RemoveDeviceReq)
+	in := new(RemoveDeletedDeviceReq)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -435,7 +371,7 @@ func _Users_RemoveDeviceFromCollections_Handler(srv interface{}, ctx context.Con
 		FullMethod: "/user.Users/RemoveDeviceFromCollections",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(UsersServer).RemoveDeviceFromCollections(ctx, req.(*RemoveDeviceReq))
+		return srv.(UsersServer).RemoveDeviceFromCollections(ctx, req.(*RemoveDeletedDeviceReq))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -448,16 +384,8 @@ var Users_ServiceDesc = grpc.ServiceDesc{
 	HandlerType: (*UsersServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "Signup",
-			Handler:    _Users_Signup_Handler,
-		},
-		{
-			MethodName: "Login",
-			Handler:    _Users_Login_Handler,
-		},
-		{
-			MethodName: "GetInfo",
-			Handler:    _Users_GetInfo_Handler,
+			MethodName: "GetUserInfo",
+			Handler:    _Users_GetUserInfo_Handler,
 		},
 		{
 			MethodName: "AddToFavourite",

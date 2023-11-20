@@ -4,14 +4,13 @@ option go_package = "/";
 
 import "proto/device.proto";
 import "google/protobuf/timestamp.proto";
-import "google/protobuf/empty.proto";
 
 package order;
 
 service Orders {
   rpc CreateOrder(CreateOrderReq) returns(CreateOrderRes);
   rpc CheckOrder(CheckOrderReq) returns(CheckOrderRes);
-  rpc UpdateOrder(UpdateOrderReq) returns(google.protobuf.Empty);
+  rpc UpdateOrder(UpdateOrderReq) returns(UpdateOrderRes);
 }
 
 message OrderDevice {
@@ -42,4 +41,8 @@ message CheckOrderRes {
 message UpdateOrderReq {
   string Status = 1;
   string OrderUUID = 2;
+}
+
+message UpdateOrderRes {
+  string Status = 1;
 }

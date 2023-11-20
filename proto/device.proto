@@ -6,27 +6,58 @@ import "google/protobuf/empty.proto";
 
 package device;
 
-service Devices {
-  rpc CreateDevice(CreateReq) returns(google.protobuf.Empty);
-  rpc DeleteDevice(DeleteReq) returns(google.protobuf.Empty);
-  rpc UpdateDevice(UpdateReq) returns(google.protobuf.Empty);
+message Device {
+  string UUID = 1;
+  string Title = 2;
+  string Description = 3;
+  float Price = 4;
+  string Manufacturer = 5;
+  uint32 Amount = 6;
+}
 
-  rpc GetAllDevices(GetAllReq) returns (DevicesRes);
-  rpc GetDevicesByTitle(GetByTitleReq) returns (DevicesRes);
+
+service Devices {
+  rpc CreateDevice(CreateDeviceReq) returns(google.protobuf.Empty);
+  rpc DeleteDevice(DeleteDeviceReq) returns(google.protobuf.Empty);
+  rpc UpdateDevice(UpdateDeviceReq) returns(google.protobuf.Empty);
+
+  rpc GetAllDevices(GetAllDevicesReq) returns (DevicesRes);
+  rpc GetDevicesByTitle(GetDeviceByTitleReq) returns (DevicesRes);
   rpc GetDevicesByManufacturer(GetByManufacturer) returns(DevicesRes);
   rpc GetDevicesByPrice(GetByPrice) returns(DevicesRes);
 
-  rpc GetDeviceByUUID(UUIDReq) returns(Device);
-  rpc GetDeviceByUUIDWithAmount(GetDeviceByUUIDWithAmountReq) returns (Device);
-  rpc IncreaseDeviceAmountByUUID(IncreaseDeviceAmountByUUIDReq) returns(google.protobuf.Empty);
+  rpc GetDeviceByUUID(GetDeviceByUUIDReq) returns(Device);
 }
 
-message IncreaseDeviceAmountByUUIDReq {
-  string DeviceUUID = 1;
+message CreateDeviceReq {
+  string Title = 1;
+  string Description = 2;
+  float Price = 3;
+  string Manufacturer = 4;
+  uint32 Amount = 5;
+}
+
+message DeleteDeviceReq {
+  string UUID = 1;
+}
+
+message UpdateDeviceReq {
+  string Title = 1;
+  string Description = 2;
+  float Price = 3;
+  string UUID = 4;
+}
+
+message GetAllDevicesReq {
+  uint32 Index = 1;
   uint32 Amount = 2;
 }
 
-message GetDeviceByUUIDWithAmountReq {
+message GetDeviceByTitleReq {
+  string Title = 1;
+}
+
+message IncreaseDeviceAmountByUUIDReq {
   string DeviceUUID = 1;
   uint32 Amount = 2;
 }
@@ -40,47 +71,10 @@ message GetByManufacturer {
   string Manufacturer = 1;
 }
 
-message UUIDReq {
+message GetDeviceByUUIDReq {
   string UUID = 1;
 }
 
 message DevicesRes {
   repeated Device Devices = 1;
-}
-
-message Device {
-  string UUID = 1;
-  string Title = 2;
-  string Description = 3;
-  float Price = 4;
-  string Manufacturer = 5;
-  uint32 Amount = 6;
-}
-
-message CreateReq {
-  string Title = 1;
-  string Description = 2;
-  float Price = 3;
-  string Manufacturer = 4;
-  uint32 Amount = 5;
-}
-
-message DeleteReq {
-  string UUID = 1;
-}
-
-message UpdateReq {
-  string Title = 1;
-  string Description = 2;
-  float Price = 3;
-  string UUID = 4;
-}
-
-message GetAllReq {
-  uint32 Index = 1;
-  uint32 Amount = 2;
-}
-
-message GetByTitleReq {
-  string Title = 1;
 }

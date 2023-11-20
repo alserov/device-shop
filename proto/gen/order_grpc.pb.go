@@ -11,7 +11,6 @@ import (
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
-	emptypb "google.golang.org/protobuf/types/known/emptypb"
 )
 
 // This is a compile-time assertion to ensure that this generated file
@@ -25,7 +24,7 @@ const _ = grpc.SupportPackageIsVersion7
 type OrdersClient interface {
 	CreateOrder(ctx context.Context, in *CreateOrderReq, opts ...grpc.CallOption) (*CreateOrderRes, error)
 	CheckOrder(ctx context.Context, in *CheckOrderReq, opts ...grpc.CallOption) (*CheckOrderRes, error)
-	UpdateOrder(ctx context.Context, in *UpdateOrderReq, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	UpdateOrder(ctx context.Context, in *UpdateOrderReq, opts ...grpc.CallOption) (*UpdateOrderRes, error)
 }
 
 type ordersClient struct {
@@ -54,8 +53,8 @@ func (c *ordersClient) CheckOrder(ctx context.Context, in *CheckOrderReq, opts .
 	return out, nil
 }
 
-func (c *ordersClient) UpdateOrder(ctx context.Context, in *UpdateOrderReq, opts ...grpc.CallOption) (*emptypb.Empty, error) {
-	out := new(emptypb.Empty)
+func (c *ordersClient) UpdateOrder(ctx context.Context, in *UpdateOrderReq, opts ...grpc.CallOption) (*UpdateOrderRes, error) {
+	out := new(UpdateOrderRes)
 	err := c.cc.Invoke(ctx, "/order.Orders/UpdateOrder", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -69,7 +68,7 @@ func (c *ordersClient) UpdateOrder(ctx context.Context, in *UpdateOrderReq, opts
 type OrdersServer interface {
 	CreateOrder(context.Context, *CreateOrderReq) (*CreateOrderRes, error)
 	CheckOrder(context.Context, *CheckOrderReq) (*CheckOrderRes, error)
-	UpdateOrder(context.Context, *UpdateOrderReq) (*emptypb.Empty, error)
+	UpdateOrder(context.Context, *UpdateOrderReq) (*UpdateOrderRes, error)
 }
 
 // UnimplementedOrdersServer must be embedded to have forward compatible implementations.
@@ -82,7 +81,7 @@ func (UnimplementedOrdersServer) CreateOrder(context.Context, *CreateOrderReq) (
 func (UnimplementedOrdersServer) CheckOrder(context.Context, *CheckOrderReq) (*CheckOrderRes, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CheckOrder not implemented")
 }
-func (UnimplementedOrdersServer) UpdateOrder(context.Context, *UpdateOrderReq) (*emptypb.Empty, error) {
+func (UnimplementedOrdersServer) UpdateOrder(context.Context, *UpdateOrderReq) (*UpdateOrderRes, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpdateOrder not implemented")
 }
 func (UnimplementedOrdersServer) mustEmbedUnimplementedOrdersServer() {}
