@@ -3,59 +3,97 @@ package service
 import (
 	"context"
 	"database/sql"
-	"github.com/alserov/device-shop/gateway/pkg/client"
 	"github.com/alserov/device-shop/order-service/internal/db/postgres"
+	"github.com/alserov/device-shop/order-service/internal/entity"
 	"github.com/alserov/device-shop/order-service/internal/utils"
-	"github.com/alserov/device-shop/order-service/pkg/entity"
 	"github.com/alserov/device-shop/proto/gen"
 	"github.com/google/uuid"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/timestamppb"
-	"os"
 	"sync"
 	"time"
 )
 
 type service struct {
-	db         postgres.Repo
-	deviceAddr string
-	userAddr   string
+	db postgres.Repository
 }
 
-func New(db *sql.DB) pb.OrdersServer {
+func New(ordersDB, devicesDB, usersDB *sql.DB) pb.OrdersServer {
 	return &service{
-		db:         postgres.New(db),
-		deviceAddr: os.Getenv("DEVICE_ADDR"),
-		userAddr:   os.Getenv("USER_ADDR"),
+		db: postgres.New(ordersDB, devicesDB, usersDB),
 	}
 }
 
 func (s service) CreateOrder(ctx context.Context, req *pb.CreateOrderReq) (*pb.CreateOrderRes, error) {
-	order := &entity.CreateOrderReqWithDevices{
-		OrderUUID: uuid.New().String(),
-		UserUUID:  req.UserUUID,
-		Status:    utils.StatusToCode(utils.CREATING),
-		Devices:   make([]*pb.Device, 0, len(req.Devices)),
-		CreatedAt: time.Now().UTC(),
-	}
+	var (
+		err  error
+		now  = time.Now().UTC()
+		info = &entity.OrderAdditional{
+			CreatedAt: &now,
+			Status:    utils.CREATING_CODE,
+			OrderUUID: uuid.New().String(),
+		}
+		wg    *sync.WaitGroup
+		chErr = make(chan error)
+	)
 
-	if err := utils.FetchDevices(ctx, s.deviceAddr, req.Devices, order); err != nil {
+	info.TotalPrice, err = utils.CountPrice(ctx, req.Devices)
+
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	orderTx, err := s.db.GetOrdersDB().Begin()
+	if err != nil {
 		return &pb.CreateOrderRes{}, err
 	}
 
-	if err := utils.ChangeBalance(ctx, s.userAddr, order); err != nil {
-		utils.RollbackDeviceAmountPB(order.Devices, s.deviceAddr)
+	deviceTx, err := s.db.GetDevicesDB().Begin()
+	if err != nil {
 		return &pb.CreateOrderRes{}, err
 	}
 
-	if err := s.db.CreateOrder(ctx, order); err != nil {
-		utils.RollbackDeviceAmountPB(order.Devices, s.deviceAddr)
-		utils.RollBackBalance(order.UserUUID, utils.CountOrderPrice(order.Devices), s.userAddr)
+	balanceTx, err := s.db.GetUsersDB().Begin()
+	if err != nil {
+		return &pb.CreateOrderRes{}, err
+	}
+
+	wg.Add(3)
+	go func() {
+		defer wg.Done()
+		if err := s.db.CreateOrder(ctx, orderTx, req, info); err != nil {
+			chErr <- err
+		}
+	}()
+
+	go func() {
+		defer wg.Done()
+		if err = s.db.DecreaseDevicesAmount(ctx, deviceTx, req.Devices); err != nil {
+			chErr <- err
+		}
+	}()
+
+	go func() {
+		defer wg.Done()
+		if err = s.db.DebitBalance(ctx, balanceTx, req.UserUUID, info.TotalPrice); err != nil {
+			chErr <- err
+		}
+	}()
+
+	go func() {
+		wg.Wait()
+		close(chErr)
+	}()
+
+	for err = range chErr {
+		cancel()
+		orderTx.Rollback()
+		balanceTx.Rollback()
+		deviceTx.Rollback()
 		return &pb.CreateOrderRes{}, err
 	}
 
 	return &pb.CreateOrderRes{
-		OrderUUID: order.OrderUUID,
+		OrderUUID: info.OrderUUID,
 	}, nil
 }
 
@@ -66,42 +104,21 @@ func (s service) CheckOrder(ctx context.Context, req *pb.CheckOrderReq) (*pb.Che
 	}
 
 	var (
-		devices = make([]*pb.Device, 0, len(order.Devices))
-		price   = float32(0)
-		wg      = &sync.WaitGroup{}
-		mu      = &sync.Mutex{}
-		chErr   = make(chan error)
+		price = float32(0)
+		wg    = &sync.WaitGroup{}
+		mu    = &sync.Mutex{}
+		chErr = make(chan error)
 	)
-
-	cl, cc, err := client.DialDevice(s.deviceAddr)
-	if err != nil {
-		return &pb.CheckOrderRes{}, err
-	}
-	defer cc.Close()
 
 	wg.Add(len(order.Devices))
 
-	for _, device := range order.Devices {
-		device := device
+	for _, d := range order.Devices {
+		d := d
 		go func() {
 			defer wg.Done()
-			d, err := cl.GetDeviceByUUID(ctx, &pb.UUIDReq{UUID: device.DeviceUUID})
-			if err != nil {
-				chErr <- err
-			}
-			device := &pb.Device{
-				UUID:         d.UUID,
-				Title:        d.Title,
-				Description:  d.Description,
-				Price:        d.Price,
-				Manufacturer: d.Manufacturer,
-				Amount:       device.Amount,
-			}
-
 			mu.Lock()
 			defer mu.Unlock()
-			price += d.Price * float32(device.Amount)
-			devices = append(devices, device)
+			price += d.Price
 		}()
 	}
 
@@ -115,7 +132,7 @@ func (s service) CheckOrder(ctx context.Context, req *pb.CheckOrderReq) (*pb.Che
 	}
 
 	return &pb.CheckOrderRes{
-		Devices: devices,
+		Devices: order.Devices,
 		Status:  utils.StatusCodeToString(order.Status),
 		Price:   price,
 		CreatedAt: &timestamppb.Timestamp{
@@ -125,30 +142,18 @@ func (s service) CheckOrder(ctx context.Context, req *pb.CheckOrderReq) (*pb.Che
 	}, nil
 }
 
-// TODO: finish cancel order and fix incorrect order status
-
-func (s service) UpdateOrder(ctx context.Context, req *pb.UpdateOrderReq) (*emptypb.Empty, error) {
-	if err := s.db.UpdateOrder(ctx, req.Status, req.OrderUUID); err != nil {
-		return &emptypb.Empty{}, err
-	}
+func (s service) UpdateOrder(ctx context.Context, req *pb.UpdateOrderReq) (*pb.UpdateOrderRes, error) {
 	if utils.StatusToCode(req.Status) == utils.CANCELED_CODE {
 		order, err := s.db.CheckOrder(ctx, req.OrderUUID)
 		if err != nil {
-			return &emptypb.Empty{}, err
+			return &pb.UpdateOrderRes{}, err
 		}
 
 		var (
 			wg    = &sync.WaitGroup{}
 			mu    = &sync.Mutex{}
-			chErr = make(chan error)
 			price = float32(0)
 		)
-
-		cl, cc, err := client.DialDevice(s.deviceAddr)
-		if err != nil {
-			return &emptypb.Empty{}, err
-		}
-		defer cc.Close()
 
 		wg.Add(len(order.Devices))
 
@@ -156,26 +161,16 @@ func (s service) UpdateOrder(ctx context.Context, req *pb.UpdateOrderReq) (*empt
 			device := device
 			go func() {
 				defer wg.Done()
-				d, err := cl.GetDeviceByUUID(ctx, &pb.UUIDReq{UUID: device.DeviceUUID})
-				if err != nil {
-					chErr <- err
-				}
 				mu.Lock()
 				defer mu.Unlock()
-				price += d.Price
+				price += device.Price
 			}()
 		}
 
-		go func() {
-			wg.Wait()
-			close(chErr)
-		}()
-
-		for err = range chErr {
-			return &emptypb.Empty{}, err
-		}
-		utils.RollBackBalance(order.UserUUID, price, s.deviceAddr)
-		utils.RollbackDeviceAmount(order.Devices, s.deviceAddr)
+		wg.Wait()
+	}
+	if err := s.db.UpdateOrder(ctx, req.Status, req.OrderUUID); err != nil {
+		return &pb.UpdateOrderRes{}, err
 	}
 	return &emptypb.Empty{}, nil
 }

@@ -9,14 +9,9 @@ import (
 	"github.com/alserov/device-shop/user-service/internal/db/mongo"
 	"github.com/alserov/device-shop/user-service/internal/db/postgres"
 	"github.com/alserov/device-shop/user-service/internal/entity"
-	"github.com/alserov/device-shop/user-service/internal/utils"
-	"github.com/google/uuid"
 	mg "go.mongodb.org/mongo-driver/mongo"
-	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
-	"net/http"
 	"os"
-	"time"
 )
 
 type service struct {
@@ -33,90 +28,13 @@ func New(pg *sql.DB, mg *mg.Client) pb.UsersServer {
 	}
 }
 
-func (s *service) Signup(ctx context.Context, req *pb.SignupReq) (*pb.SignupRes, error) {
-	exists, err := s.postgres.CheckIfExistsByUsername(ctx, req.Username)
-	if err != nil {
-		return &pb.SignupRes{}, err
-	}
-	if exists {
-		return &pb.SignupRes{}, status.Error(http.StatusBadRequest, "already exists")
-	}
-
-	r := &entity.User{
-		Username:  req.Username,
-		Email:     req.Email,
-		UUID:      uuid.New().String(),
-		Role:      "user",
-		Cash:      0,
-		CreatedAt: time.Now().UTC(),
-		Password:  req.Password,
-	}
-
-	r.Token, r.RefreshToken, err = utils.GenerateTokens("user")
-	if err != nil {
-		return &pb.SignupRes{}, err
-	}
-
-	if err = r.HashPassword(); err != nil {
-		return &pb.SignupRes{}, err
-	}
-
-	if err = s.postgres.Signup(ctx, r); err != nil {
-		return &pb.SignupRes{}, err
-	}
-
-	//if err = utils.SendEmail(r.Email); err != nil {
-	//	log.Println("FAILED TO SEND EMAIL: ", err.Error())
-	//}
-
-	return &pb.SignupRes{
-		Username:     r.Username,
-		Email:        r.Email,
-		UUID:         r.UUID,
-		Cash:         r.Cash,
-		RefreshToken: r.RefreshToken,
-		Token:        r.Token,
-	}, nil
-}
-
-func (s *service) Login(ctx context.Context, req *pb.LoginReq) (*pb.LoginRes, error) {
-	user, err := s.postgres.FindByUsername(ctx, req.Username)
-	if err != nil {
-		return &pb.LoginRes{}, err
-	}
-
-	if err = user.CheckPassword(req.Password); err != nil {
-		return nil, status.Error(http.StatusBadRequest, "invalid password")
-	}
-
-	token, rToken, err := utils.GenerateTokens(user.Role)
-	if err != nil {
-		return &pb.LoginRes{}, err
-	}
-
-	r := &entity.RepoLoginReq{
-		RefreshToken: rToken,
-		Username:     user.Username,
-	}
-	res, err := s.postgres.Login(ctx, r)
-	if err != nil {
-		return &pb.LoginRes{}, err
-	}
-
-	return &pb.LoginRes{
-		RefreshToken: rToken,
-		Token:        token,
-		UUID:         res.UUID,
-	}, nil
-}
-
-func (s *service) GetInfo(ctx context.Context, req *pb.GetInfoReq) (*pb.GetInfoRes, error) {
+func (s *service) GetUserInfo(ctx context.Context, req *pb.GetUserInfoReq) (*pb.GetUserInfoRes, error) {
 	info, err := s.postgres.GetInfo(ctx, req.UserUUID)
 	if err != nil {
-		return &pb.GetInfoRes{}, err
+		return &pb.GetUserInfoRes{}, err
 	}
 
-	return &pb.GetInfoRes{
+	return &pb.GetUserInfoRes{
 		Cash:     info.Cash,
 		Username: info.Username,
 		Email:    info.Email,
@@ -124,42 +42,42 @@ func (s *service) GetInfo(ctx context.Context, req *pb.GetInfoReq) (*pb.GetInfoR
 	}, nil
 }
 
-func (s *service) TopUpBalance(ctx context.Context, req *pb.TopUpBalanceReq) (*pb.TopUpBalanceRes, error) {
+func (s *service) TopUpBalance(ctx context.Context, req *pb.BalanceReq) (*pb.BalanceRes, error) {
 	cash, err := s.postgres.TopUpBalance(ctx, &entity.TopUpBalanceReq{
 		Cash:     req.Cash,
 		UserUUID: req.UserUUID,
 	})
 	if err != nil {
-		return &pb.TopUpBalanceRes{}, err
+		return &pb.BalanceRes{}, err
 	}
 
-	return &pb.TopUpBalanceRes{
+	return &pb.BalanceRes{
 		Cash: cash,
 	}, nil
 }
 
-func (s *service) DebitBalance(ctx context.Context, req *pb.DebitBalanceReq) (*pb.DebitBalanceRes, error) {
+func (s *service) DebitBalance(ctx context.Context, req *pb.BalanceReq) (*pb.BalanceRes, error) {
 	cash, err := s.postgres.DebitBalance(ctx, &entity.DebitBalanceReq{
 		Cash:     req.Cash,
 		UserUUID: req.UserUUID,
 	})
 	if err != nil {
-		return &pb.DebitBalanceRes{}, err
+		return &pb.BalanceRes{}, err
 	}
 
-	return &pb.DebitBalanceRes{
+	return &pb.BalanceRes{
 		Cash: cash,
 	}, nil
 }
 
-func (s *service) AddToFavourite(ctx context.Context, req *pb.AddReq) (*emptypb.Empty, error) {
+func (s *service) AddToFavourite(ctx context.Context, req *pb.AddToCollectionReq) (*emptypb.Empty, error) {
 	cl, cc, err := client.DialDevice(s.deviceAddr)
 	if err != nil {
 		return &emptypb.Empty{}, err
 	}
 	defer cc.Close()
 
-	getDeviceReq := &pb.UUIDReq{
+	getDeviceReq := &pb.GetDeviceByUUIDReq{
 		UUID: req.DeviceUUID,
 	}
 
@@ -186,7 +104,7 @@ func (s *service) AddToFavourite(ctx context.Context, req *pb.AddReq) (*emptypb.
 	return &emptypb.Empty{}, nil
 }
 
-func (s *service) RemoveFromFavourite(ctx context.Context, req *pb.RemoveReq) (*emptypb.Empty, error) {
+func (s *service) RemoveFromFavourite(ctx context.Context, req *pb.RemoveFromCollectionReq) (*emptypb.Empty, error) {
 	err := s.mongo.RemoveFromFavourite(ctx, &entity.RemoveReq{
 		UserUUID:   req.UserUUID,
 		DeviceUUID: req.DeviceUUID,
@@ -198,10 +116,10 @@ func (s *service) RemoveFromFavourite(ctx context.Context, req *pb.RemoveReq) (*
 	return &emptypb.Empty{}, nil
 }
 
-func (s *service) GetFavourite(ctx context.Context, req *pb.GetReq) (*pb.GetRes, error) {
+func (s *service) GetFavourite(ctx context.Context, req *pb.GetCollectionReq) (*pb.GetCollectionRes, error) {
 	coll, err := s.mongo.GetFavourite(ctx, req.UserUUID)
 	if err != nil {
-		return &pb.GetRes{}, err
+		return &pb.GetCollectionRes{}, err
 	}
 
 	var devices []*pb.Device
@@ -217,19 +135,19 @@ func (s *service) GetFavourite(ctx context.Context, req *pb.GetReq) (*pb.GetRes,
 		devices = append(devices, device)
 	}
 
-	return &pb.GetRes{
+	return &pb.GetCollectionRes{
 		Devices: devices,
 	}, nil
 }
 
-func (s *service) AddToCart(ctx context.Context, req *pb.AddReq) (*emptypb.Empty, error) {
+func (s *service) AddToCart(ctx context.Context, req *pb.AddToCollectionReq) (*emptypb.Empty, error) {
 	cl, cc, err := client.DialDevice(s.deviceAddr)
 	if err != nil {
 		return &emptypb.Empty{}, err
 	}
 	defer cc.Close()
 
-	getDeviceReq := &pb.UUIDReq{
+	getDeviceReq := &pb.GetDeviceByUUIDReq{
 		UUID: req.DeviceUUID,
 	}
 
@@ -256,7 +174,7 @@ func (s *service) AddToCart(ctx context.Context, req *pb.AddReq) (*emptypb.Empty
 	return &emptypb.Empty{}, nil
 }
 
-func (s *service) RemoveFromCart(ctx context.Context, req *pb.RemoveReq) (*emptypb.Empty, error) {
+func (s *service) RemoveFromCart(ctx context.Context, req *pb.RemoveFromCollectionReq) (*emptypb.Empty, error) {
 	err := s.mongo.RemoveFromCart(ctx, &entity.RemoveReq{
 		UserUUID:   req.UserUUID,
 		DeviceUUID: req.GetDeviceUUID(),
@@ -268,10 +186,10 @@ func (s *service) RemoveFromCart(ctx context.Context, req *pb.RemoveReq) (*empty
 	return &emptypb.Empty{}, nil
 }
 
-func (s *service) GetCart(ctx context.Context, req *pb.GetReq) (*pb.GetRes, error) {
+func (s *service) GetCart(ctx context.Context, req *pb.GetCollectionReq) (*pb.GetCollectionRes, error) {
 	coll, err := s.mongo.GetCart(ctx, req.UserUUID)
 	if err != nil {
-		return &pb.GetRes{}, err
+		return &pb.GetCollectionRes{}, err
 	}
 
 	var devices []*pb.Device
@@ -287,12 +205,12 @@ func (s *service) GetCart(ctx context.Context, req *pb.GetReq) (*pb.GetRes, erro
 		devices = append(devices, device)
 	}
 
-	return &pb.GetRes{
+	return &pb.GetCollectionRes{
 		Devices: devices,
 	}, nil
 }
 
-func (s *service) RemoveDeviceFromCollections(ctx context.Context, req *pb.RemoveDeviceReq) (*emptypb.Empty, error) {
+func (s *service) RemoveDeviceFromCollections(ctx context.Context, req *pb.RemoveDeletedDeviceReq) (*emptypb.Empty, error) {
 	if err := s.mongo.RemoveDeviceFromCollections(ctx, req.DeviceUUID); err != nil {
 		return &emptypb.Empty{}, err
 	}

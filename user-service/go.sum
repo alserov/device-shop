@@ -32,6 +32,8 @@ github.com/alserov/device-shop/proto v0.0.0-20231118141702-0ddeae4be07e h1:GOZoP
 github.com/alserov/device-shop/proto v0.0.0-20231118141702-0ddeae4be07e/go.mod h1:jTRYFmTaJqxlcsigo+73JGY8OQJ0e5uTv1D3bTDAPV4=
 github.com/alserov/device-shop/proto v0.0.0-20231118142552-8c56c8457251 h1:m7Ws2dxXjLGBPcDrLyGA4X8geA/nnFCv+oLxLTaJ4Uo=
 github.com/alserov/device-shop/proto v0.0.0-20231118142552-8c56c8457251/go.mod h1:jTRYFmTaJqxlcsigo+73JGY8OQJ0e5uTv1D3bTDAPV4=
+github.com/alserov/device-shop/proto v0.0.0-20231120143052-cedfb61a945a h1:CN+x/o5d+P8flCxo4qqlCA7UPAgdR8oXxBuaNEU/A6c=
+github.com/alserov/device-shop/proto v0.0.0-20231120143052-cedfb61a945a/go.mod h1:jTRYFmTaJqxlcsigo+73JGY8OQJ0e5uTv1D3bTDAPV4=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=

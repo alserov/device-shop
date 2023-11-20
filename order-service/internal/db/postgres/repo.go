@@ -3,66 +3,90 @@ package postgres
 import (
 	"context"
 	"database/sql"
+	"github.com/alserov/device-shop/order-service/internal/entity"
 	"github.com/alserov/device-shop/order-service/internal/utils"
-	"github.com/alserov/device-shop/order-service/pkg/entity"
+	pb "github.com/alserov/device-shop/proto/gen"
 	"sync"
 	"time"
 )
 
-type Repo interface {
-	CreateOrder(context.Context, *entity.CreateOrderReqWithDevices) error
-	CheckOrder(context.Context, string) (*entity.CheckOrderRes, error)
-	UpdateOrder(context.Context, string, string) error
-	GetDB() *sql.DB
+type Repository interface {
+	CreateOrder(ctx context.Context, tx *sql.Tx, req *pb.CreateOrderReq, info *entity.OrderAdditional) error
+	CheckOrder(ctx context.Context, orderUUID string) (*entity.CheckOrderRes, error)
+	UpdateOrder(ctx context.Context, status string, orderUUID string) error
+
+	DecreaseDevicesAmount(ctx context.Context, tx *sql.Tx, devices []*pb.OrderDevice) error
+	DebitBalance(ctx context.Context, tx *sql.Tx, userUUID string, cash float32) error
+
+	RollbackDevices(ctx context.Context)
+	RollbackBalance(ctx context.Context)
+
+	GetOrdersDB() *sql.DB
+	GetUsersDB() *sql.DB
+	GetDevicesDB() *sql.DB
 }
 
-func New(db *sql.DB) Repo {
+func New(ordersDB, devicesDB, usersDB *sql.DB) Repository {
 	return &repo{
-		db: db,
+		orders:  ordersDB,
+		devices: devicesDB,
+		users:   usersDB,
 	}
 }
 
 type repo struct {
-	db *sql.DB
+	orders  *sql.DB
+	devices *sql.DB
+	users   *sql.DB
 }
 
-func (r *repo) GetDB() *sql.DB {
-	return r.db
+func (r *repo) GetOrdersDB() *sql.DB {
+	return r.orders
 }
 
-func (r *repo) CreateOrder(ctx context.Context, req *entity.CreateOrderReqWithDevices) error {
-	query := `INSERT INTO orders (user_uuid,order_uuid,device_uuid,amount,status,created_at) VALUES($1,$2,$3,$4,$5,$6)`
+func (r *repo) GetUsersDB() *sql.DB {
+	return r.users
+}
 
-	tx, err := r.db.Begin()
-	if err != nil {
-		return err
-	}
+func (r *repo) GetDevicesDB() *sql.DB {
+	return r.devices
+}
 
-	wg := &sync.WaitGroup{}
-	wg.Add(len(req.Devices))
-
+func (r *repo) CreateOrder(ctx context.Context, tx *sql.Tx, req *pb.CreateOrderReq, info *entity.OrderAdditional) error {
 	chErr := make(chan error)
+	wg := &sync.WaitGroup{}
+	wg.Add(len(req.Devices) + 1)
 
-	for _, device := range req.Devices {
-		device := device
-		go func() {
-			defer wg.Done()
-			_, err = tx.Exec(query, req.UserUUID, req.OrderUUID, device.UUID, device.Amount, req.Status, req.CreatedAt)
-			if err != nil {
-				chErr <- err
-			}
-		}()
-	}
+	go func() {
+		defer wg.Done()
+		query := `INSERT INTO orders (order_uuid,user_uuid,total_price,status,created_at) VALUES($1,$2,$3,$4,$5)`
+		_, err := tx.Exec(query, info.OrderUUID, req.UserUUID, info.TotalPrice, info.Status, info.CreatedAt)
+		if err != nil {
+			chErr <- err
+		}
+	}()
+
+	go func() {
+		query := `INSERT INTO ordered_devices (order_uuid, device_uuid, amount) VALUES($1,$2,$3)`
+		for _, device := range req.Devices {
+			device := device
+			go func() {
+				defer wg.Done()
+				_, err := tx.Exec(query, info.OrderUUID, device.DeviceUUID, device.Amount)
+				if err != nil {
+					chErr <- err
+				}
+			}()
+		}
+	}()
 
 	go func() {
 		wg.Wait()
 		close(chErr)
-		tx.Commit()
 	}()
 
-	for e := range chErr {
-		tx.Rollback()
-		return e
+	for err := range chErr {
+		return err
 	}
 
 	return nil
@@ -71,20 +95,20 @@ func (r *repo) CreateOrder(ctx context.Context, req *entity.CreateOrderReqWithDe
 func (r *repo) CheckOrder(ctx context.Context, orderUUID string) (*entity.CheckOrderRes, error) {
 	query := `SELECT device_uuid, amount, status, created_at FROM orders WHERE order_uuid = $1`
 
-	rows, err := r.db.Query(query, orderUUID)
+	rows, err := r.orders.Query(query, orderUUID)
 	if err != nil {
 		return nil, err
 	}
 
 	var (
-		devices    []*entity.OrderDevice
+		devices    []*pb.Device
 		createdAt  *time.Time
 		statusCode = int32(-1)
 	)
 
 	for rows.Next() {
-		var orderedDevice entity.OrderedDevice
-		if err = rows.Scan(&orderedDevice.DeviceUUID, &orderedDevice.Amount, &orderedDevice.Status, &orderedDevice.CreatedAt); err != nil {
+		var orderedDevice entity.OrderDevice
+		if err = rows.Scan(&orderedDevice.UUID, &orderedDevice.Amount, &orderedDevice.Status, &orderedDevice.CreatedAt); err != nil {
 			return &entity.CheckOrderRes{}, err
 		}
 		if statusCode == -1 {
@@ -93,9 +117,9 @@ func (r *repo) CheckOrder(ctx context.Context, orderUUID string) (*entity.CheckO
 		if createdAt == nil {
 			createdAt = orderedDevice.CreatedAt
 		}
-		devices = append(devices, &entity.OrderDevice{
-			DeviceUUID: orderedDevice.DeviceUUID,
-			Amount:     orderedDevice.Amount,
+		devices = append(devices, &pb.Device{
+			UUID:   orderedDevice.UUID,
+			Amount: orderedDevice.Amount,
 		})
 	}
 
@@ -109,10 +133,20 @@ func (r *repo) CheckOrder(ctx context.Context, orderUUID string) (*entity.CheckO
 func (r *repo) UpdateOrder(ctx context.Context, status string, orderUUID string) error {
 	query := `UPDATE orders SET status = $1 WHERE order_uuid = $2`
 
-	_, err := r.db.Exec(query, utils.StatusToCode(status), orderUUID)
+	_, err := r.orders.Exec(query, utils.StatusToCode(status), orderUUID)
 	if err != nil {
 		return err
 	}
 
 	return nil
+}
+
+func (r *repo) TakeDevices(ctx context.Context, tx *sql.Tx, devices []*pb.OrderDevice) ([]*pb.Device, error) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (r *repo) DebitBalance(ctx context.Context, tx *sql.Tx, userUUID string, cash float32) error {
+	//TODO implement me
+	panic("implement me")
 }

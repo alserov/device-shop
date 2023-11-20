@@ -29,7 +29,7 @@ func New(pg *sql.DB) pb.DevicesServer {
 	}
 }
 
-func (s *service) CreateDevice(ctx context.Context, req *pb.CreateReq) (*emptypb.Empty, error) {
+func (s *service) CreateDevice(ctx context.Context, req *pb.CreateDeviceReq) (*emptypb.Empty, error) {
 	r := &entity.Device{
 		UUID:         uuid.New().String(),
 		Title:        strings.ToLower(req.Title),
@@ -46,7 +46,22 @@ func (s *service) CreateDevice(ctx context.Context, req *pb.CreateReq) (*emptypb
 	return &emptypb.Empty{}, nil
 }
 
-func (s *service) DeleteDevice(ctx context.Context, req *pb.DeleteReq) (*emptypb.Empty, error) {
+func (s *service) UpdateDevice(ctx context.Context, req *pb.UpdateDeviceReq) (*emptypb.Empty, error) {
+	r := &entity.UpdateDeviceReq{
+		Title:       strings.ToLower(req.Title),
+		Description: req.Description,
+		Price:       req.Price,
+		UUID:        req.UUID,
+	}
+
+	if err := s.postgres.UpdateDevice(ctx, r); err != nil {
+		return &emptypb.Empty{}, err
+	}
+
+	return &emptypb.Empty{}, nil
+}
+
+func (s *service) DeleteDevice(ctx context.Context, req *pb.DeleteDeviceReq) (*emptypb.Empty, error) {
 	chErr := make(chan error)
 	go func() {
 		defer close(chErr)
@@ -56,7 +71,7 @@ func (s *service) DeleteDevice(ctx context.Context, req *pb.DeleteReq) (*emptypb
 		}
 		defer cc.Close()
 
-		_, err = cl.RemoveDeviceFromCollections(ctx, &pb.RemoveDeviceReq{
+		_, err = cl.RemoveDeviceFromCollections(ctx, &pb.RemoveDeletedDeviceReq{
 			DeviceUUID: req.UUID,
 		})
 		if err != nil {
@@ -75,22 +90,7 @@ func (s *service) DeleteDevice(ctx context.Context, req *pb.DeleteReq) (*emptypb
 	return &emptypb.Empty{}, nil
 }
 
-func (s *service) UpdateDevice(ctx context.Context, req *pb.UpdateReq) (*emptypb.Empty, error) {
-	r := &entity.UpdateDeviceReq{
-		Title:       strings.ToLower(req.Title),
-		Description: req.Description,
-		Price:       req.Price,
-		UUID:        req.UUID,
-	}
-
-	if err := s.postgres.UpdateDevice(ctx, r); err != nil {
-		return &emptypb.Empty{}, err
-	}
-
-	return &emptypb.Empty{}, nil
-}
-
-func (s *service) GetAllDevices(ctx context.Context, req *pb.GetAllReq) (*pb.DevicesRes, error) {
+func (s *service) GetAllDevices(ctx context.Context, req *pb.GetAllDevicesReq) (*pb.DevicesRes, error) {
 	d, err := s.postgres.GetAllDevices(ctx, req.Index, req.Amount)
 	if err != nil {
 		return &pb.DevicesRes{}, err
@@ -114,7 +114,7 @@ func (s *service) GetAllDevices(ctx context.Context, req *pb.GetAllReq) (*pb.Dev
 	}, nil
 }
 
-func (s *service) GetDevicesByTitle(ctx context.Context, req *pb.GetByTitleReq) (*pb.DevicesRes, error) {
+func (s *service) GetDevicesByTitle(ctx context.Context, req *pb.GetDeviceByTitleReq) (*pb.DevicesRes, error) {
 	d, err := s.postgres.GetDevicesByTitle(ctx, strings.ToLower(req.Title))
 	if errors.Is(err, sql.ErrNoRows) {
 		return &pb.DevicesRes{}, status.Error(http.StatusBadRequest, fmt.Sprintf("Nothing found by %s", req.Title))
@@ -141,7 +141,7 @@ func (s *service) GetDevicesByTitle(ctx context.Context, req *pb.GetByTitleReq) 
 	}, nil
 }
 
-func (s *service) GetDeviceByUUID(ctx context.Context, req *pb.UUIDReq) (*pb.Device, error) {
+func (s *service) GetDeviceByUUID(ctx context.Context, req *pb.GetDeviceByUUIDReq) (*pb.Device, error) {
 	dv, err := s.postgres.GetDeviceByUUID(ctx, req.UUID)
 	if err != nil {
 		return nil, err
@@ -210,29 +210,4 @@ func (s *service) GetDevicesByPrice(ctx context.Context, req *pb.GetByPrice) (*p
 	return &pb.DevicesRes{
 		Devices: devices,
 	}, nil
-}
-
-func (s *service) GetDeviceByUUIDWithAmount(ctx context.Context, req *pb.GetDeviceByUUIDWithAmountReq) (*pb.Device, error) {
-	device, err := s.postgres.GetDeviceByUUIDWithAmount(ctx, req.DeviceUUID, req.Amount)
-	if err != nil {
-		return &pb.Device{}, err
-	}
-
-	pbDevice := &pb.Device{
-		UUID:         device.UUID,
-		Title:        device.Title,
-		Description:  device.Description,
-		Price:        device.Price,
-		Manufacturer: device.Manufacturer,
-		Amount:       req.Amount,
-	}
-
-	return pbDevice, nil
-}
-
-func (s *service) IncreaseDeviceAmountByUUID(ctx context.Context, req *pb.IncreaseDeviceAmountByUUIDReq) (*emptypb.Empty, error) {
-	if err := s.postgres.IncreaseDeviceAmountByUUID(ctx, req.DeviceUUID, req.Amount); err != nil {
-		return &emptypb.Empty{}, err
-	}
-	return &emptypb.Empty{}, nil
 }

@@ -9,10 +9,13 @@ import (
 )
 
 type App struct {
-	port        int
-	host        string
-	connType    string
-	postgresDsn string
+	port           int
+	host           string
+	connType       string
+	ordersDsn      string
+	devicesDsn     string
+	usersDsn       string
+	collectionsUri string
 }
 
 const (
@@ -52,7 +55,7 @@ func New() (*App, error) {
 		port:     port,
 		host:     host,
 		connType: "tcp",
-		postgresDsn: fmt.Sprintf("host=%s port=%s user=%s password=%v dbname=%s sslmode=%s",
+		ordersDsn: fmt.Sprintf("host=%s port=%s user=%s password=%v dbname=%s sslmode=%s",
 			os.Getenv("DB_HOST"),
 			os.Getenv("DB_PORT"),
 			os.Getenv("DB_USER"),
@@ -60,6 +63,23 @@ func New() (*App, error) {
 			os.Getenv("DB_NAME"),
 			os.Getenv("DB_SSLMODE"),
 		),
+		devicesDsn: fmt.Sprintf("host=%s port=%s user=%s password=%v dbname=%s sslmode=%s",
+			os.Getenv("DB_DEVICES_HOST"),
+			os.Getenv("DB_DEVICES_PORT"),
+			os.Getenv("DB_DEVICES_USER"),
+			os.Getenv("DB_DEVICES_PASSWORD"),
+			os.Getenv("DB_DEVICES_NAME"),
+			os.Getenv("DB_DEVICES_SSLMODE"),
+		),
+		usersDsn: fmt.Sprintf("host=%s port=%s user=%s password=%v dbname=%s sslmode=%s",
+			os.Getenv("DB_USERS_HOST"),
+			os.Getenv("DB_USERS_PORT"),
+			os.Getenv("DB_USERS_USER"),
+			os.Getenv("DB_USERS_PASSWORD"),
+			os.Getenv("DB_USERS_NAME"),
+			os.Getenv("DB_USERS_SSLMODE"),
+		),
+		collectionsUri: os.Getenv("MONGO_URI"),
 	}
 
 	return a, nil
