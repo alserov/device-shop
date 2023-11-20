@@ -45,3 +45,14 @@ func DialOrder(addr string) (pb.OrdersClient, *grpc.ClientConn, error) {
 
 	return client, cc, nil
 }
+
+func DialAuth(addr string) (pb.AuthClient, *grpc.ClientConn, error) {
+	cc, err := dial(addr)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	client := pb.NewAuthClient(cc)
+
+	return client, cc, err
+}

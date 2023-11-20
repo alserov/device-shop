@@ -93,41 +93,72 @@ func (r *repo) CreateOrder(ctx context.Context, tx *sql.Tx, req *pb.CreateOrderR
 }
 
 func (r *repo) CheckOrder(ctx context.Context, orderUUID string) (*entity.CheckOrderRes, error) {
-	query := `SELECT device_uuid, amount, status, created_at FROM orders WHERE order_uuid = $1`
+	var (
+		chDevices  = make(chan *pb.Device)
+		chErr      = make(chan error)
+		wg         *sync.WaitGroup
+		devices    []*pb.Device
+		statusCode int32
+		createdAt  *time.Time
+		totalPrice float32
+	)
+	wg.Add(2)
 
-	rows, err := r.orders.Query(query, orderUUID)
-	if err != nil {
+	go func() {
+		defer wg.Done()
+		query := `SELECT device_uuid,amount FROM ordered_devices WHERE order_uuid = $1`
+
+		rows, err := r.orders.Query(query, orderUUID)
+		if err != nil {
+			chErr <- err
+		}
+
+		for rows.Next() {
+			var (
+				uuid   string
+				amount uint32
+			)
+			if err = rows.Scan(&uuid, &amount); err != nil {
+				chErr <- err
+			}
+			chDevices <- &pb.Device{
+				UUID:   uuid,
+				Amount: amount,
+			}
+		}
+	}()
+
+	go func() {
+		defer wg.Done()
+		query := `SELECT total_price,status,created_at FROM orders WHERE order_uuid = $1`
+
+		if err := r.orders.QueryRow(query, orderUUID).Scan(&totalPrice, &statusCode, &createdAt); err != nil {
+			chErr <- err
+		}
+	}()
+
+	go func() {
+		for d := range chDevices {
+			devices = append(devices, d)
+		}
+	}()
+
+	go func() {
+		wg.Wait()
+		close(chDevices)
+		close(chErr)
+	}()
+
+	for err := range chErr {
 		return nil, err
 	}
 
-	var (
-		devices    []*pb.Device
-		createdAt  *time.Time
-		statusCode = int32(-1)
-	)
-
-	for rows.Next() {
-		var orderedDevice entity.OrderDevice
-		if err = rows.Scan(&orderedDevice.UUID, &orderedDevice.Amount, &orderedDevice.Status, &orderedDevice.CreatedAt); err != nil {
-			return &entity.CheckOrderRes{}, err
-		}
-		if statusCode == -1 {
-			statusCode = orderedDevice.Status
-		}
-		if createdAt == nil {
-			createdAt = orderedDevice.CreatedAt
-		}
-		devices = append(devices, &pb.Device{
-			UUID:   orderedDevice.UUID,
-			Amount: orderedDevice.Amount,
-		})
-	}
-
 	return &entity.CheckOrderRes{
-		Devices:   devices,
-		Status:    statusCode,
-		CreatedAt: createdAt,
-	}, err
+		Devices:    devices,
+		Status:     statusCode,
+		CreatedAt:  createdAt,
+		TotalPrice: totalPrice,
+	}, nil
 }
 
 func (r *repo) UpdateOrder(ctx context.Context, status string, orderUUID string) error {
@@ -141,12 +172,22 @@ func (r *repo) UpdateOrder(ctx context.Context, status string, orderUUID string)
 	return nil
 }
 
-func (r *repo) TakeDevices(ctx context.Context, tx *sql.Tx, devices []*pb.OrderDevice) ([]*pb.Device, error) {
+func (r *repo) DecreaseDevicesAmount(ctx context.Context, tx *sql.Tx, devices []*pb.OrderDevice) error {
 	//TODO implement me
 	panic("implement me")
 }
 
 func (r *repo) DebitBalance(ctx context.Context, tx *sql.Tx, userUUID string, cash float32) error {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (r *repo) RollbackDevices(ctx context.Context) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (r *repo) RollbackBalance(ctx context.Context) {
 	//TODO implement me
 	panic("implement me")
 }

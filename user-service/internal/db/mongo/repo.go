@@ -3,20 +3,20 @@ package mongo
 import (
 	"context"
 	device "github.com/alserov/device-shop/device-service/pkg/entity"
-	"github.com/alserov/device-shop/user-service/internal/entity"
+	pb "github.com/alserov/device-shop/proto/gen"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"sync"
 )
 
 type Repository interface {
-	AddToFavourite(context.Context, *entity.AddReq) error
-	RemoveFromFavourite(context.Context, *entity.RemoveReq) error
-	GetFavourite(context.Context, string) ([]*device.Device, error)
+	AddToFavourite(ctx context.Context, userUUID string, device *pb.Device) error
+	RemoveFromFavourite(ctx context.Context, req *pb.RemoveFromCollectionReq) error
+	GetFavourite(ctx context.Context, userUUID string) ([]*device.Device, error)
 
-	AddToCart(context.Context, *entity.AddReq) error
-	RemoveFromCart(context.Context, *entity.RemoveReq) error
-	GetCart(context.Context, string) ([]*device.Device, error)
+	AddToCart(ctx context.Context, userUUID string, device *pb.Device) error
+	RemoveFromCart(ctx context.Context, req *pb.RemoveFromCollectionReq) error
+	GetCart(ctx context.Context, userUUID string) ([]*device.Device, error)
 
 	RemoveDeviceFromCollections(ctx context.Context, deviceUUID string) error
 }
@@ -37,12 +37,12 @@ const (
 	DB_CART_COLLECTION      = "cart"
 )
 
-func (r repo) AddToFavourite(ctx context.Context, req *entity.AddReq) error {
+func (r repo) AddToFavourite(ctx context.Context, userUUID string, device *pb.Device) error {
 	coll := r.db.Database(DB_NAME).Collection(DB_FAVOURITE_COLLECTION)
 
 	_, err := coll.InsertOne(ctx, bson.M{
-		"device":   req.Device,
-		"userUUID": req.UserUUID,
+		"device":   device,
+		"userUUID": userUUID,
 	})
 	if err != nil {
 		return err
@@ -50,7 +50,7 @@ func (r repo) AddToFavourite(ctx context.Context, req *entity.AddReq) error {
 	return nil
 }
 
-func (r repo) RemoveFromFavourite(ctx context.Context, req *entity.RemoveReq) error {
+func (r repo) RemoveFromFavourite(ctx context.Context, req *pb.RemoveFromCollectionReq) error {
 	coll := r.db.Database(DB_NAME).Collection(DB_FAVOURITE_COLLECTION)
 
 	_, err := coll.DeleteOne(ctx, bson.D{
@@ -90,12 +90,12 @@ func (r repo) GetFavourite(ctx context.Context, userUUID string) ([]*device.Devi
 	return devices, nil
 }
 
-func (r repo) AddToCart(ctx context.Context, req *entity.AddReq) error {
+func (r repo) AddToCart(ctx context.Context, userUUID string, device *pb.Device) error {
 	coll := r.db.Database(DB_NAME).Collection(DB_CART_COLLECTION)
 
 	_, err := coll.InsertOne(ctx, bson.M{
-		"device":   req.Device,
-		"userUUID": req.UserUUID,
+		"device":   device,
+		"userUUID": userUUID,
 	})
 	if err != nil {
 		return err
@@ -103,7 +103,7 @@ func (r repo) AddToCart(ctx context.Context, req *entity.AddReq) error {
 	return nil
 }
 
-func (r repo) RemoveFromCart(ctx context.Context, req *entity.RemoveReq) error {
+func (r repo) RemoveFromCart(ctx context.Context, req *pb.RemoveFromCollectionReq) error {
 	coll := r.db.Database(DB_NAME).Collection(DB_CART_COLLECTION)
 
 	_, err := coll.DeleteOne(ctx, bson.D{

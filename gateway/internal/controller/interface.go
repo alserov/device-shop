@@ -22,6 +22,7 @@ type handler struct {
 	userAddr   string
 	deviceAddr string
 	orderAddr  string
+	authAddr   string
 }
 
 func NewHandler(c *redis.Client, lg *logrus.Logger) Handler {

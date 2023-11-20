@@ -8,7 +8,6 @@ import (
 	"github.com/alserov/device-shop/order-service/internal/utils"
 	"github.com/alserov/device-shop/proto/gen"
 	"github.com/google/uuid"
-	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 	"sync"
 	"time"
@@ -102,39 +101,10 @@ func (s service) CheckOrder(ctx context.Context, req *pb.CheckOrderReq) (*pb.Che
 	if err != nil {
 		return &pb.CheckOrderRes{}, err
 	}
-
-	var (
-		price = float32(0)
-		wg    = &sync.WaitGroup{}
-		mu    = &sync.Mutex{}
-		chErr = make(chan error)
-	)
-
-	wg.Add(len(order.Devices))
-
-	for _, d := range order.Devices {
-		d := d
-		go func() {
-			defer wg.Done()
-			mu.Lock()
-			defer mu.Unlock()
-			price += d.Price
-		}()
-	}
-
-	go func() {
-		wg.Wait()
-		close(chErr)
-	}()
-
-	for err = range chErr {
-		return &pb.CheckOrderRes{}, err
-	}
-
 	return &pb.CheckOrderRes{
 		Devices: order.Devices,
 		Status:  utils.StatusCodeToString(order.Status),
-		Price:   price,
+		Price:   order.TotalPrice,
 		CreatedAt: &timestamppb.Timestamp{
 			Seconds: order.CreatedAt.Unix(),
 			Nanos:   int32(order.CreatedAt.Nanosecond()),
@@ -172,5 +142,5 @@ func (s service) UpdateOrder(ctx context.Context, req *pb.UpdateOrderReq) (*pb.U
 	if err := s.db.UpdateOrder(ctx, req.Status, req.OrderUUID); err != nil {
 		return &pb.UpdateOrderRes{}, err
 	}
-	return &emptypb.Empty{}, nil
+	return &pb.UpdateOrderRes{}, nil
 }

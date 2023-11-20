@@ -6,7 +6,6 @@ import (
 	"github.com/alserov/device-shop/gateway/pkg/client"
 	"github.com/alserov/device-shop/gateway/pkg/responser"
 	"github.com/alserov/device-shop/proto/gen"
-	user "github.com/alserov/device-shop/user-service/pkg/entity"
 	"github.com/asaskevich/govalidator"
 	"github.com/gin-gonic/gin"
 	"google.golang.org/grpc/status"
@@ -19,18 +18,18 @@ type Auther interface {
 }
 
 func (h *handler) Signup(c *gin.Context) {
-	msg, err := utils.RequestToPBMessage[user.SignupReq, pb.SignupReq](c.Request, utils.SignupReqToPB)
+	req, err := utils.Decode[pb.SignupReq](c.Request)
 	if err != nil {
-		responser.ServerError(c.Writer, h.logger, err)
+		responser.UserError(c.Writer, err.Error())
 		return
 	}
 
-	if valid := govalidator.IsEmail(msg.Email); !valid {
+	if valid := govalidator.IsEmail(req.Email); !valid {
 		responser.UserError(c.Writer, "invalid email")
 		return
 	}
 
-	cl, cc, err := client.DialUser(h.userAddr)
+	cl, cc, err := client.DialAuth(h.authAddr)
 	if err != nil {
 		responser.ServerError(c.Writer, h.logger, err)
 		return
@@ -40,7 +39,7 @@ func (h *handler) Signup(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
 	defer cancel()
 
-	user, err := cl.Signup(ctx, msg)
+	user, err := cl.Signup(ctx, req)
 	if err != nil {
 		if st, ok := status.FromError(err); ok {
 			responser.UserError(c.Writer, st.Message())
@@ -55,13 +54,13 @@ func (h *handler) Signup(c *gin.Context) {
 }
 
 func (h *handler) Login(c *gin.Context) {
-	msg, err := utils.RequestToPBMessage[user.LoginReq, pb.LoginReq](c.Request, utils.LoginReqToPB)
+	req, err := utils.Decode[pb.LoginReq](c.Request)
 	if err != nil {
-		responser.ServerError(c.Writer, h.logger, err)
+		responser.UserError(c.Writer, err.Error())
 		return
 	}
 
-	cl, cc, err := client.DialUser(h.userAddr)
+	cl, cc, err := client.DialAuth(h.authAddr)
 	if err != nil {
 		responser.ServerError(c.Writer, h.logger, err)
 		return
@@ -71,7 +70,7 @@ func (h *handler) Login(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), time.Second)
 	defer cancel()
 
-	res, err := cl.Login(ctx, msg)
+	res, err := cl.Login(ctx, req)
 	if err != nil {
 		if st, ok := status.FromError(err); ok {
 			responser.UserError(c.Writer, st.Message())

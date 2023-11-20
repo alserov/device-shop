@@ -3,13 +3,13 @@ package postgres
 import (
 	"context"
 	"database/sql"
-	"github.com/alserov/device-shop/user-service/internal/entity"
+	pb "github.com/alserov/device-shop/proto/gen"
 )
 
 type Repository interface {
-	GetInfo(context.Context, string) (*entity.RepoGetInfoRes, error)
-	TopUpBalance(context.Context, *entity.TopUpBalanceReq) (float32, error)
-	DebitBalance(context.Context, *entity.DebitBalanceReq) (float32, error)
+	GetInfo(context.Context, string) (*pb.GetUserInfoRes, error)
+	TopUpBalance(context.Context, *pb.BalanceReq) (float32, error)
+	DebitBalance(context.Context, *pb.BalanceReq) (float32, error)
 }
 
 func NewRepo(db *sql.DB) Repository {
@@ -22,10 +22,10 @@ type repo struct {
 	db *sql.DB
 }
 
-func (r *repo) GetInfo(ctx context.Context, userUUID string) (*entity.RepoGetInfoRes, error) {
+func (r *repo) GetInfo(ctx context.Context, userUUID string) (*pb.GetUserInfoRes, error) {
 	query := `SELECT username,email,uuid,cash FROM users WHERE uuid = $1`
 
-	var info entity.RepoGetInfoRes
+	var info pb.GetUserInfoRes
 	if err := r.db.QueryRow(query, userUUID).Scan(&info.Username, &info.Email, &info.UUID, &info.Cash); err != nil {
 		return nil, err
 	}
@@ -33,7 +33,7 @@ func (r *repo) GetInfo(ctx context.Context, userUUID string) (*entity.RepoGetInf
 	return &info, nil
 }
 
-func (r *repo) TopUpBalance(ctx context.Context, req *entity.TopUpBalanceReq) (float32, error) {
+func (r *repo) TopUpBalance(ctx context.Context, req *pb.BalanceReq) (float32, error) {
 	query := `UPDATE users SET cash = cash + $1 WHERE uuid = $2 RETURNING cash`
 
 	var cash float32
@@ -44,7 +44,7 @@ func (r *repo) TopUpBalance(ctx context.Context, req *entity.TopUpBalanceReq) (f
 	return cash, nil
 }
 
-func (r *repo) DebitBalance(ctx context.Context, req *entity.DebitBalanceReq) (float32, error) {
+func (r *repo) DebitBalance(ctx context.Context, req *pb.BalanceReq) (float32, error) {
 	query := `UPDATE users SET cash = cash - $1 WHERE uuid = $2 RETURNING cash`
 
 	var cash float32

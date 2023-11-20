@@ -20,7 +20,8 @@ type OrderDevice struct {
 }
 
 type CheckOrderRes struct {
-	Devices   []*pb.Device
-	Status    int32
-	CreatedAt *time.Time
+	Devices    []*pb.Device
+	Status     int32
+	CreatedAt  *time.Time
+	TotalPrice float32
 }

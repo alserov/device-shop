@@ -20,12 +20,22 @@ func (a *App) Start(ctx context.Context) error {
 
 	s := grpc.NewServer()
 
-	pg, err := postgres.Connect(a.ordersDsn)
+	ordersDB, err := postgres.Connect(a.ordersDsn)
 	if err != nil {
 		return err
 	}
 
-	pb.RegisterOrdersServer(s, service.New(pg))
+	devicesDB, err := postgres.Connect(a.devicesDsn)
+	if err != nil {
+		return err
+	}
+
+	usersDB, err := postgres.Connect(a.usersDsn)
+	if err != nil {
+		return err
+	}
+
+	pb.RegisterOrdersServer(s, service.New(ordersDB, devicesDB, usersDB))
 
 	chErr := make(chan error, 1)
 	go func() {

@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"github.com/alserov/device-shop/device-service/internal/db/postgres"
-	"github.com/alserov/device-shop/device-service/pkg/entity"
 	"github.com/alserov/device-shop/gateway/pkg/client"
 	"github.com/alserov/device-shop/proto/gen"
 	"github.com/google/uuid"
@@ -30,7 +29,7 @@ func New(pg *sql.DB) pb.DevicesServer {
 }
 
 func (s *service) CreateDevice(ctx context.Context, req *pb.CreateDeviceReq) (*emptypb.Empty, error) {
-	r := &entity.Device{
+	r := &pb.Device{
 		UUID:         uuid.New().String(),
 		Title:        strings.ToLower(req.Title),
 		Description:  req.Description,
@@ -47,7 +46,7 @@ func (s *service) CreateDevice(ctx context.Context, req *pb.CreateDeviceReq) (*e
 }
 
 func (s *service) UpdateDevice(ctx context.Context, req *pb.UpdateDeviceReq) (*emptypb.Empty, error) {
-	r := &entity.UpdateDeviceReq{
+	r := &pb.UpdateDeviceReq{
 		Title:       strings.ToLower(req.Title),
 		Description: req.Description,
 		Price:       req.Price,

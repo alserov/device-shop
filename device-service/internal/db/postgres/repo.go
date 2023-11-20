@@ -4,19 +4,19 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"github.com/alserov/device-shop/device-service/pkg/entity"
+	pb "github.com/alserov/device-shop/proto/gen"
 )
 
 type Repository interface {
-	CreateDevice(context.Context, *entity.Device) error
+	CreateDevice(context.Context, *pb.Device) error
 	DeleteDevice(context.Context, string) error
-	UpdateDevice(context.Context, *entity.UpdateDeviceReq) error
-	GetAllDevices(context.Context, uint32, uint32) ([]*entity.Device, error)
-	GetDevicesByTitle(context.Context, string) ([]*entity.Device, error)
-	GetDeviceByUUID(context.Context, string) (*entity.Device, error)
-	GetDevicesByManufacturer(context.Context, string) ([]*entity.Device, error)
-	GetDevicesByPrice(context.Context, uint, uint) ([]*entity.Device, error)
-	GetDeviceByUUIDWithAmount(context.Context, string, uint32) (*entity.Device, error)
+	UpdateDevice(context.Context, *pb.UpdateDeviceReq) error
+	GetAllDevices(context.Context, uint32, uint32) ([]*pb.Device, error)
+	GetDevicesByTitle(context.Context, string) ([]*pb.Device, error)
+	GetDeviceByUUID(context.Context, string) (*pb.Device, error)
+	GetDevicesByManufacturer(context.Context, string) ([]*pb.Device, error)
+	GetDevicesByPrice(context.Context, uint, uint) ([]*pb.Device, error)
+	GetDeviceByUUIDWithAmount(context.Context, string, uint32) (*pb.Device, error)
 	IncreaseDeviceAmountByUUID(ctx context.Context, deviceUUID string, amount uint32) error
 }
 
@@ -30,7 +30,7 @@ func NewRepo(db *sql.DB) Repository {
 	}
 }
 
-func (r *repo) CreateDevice(ctx context.Context, device *entity.Device) error {
+func (r *repo) CreateDevice(ctx context.Context, device *pb.Device) error {
 	query := `INSERT INTO devices (uuid, title, description, price, manufacturer, amount) VALUES($1,$2,$3,$4,$5,$6)`
 
 	_, err := r.db.Exec(query, device.UUID, device.Title, device.Description, device.Price, device.Manufacturer, device.Amount)
@@ -52,7 +52,7 @@ func (r *repo) DeleteDevice(ctx context.Context, uuid string) error {
 	return nil
 }
 
-func (r *repo) UpdateDevice(ctx context.Context, device *entity.UpdateDeviceReq) error {
+func (r *repo) UpdateDevice(ctx context.Context, device *pb.UpdateDeviceReq) error {
 	query := `UPDATE devices SET title = $1, description = $2, price = $3 WHERE uuid = $4`
 
 	_, err := r.db.Exec(query, device.Title, device.Description, device.Price, device.UUID)
@@ -63,7 +63,7 @@ func (r *repo) UpdateDevice(ctx context.Context, device *entity.UpdateDeviceReq)
 	return nil
 }
 
-func (r *repo) GetAllDevices(ctx context.Context, index uint32, amount uint32) ([]*entity.Device, error) {
+func (r *repo) GetAllDevices(ctx context.Context, index uint32, amount uint32) ([]*pb.Device, error) {
 	query := `SELECT * FROM devices LIMIT $1 OFFSET $2`
 
 	rows, err := r.db.Query(query, amount, index)
@@ -71,9 +71,9 @@ func (r *repo) GetAllDevices(ctx context.Context, index uint32, amount uint32) (
 		return nil, nil
 	}
 
-	devices := make([]*entity.Device, 0, amount)
+	devices := make([]*pb.Device, 0, amount)
 	for rows.Next() {
-		d := entity.Device{}
+		d := pb.Device{}
 		if err = rows.Scan(&d.UUID, &d.Title, &d.Description, &d.Price, &d.Manufacturer, &d.Amount); err != nil {
 			return nil, err
 		}
@@ -83,7 +83,7 @@ func (r *repo) GetAllDevices(ctx context.Context, index uint32, amount uint32) (
 	return devices, nil
 }
 
-func (r *repo) GetDevicesByTitle(ctx context.Context, title string) ([]*entity.Device, error) {
+func (r *repo) GetDevicesByTitle(ctx context.Context, title string) ([]*pb.Device, error) {
 	query := `SELECT * FROM devices WHERE title LIKE $1`
 
 	rows, err := r.db.Query(query, "%"+title+"%")
@@ -91,9 +91,9 @@ func (r *repo) GetDevicesByTitle(ctx context.Context, title string) ([]*entity.D
 		return nil, err
 	}
 
-	var devices []*entity.Device
+	var devices []*pb.Device
 	for rows.Next() {
-		d := entity.Device{}
+		d := pb.Device{}
 		if err = rows.Scan(&d.UUID, &d.Title, &d.Description, &d.Price, &d.Manufacturer, &d.Amount); err != nil {
 			return nil, err
 		}
@@ -103,10 +103,10 @@ func (r *repo) GetDevicesByTitle(ctx context.Context, title string) ([]*entity.D
 	return devices, nil
 }
 
-func (r *repo) GetDeviceByUUID(ctx context.Context, uuid string) (*entity.Device, error) {
+func (r *repo) GetDeviceByUUID(ctx context.Context, uuid string) (*pb.Device, error) {
 	query := `SELECT * FROM devices WHERE uuid = $1`
 
-	d := entity.Device{}
+	d := pb.Device{}
 
 	err := r.db.QueryRow(query, uuid).Scan(&d.UUID, &d.Title, &d.Description, &d.Price, &d.Manufacturer, &d.Amount)
 	if err != nil && !errors.Is(err, sql.ErrNoRows) {
@@ -116,7 +116,7 @@ func (r *repo) GetDeviceByUUID(ctx context.Context, uuid string) (*entity.Device
 	return &d, nil
 }
 
-func (r *repo) GetDevicesByManufacturer(ctx context.Context, manu string) ([]*entity.Device, error) {
+func (r *repo) GetDevicesByManufacturer(ctx context.Context, manu string) ([]*pb.Device, error) {
 	query := `SELECT * FROM devices WHERE manufacturer = $1`
 
 	rows, err := r.db.Query(query, manu)
@@ -124,9 +124,9 @@ func (r *repo) GetDevicesByManufacturer(ctx context.Context, manu string) ([]*en
 		return nil, err
 	}
 
-	var devices []*entity.Device
+	var devices []*pb.Device
 	for rows.Next() {
-		d := entity.Device{}
+		d := pb.Device{}
 		if err = rows.Scan(&d.UUID, &d.Title, &d.Description, &d.Price, &d.Manufacturer, &d.Amount); err != nil {
 			return nil, err
 		}
@@ -136,7 +136,7 @@ func (r *repo) GetDevicesByManufacturer(ctx context.Context, manu string) ([]*en
 	return devices, nil
 }
 
-func (r *repo) GetDevicesByPrice(ctx context.Context, min uint, max uint) ([]*entity.Device, error) {
+func (r *repo) GetDevicesByPrice(ctx context.Context, min uint, max uint) ([]*pb.Device, error) {
 	query := `SELECT * FROM devices WHERE price BETWEEN $1 AND $2`
 
 	rows, err := r.db.Query(query, min, max)
@@ -144,9 +144,9 @@ func (r *repo) GetDevicesByPrice(ctx context.Context, min uint, max uint) ([]*en
 		return nil, err
 	}
 
-	var devices []*entity.Device
+	var devices []*pb.Device
 	for rows.Next() {
-		d := entity.Device{}
+		d := pb.Device{}
 		if err = rows.Scan(&d.UUID, &d.Title, &d.Description, &d.Price, &d.Manufacturer, &d.Amount); err != nil {
 			return nil, err
 		}
@@ -156,10 +156,10 @@ func (r *repo) GetDevicesByPrice(ctx context.Context, min uint, max uint) ([]*en
 	return devices, nil
 }
 
-func (r *repo) GetDeviceByUUIDWithAmount(ctx context.Context, deviceUUID string, amount uint32) (*entity.Device, error) {
+func (r *repo) GetDeviceByUUIDWithAmount(ctx context.Context, deviceUUID string, amount uint32) (*pb.Device, error) {
 	query := `UPDATE devices SET amount = amount - $1 WHERE uuid = $2 RETURNING *`
 
-	var device entity.Device
+	var device pb.Device
 
 	if err := r.db.QueryRow(query, amount, deviceUUID).Scan(&device.UUID, &device.Title, &device.Description, &device.Price, &device.Manufacturer, &device.Amount); err != nil {
 		return nil, err

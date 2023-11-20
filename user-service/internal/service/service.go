@@ -3,12 +3,10 @@ package service
 import (
 	"context"
 	"database/sql"
-	device "github.com/alserov/device-shop/device-service/pkg/entity"
 	"github.com/alserov/device-shop/gateway/pkg/client"
 	pb "github.com/alserov/device-shop/proto/gen"
 	"github.com/alserov/device-shop/user-service/internal/db/mongo"
 	"github.com/alserov/device-shop/user-service/internal/db/postgres"
-	"github.com/alserov/device-shop/user-service/internal/entity"
 	mg "go.mongodb.org/mongo-driver/mongo"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"os"
@@ -43,7 +41,7 @@ func (s *service) GetUserInfo(ctx context.Context, req *pb.GetUserInfoReq) (*pb.
 }
 
 func (s *service) TopUpBalance(ctx context.Context, req *pb.BalanceReq) (*pb.BalanceRes, error) {
-	cash, err := s.postgres.TopUpBalance(ctx, &entity.TopUpBalanceReq{
+	cash, err := s.postgres.TopUpBalance(ctx, &pb.BalanceReq{
 		Cash:     req.Cash,
 		UserUUID: req.UserUUID,
 	})
@@ -57,7 +55,7 @@ func (s *service) TopUpBalance(ctx context.Context, req *pb.BalanceReq) (*pb.Bal
 }
 
 func (s *service) DebitBalance(ctx context.Context, req *pb.BalanceReq) (*pb.BalanceRes, error) {
-	cash, err := s.postgres.DebitBalance(ctx, &entity.DebitBalanceReq{
+	cash, err := s.postgres.DebitBalance(ctx, &pb.BalanceReq{
 		Cash:     req.Cash,
 		UserUUID: req.UserUUID,
 	})
@@ -86,18 +84,7 @@ func (s *service) AddToFavourite(ctx context.Context, req *pb.AddToCollectionReq
 		return &emptypb.Empty{}, err
 	}
 
-	r := &entity.AddReq{
-		UserUUID: req.UserUUID,
-		Device: &device.Device{
-			UUID:         dvc.UUID,
-			Title:        dvc.Title,
-			Manufacturer: dvc.Manufacturer,
-			Price:        dvc.Price,
-			Description:  dvc.Description,
-		},
-	}
-
-	if err = s.mongo.AddToFavourite(ctx, r); err != nil {
+	if err = s.mongo.AddToFavourite(ctx, req.UserUUID, dvc); err != nil {
 		return &emptypb.Empty{}, err
 	}
 
@@ -105,7 +92,7 @@ func (s *service) AddToFavourite(ctx context.Context, req *pb.AddToCollectionReq
 }
 
 func (s *service) RemoveFromFavourite(ctx context.Context, req *pb.RemoveFromCollectionReq) (*emptypb.Empty, error) {
-	err := s.mongo.RemoveFromFavourite(ctx, &entity.RemoveReq{
+	err := s.mongo.RemoveFromFavourite(ctx, &pb.RemoveFromCollectionReq{
 		UserUUID:   req.UserUUID,
 		DeviceUUID: req.DeviceUUID,
 	})
@@ -156,18 +143,7 @@ func (s *service) AddToCart(ctx context.Context, req *pb.AddToCollectionReq) (*e
 		return &emptypb.Empty{}, err
 	}
 
-	r := &entity.AddReq{
-		UserUUID: req.UserUUID,
-		Device: &device.Device{
-			UUID:         dvc.UUID,
-			Title:        dvc.Title,
-			Manufacturer: dvc.Manufacturer,
-			Price:        dvc.Price,
-			Description:  dvc.Description,
-		},
-	}
-
-	if err = s.mongo.AddToCart(ctx, r); err != nil {
+	if err = s.mongo.AddToCart(ctx, req.UserUUID, dvc); err != nil {
 		return &emptypb.Empty{}, err
 	}
 
@@ -175,7 +151,7 @@ func (s *service) AddToCart(ctx context.Context, req *pb.AddToCollectionReq) (*e
 }
 
 func (s *service) RemoveFromCart(ctx context.Context, req *pb.RemoveFromCollectionReq) (*emptypb.Empty, error) {
-	err := s.mongo.RemoveFromCart(ctx, &entity.RemoveReq{
+	err := s.mongo.RemoveFromCart(ctx, &pb.RemoveFromCollectionReq{
 		UserUUID:   req.UserUUID,
 		DeviceUUID: req.GetDeviceUUID(),
 	})

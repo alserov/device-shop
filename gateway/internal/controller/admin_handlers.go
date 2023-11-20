@@ -2,7 +2,6 @@ package controller
 
 import (
 	"context"
-	"github.com/alserov/device-shop/device-service/pkg/entity"
 	"github.com/alserov/device-shop/gateway/internal/utils"
 	"github.com/alserov/device-shop/gateway/pkg/client"
 	"github.com/alserov/device-shop/gateway/pkg/responser"
@@ -20,7 +19,7 @@ type Adminer interface {
 }
 
 func (h *handler) CreateDevice(c *gin.Context) {
-	msg, err := utils.RequestToPBMessage[entity.Device, pb.CreateReq](c.Request, utils.CreateDeviceToPB)
+	device, err := utils.Decode[pb.CreateDeviceReq](c.Request)
 	if err != nil {
 		responser.UserError(c.Writer, err.Error())
 		return
@@ -36,7 +35,7 @@ func (h *handler) CreateDevice(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), time.Duration(1000)*time.Millisecond)
 	defer cancel()
 
-	_, err = cl.CreateDevice(ctx, msg)
+	_, err = cl.CreateDevice(ctx, device)
 	if err != nil {
 		if st, ok := status.FromError(err); ok {
 			responser.UserError(c.Writer, st.Message())
@@ -67,7 +66,7 @@ func (h *handler) DeleteDevice(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), time.Duration(1000)*time.Millisecond)
 	defer cancel()
 
-	_, err = cl.DeleteDevice(ctx, &pb.DeleteReq{UUID: deviceUUID})
+	_, err = cl.DeleteDevice(ctx, &pb.DeleteDeviceReq{UUID: deviceUUID})
 	if err != nil {
 		if st, ok := status.FromError(err); ok {
 			responser.UserError(c.Writer, st.Message())
@@ -81,9 +80,9 @@ func (h *handler) DeleteDevice(c *gin.Context) {
 }
 
 func (h *handler) UpdateDevice(c *gin.Context) {
-	msg, err := utils.RequestToPBMessage[entity.UpdateDeviceReq, pb.UpdateReq](c.Request, utils.UpdateDeviceToPB)
+	device, err := utils.Decode[pb.UpdateDeviceReq](c.Request)
 	if err != nil {
-		responser.ServerError(c.Writer, h.logger, err)
+		responser.UserError(c.Writer, err.Error())
 		return
 	}
 
@@ -97,7 +96,7 @@ func (h *handler) UpdateDevice(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), time.Duration(1000)*time.Millisecond)
 	defer cancel()
 
-	_, err = cl.UpdateDevice(ctx, msg)
+	_, err = cl.UpdateDevice(ctx, device)
 	if err != nil {
 		if st, ok := status.FromError(err); ok {
 			responser.UserError(c.Writer, st.Message())
