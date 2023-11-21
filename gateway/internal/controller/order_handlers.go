@@ -19,7 +19,7 @@ type Orderer interface {
 }
 
 func (h *handler) CreateOrder(c *gin.Context) {
-	order, err := utils.Decode[pb.CreateOrderReq](c.Request)
+	order, err := utils.Decode[pb.CreateOrderReq](c.Request, utils.CheckCreateOrder)
 	if err != nil {
 		responser.UserError(c.Writer, err.Error())
 		return
@@ -51,7 +51,7 @@ func (h *handler) CreateOrder(c *gin.Context) {
 }
 
 func (h *handler) UpdateOrder(c *gin.Context) {
-	orderStatus, err := utils.Decode[pb.UpdateOrderReq](c.Request)
+	orderStatus, err := utils.Decode[pb.UpdateOrderReq](c.Request, utils.CheckUpdateOrder)
 	if err != nil {
 		responser.UserError(c.Writer, err.Error())
 		return

@@ -17,7 +17,7 @@ type Userer interface {
 }
 
 func (h *handler) TopUpBalance(c *gin.Context) {
-	cashAmount, err := utils.Decode[pb.BalanceReq](c.Request)
+	cashAmount, err := utils.Decode[pb.BalanceReq](c.Request, utils.CheckTopUpBalance)
 	if err != nil {
 		responser.UserError(c.Writer, err.Error())
 		return

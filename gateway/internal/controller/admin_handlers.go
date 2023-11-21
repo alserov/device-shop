@@ -19,7 +19,7 @@ type Adminer interface {
 }
 
 func (h *handler) CreateDevice(c *gin.Context) {
-	device, err := utils.Decode[pb.CreateDeviceReq](c.Request)
+	device, err := utils.Decode[pb.CreateDeviceReq](c.Request, utils.CheckCreateDevice)
 	if err != nil {
 		responser.UserError(c.Writer, err.Error())
 		return
@@ -80,7 +80,7 @@ func (h *handler) DeleteDevice(c *gin.Context) {
 }
 
 func (h *handler) UpdateDevice(c *gin.Context) {
-	device, err := utils.Decode[pb.UpdateDeviceReq](c.Request)
+	device, err := utils.Decode[pb.UpdateDeviceReq](c.Request, utils.CheckUpdateDevice)
 	if err != nil {
 		responser.UserError(c.Writer, err.Error())
 		return

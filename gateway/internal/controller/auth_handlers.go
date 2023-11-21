@@ -18,7 +18,7 @@ type Auther interface {
 }
 
 func (h *handler) Signup(c *gin.Context) {
-	userInfo, err := utils.Decode[pb.SignupReq](c.Request)
+	userInfo, err := utils.Decode[pb.SignupReq](c.Request, utils.CheckSignup)
 	if err != nil {
 		responser.UserError(c.Writer, err.Error())
 		return
@@ -54,7 +54,7 @@ func (h *handler) Signup(c *gin.Context) {
 }
 
 func (h *handler) Login(c *gin.Context) {
-	userInfo, err := utils.Decode[pb.LoginReq](c.Request)
+	userInfo, err := utils.Decode[pb.LoginReq](c.Request, utils.CheckLogin)
 	if err != nil {
 		responser.UserError(c.Writer, err.Error())
 		return

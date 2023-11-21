@@ -24,7 +24,7 @@ type Devicer interface {
 }
 
 func (h *handler) GetAllDevices(c *gin.Context) {
-	getDevicesCred, err := utils.Decode[pb.GetAllDevicesReq](c.Request)
+	getDevicesCred, err := utils.Decode[pb.GetAllDevicesReq](c.Request, utils.CheckGetAll)
 	if err != nil {
 		responser.UserError(c.Writer, err.Error())
 		return

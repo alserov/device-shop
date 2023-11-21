@@ -68,7 +68,7 @@ func (s *service) DebitBalance(ctx context.Context, req *pb.BalanceReq) (*pb.Bal
 	}, nil
 }
 
-func (s *service) AddToFavourite(ctx context.Context, req *pb.AddToCollectionReq) (*emptypb.Empty, error) {
+func (s *service) AddToFavourite(ctx context.Context, req *pb.ChangeCollectionReq) (*emptypb.Empty, error) {
 	cl, cc, err := client.DialDevice(s.deviceAddr)
 	if err != nil {
 		return &emptypb.Empty{}, err
@@ -91,8 +91,8 @@ func (s *service) AddToFavourite(ctx context.Context, req *pb.AddToCollectionReq
 	return &emptypb.Empty{}, nil
 }
 
-func (s *service) RemoveFromFavourite(ctx context.Context, req *pb.RemoveFromCollectionReq) (*emptypb.Empty, error) {
-	err := s.mongo.RemoveFromFavourite(ctx, &pb.RemoveFromCollectionReq{
+func (s *service) RemoveFromFavourite(ctx context.Context, req *pb.ChangeCollectionReq) (*emptypb.Empty, error) {
+	err := s.mongo.RemoveFromFavourite(ctx, &pb.ChangeCollectionReq{
 		UserUUID:   req.UserUUID,
 		DeviceUUID: req.DeviceUUID,
 	})
@@ -127,7 +127,7 @@ func (s *service) GetFavourite(ctx context.Context, req *pb.GetCollectionReq) (*
 	}, nil
 }
 
-func (s *service) AddToCart(ctx context.Context, req *pb.AddToCollectionReq) (*emptypb.Empty, error) {
+func (s *service) AddToCart(ctx context.Context, req *pb.ChangeCollectionReq) (*emptypb.Empty, error) {
 	cl, cc, err := client.DialDevice(s.deviceAddr)
 	if err != nil {
 		return &emptypb.Empty{}, err
@@ -150,8 +150,8 @@ func (s *service) AddToCart(ctx context.Context, req *pb.AddToCollectionReq) (*e
 	return &emptypb.Empty{}, nil
 }
 
-func (s *service) RemoveFromCart(ctx context.Context, req *pb.RemoveFromCollectionReq) (*emptypb.Empty, error) {
-	err := s.mongo.RemoveFromCart(ctx, &pb.RemoveFromCollectionReq{
+func (s *service) RemoveFromCart(ctx context.Context, req *pb.ChangeCollectionReq) (*emptypb.Empty, error) {
+	err := s.mongo.RemoveFromCart(ctx, &pb.ChangeCollectionReq{
 		UserUUID:   req.UserUUID,
 		DeviceUUID: req.GetDeviceUUID(),
 	})

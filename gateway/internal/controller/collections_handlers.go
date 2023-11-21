@@ -23,7 +23,7 @@ type Collectioner interface {
 }
 
 func (h *handler) AddToFavourite(c *gin.Context) {
-	addCred, err := utils.Decode[pb.AddToCollectionReq](c.Request)
+	addCred, err := utils.Decode[pb.ChangeCollectionReq](c.Request, utils.CheckCollection)
 	if err != nil {
 		responser.UserError(c.Writer, err.Error())
 		return
@@ -53,7 +53,7 @@ func (h *handler) AddToFavourite(c *gin.Context) {
 }
 
 func (h *handler) RemoveFromFavourite(c *gin.Context) {
-	removeCred, err := utils.Decode[pb.RemoveFromCollectionReq](c.Request)
+	removeCred, err := utils.Decode[pb.ChangeCollectionReq](c.Request, utils.CheckCollection)
 	if err != nil {
 		responser.UserError(c.Writer, err.Error())
 		return
@@ -117,7 +117,7 @@ func (h *handler) GetFavourite(c *gin.Context) {
 }
 
 func (h *handler) AddToCart(c *gin.Context) {
-	addCred, err := utils.Decode[pb.AddToCollectionReq](c.Request)
+	addCred, err := utils.Decode[pb.ChangeCollectionReq](c.Request, utils.CheckCollection)
 	if err != nil {
 		responser.UserError(c.Writer, err.Error())
 		return
@@ -147,7 +147,7 @@ func (h *handler) AddToCart(c *gin.Context) {
 }
 
 func (h *handler) RemoveFromCart(c *gin.Context) {
-	removeCred, err := utils.Decode[pb.RemoveFromCollectionReq](c.Request)
+	removeCred, err := utils.Decode[pb.ChangeCollectionReq](c.Request, utils.CheckCollection)
 	if err != nil {
 		responser.UserError(c.Writer, err.Error())
 		return
