@@ -20,8 +20,10 @@ type OrderDevice struct {
 }
 
 type CheckOrderRes struct {
+	UserUUID   string
 	Devices    []*pb.Device
 	Status     int32
 	CreatedAt  *time.Time
 	TotalPrice float32
+	UUID       string
 }

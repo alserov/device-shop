@@ -18,13 +18,13 @@ type Auther interface {
 }
 
 func (h *handler) Signup(c *gin.Context) {
-	req, err := utils.Decode[pb.SignupReq](c.Request)
+	userInfo, err := utils.Decode[pb.SignupReq](c.Request)
 	if err != nil {
 		responser.UserError(c.Writer, err.Error())
 		return
 	}
 
-	if valid := govalidator.IsEmail(req.Email); !valid {
+	if valid := govalidator.IsEmail(userInfo.Email); !valid {
 		responser.UserError(c.Writer, "invalid email")
 		return
 	}
@@ -39,7 +39,7 @@ func (h *handler) Signup(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
 	defer cancel()
 
-	user, err := cl.Signup(ctx, req)
+	user, err := cl.Signup(ctx, userInfo)
 	if err != nil {
 		if st, ok := status.FromError(err); ok {
 			responser.UserError(c.Writer, st.Message())
@@ -54,7 +54,7 @@ func (h *handler) Signup(c *gin.Context) {
 }
 
 func (h *handler) Login(c *gin.Context) {
-	req, err := utils.Decode[pb.LoginReq](c.Request)
+	userInfo, err := utils.Decode[pb.LoginReq](c.Request)
 	if err != nil {
 		responser.UserError(c.Writer, err.Error())
 		return
@@ -70,7 +70,7 @@ func (h *handler) Login(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), time.Second)
 	defer cancel()
 
-	res, err := cl.Login(ctx, req)
+	res, err := cl.Login(ctx, userInfo)
 	if err != nil {
 		if st, ok := status.FromError(err); ok {
 			responser.UserError(c.Writer, st.Message())

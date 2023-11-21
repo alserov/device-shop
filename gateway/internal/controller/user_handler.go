@@ -6,7 +6,6 @@ import (
 	"github.com/alserov/device-shop/gateway/pkg/client"
 	"github.com/alserov/device-shop/gateway/pkg/responser"
 	pb "github.com/alserov/device-shop/proto/gen"
-	"github.com/alserov/device-shop/user-service/pkg/entity"
 	"github.com/gin-gonic/gin"
 	"google.golang.org/grpc/status"
 	"time"
@@ -18,7 +17,7 @@ type Userer interface {
 }
 
 func (h *handler) TopUpBalance(c *gin.Context) {
-	msg, err := utils.RequestToPBMessage[entity.TopUpBalanceReq, pb.TopUpBalanceReq](c.Request, utils.TopUpBalanceReqToPB)
+	cashAmount, err := utils.Decode[pb.BalanceReq](c.Request)
 	if err != nil {
 		responser.UserError(c.Writer, err.Error())
 		return
@@ -34,7 +33,7 @@ func (h *handler) TopUpBalance(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), time.Second)
 	defer cancel()
 
-	res, err := cl.TopUpBalance(ctx, msg)
+	res, err := cl.TopUpBalance(ctx, cashAmount)
 	if err != nil {
 		if st, ok := status.FromError(err); ok {
 			responser.UserError(c.Writer, st.Message())
@@ -67,7 +66,7 @@ func (h *handler) GetInfo(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), time.Second)
 	defer cancel()
 
-	res, err := cl.GetInfo(ctx, &pb.GetInfoReq{
+	res, err := cl.GetUserInfo(ctx, &pb.GetUserInfoReq{
 		UserUUID: userUUID,
 	})
 	if err != nil {

@@ -3,11 +3,11 @@ package postgres
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"github.com/alserov/device-shop/order-service/internal/entity"
 	"github.com/alserov/device-shop/order-service/internal/utils"
 	pb "github.com/alserov/device-shop/proto/gen"
 	"sync"
-	"time"
 )
 
 type Repository interface {
@@ -18,8 +18,8 @@ type Repository interface {
 	DecreaseDevicesAmount(ctx context.Context, tx *sql.Tx, devices []*pb.OrderDevice) error
 	DebitBalance(ctx context.Context, tx *sql.Tx, userUUID string, cash float32) error
 
-	RollbackDevices(ctx context.Context)
-	RollbackBalance(ctx context.Context)
+	RollbackDevices(ctx context.Context, tx *sql.Tx, devices []*pb.Device) error
+	RollbackBalance(ctx context.Context, tx *sql.Tx, userUUID string, orderUUID string, cash float32) error
 
 	GetOrdersDB() *sql.DB
 	GetUsersDB() *sql.DB
@@ -53,8 +53,10 @@ func (r *repo) GetDevicesDB() *sql.DB {
 }
 
 func (r *repo) CreateOrder(ctx context.Context, tx *sql.Tx, req *pb.CreateOrderReq, info *entity.OrderAdditional) error {
-	chErr := make(chan error)
-	wg := &sync.WaitGroup{}
+	var (
+		chErr = make(chan error)
+		wg    = &sync.WaitGroup{}
+	)
 	wg.Add(len(req.Devices) + 1)
 
 	go func() {
@@ -94,13 +96,11 @@ func (r *repo) CreateOrder(ctx context.Context, tx *sql.Tx, req *pb.CreateOrderR
 
 func (r *repo) CheckOrder(ctx context.Context, orderUUID string) (*entity.CheckOrderRes, error) {
 	var (
-		chDevices  = make(chan *pb.Device)
-		chErr      = make(chan error)
-		wg         *sync.WaitGroup
-		devices    []*pb.Device
-		statusCode int32
-		createdAt  *time.Time
-		totalPrice float32
+		chDevices = make(chan *pb.Device)
+		chErr     = make(chan error)
+		wg        = &sync.WaitGroup{}
+		devices   []*pb.Device
+		order     = &entity.CheckOrderRes{}
 	)
 	wg.Add(2)
 
@@ -130,9 +130,9 @@ func (r *repo) CheckOrder(ctx context.Context, orderUUID string) (*entity.CheckO
 
 	go func() {
 		defer wg.Done()
-		query := `SELECT total_price,status,created_at FROM orders WHERE order_uuid = $1`
+		query := `SELECT total_price,status,created_at, user_uuid FROM orders WHERE order_uuid = $1`
 
-		if err := r.orders.QueryRow(query, orderUUID).Scan(&totalPrice, &statusCode, &createdAt); err != nil {
+		if err := r.orders.QueryRow(query, orderUUID).Scan(&order.TotalPrice, &order.Status, &order.CreatedAt, &order.UserUUID); err != nil {
 			chErr <- err
 		}
 	}()
@@ -155,9 +155,11 @@ func (r *repo) CheckOrder(ctx context.Context, orderUUID string) (*entity.CheckO
 
 	return &entity.CheckOrderRes{
 		Devices:    devices,
-		Status:     statusCode,
-		CreatedAt:  createdAt,
-		TotalPrice: totalPrice,
+		Status:     order.Status,
+		CreatedAt:  order.CreatedAt,
+		TotalPrice: order.TotalPrice,
+		UserUUID:   order.UserUUID,
+		UUID:       orderUUID,
 	}, nil
 }
 
@@ -173,21 +175,85 @@ func (r *repo) UpdateOrder(ctx context.Context, status string, orderUUID string)
 }
 
 func (r *repo) DecreaseDevicesAmount(ctx context.Context, tx *sql.Tx, devices []*pb.OrderDevice) error {
-	//TODO implement me
-	panic("implement me")
+	query := `UPDATE devices SET amount = amount - $1 WHERE uuid = $2`
+	var (
+		chErr = make(chan error)
+		wg    = &sync.WaitGroup{}
+	)
+
+	for _, d := range devices {
+		d := d
+		go func() {
+			if _, err := tx.Exec(query, d.Amount, d.DeviceUUID); err != nil {
+				chErr <- err
+			}
+		}()
+	}
+
+	go func() {
+		wg.Wait()
+		close(chErr)
+	}()
+
+	for err := range chErr {
+		return err
+	}
+
+	return nil
 }
 
 func (r *repo) DebitBalance(ctx context.Context, tx *sql.Tx, userUUID string, cash float32) error {
-	//TODO implement me
-	panic("implement me")
+	query := `UPDATE users SET cash = cash - $1 WHERE uuid = $2`
+
+	if _, err := tx.Exec(query, cash, userUUID); err != nil {
+		return err
+	}
+	return nil
 }
 
-func (r *repo) RollbackDevices(ctx context.Context) {
-	//TODO implement me
-	panic("implement me")
+func (r *repo) RollbackDevices(ctx context.Context, tx *sql.Tx, devices []*pb.Device) error {
+	query := `UPDATE devices SET amount = amount + $1 WHERE uuid = $2`
+	var (
+		chErr = make(chan error)
+		wg    = &sync.WaitGroup{}
+	)
+
+	for _, d := range devices {
+		d := d
+		go func() {
+			if _, err := tx.Exec(query, d.Amount, d.UUID); err != nil {
+				chErr <- err
+			}
+		}()
+	}
+
+	go func() {
+		wg.Wait()
+		close(chErr)
+	}()
+
+	for err := range chErr {
+		return err
+	}
+
+	return nil
 }
 
-func (r *repo) RollbackBalance(ctx context.Context) {
-	//TODO implement me
-	panic("implement me")
+func (r *repo) RollbackBalance(ctx context.Context, tx *sql.Tx, userUUID string, orderUUID string, cash float32) error {
+	query := `SELECT status FROM orders WHERE order_uuid = $1`
+
+	var status int32
+	if err := r.orders.QueryRow(query, orderUUID).Scan(&status); err != nil {
+		return err
+	}
+	if status == utils.CANCELED_CODE {
+		return errors.New("this order is already canceled")
+	}
+
+	query = `UPDATE users SET cash = cash + $1 WHERE uuid = $2`
+
+	if _, err := tx.Exec(query, cash, userUUID); err != nil {
+		return err
+	}
+	return nil
 }

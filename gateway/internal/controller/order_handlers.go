@@ -5,7 +5,6 @@ import (
 	"github.com/alserov/device-shop/gateway/internal/utils"
 	"github.com/alserov/device-shop/gateway/pkg/client"
 	"github.com/alserov/device-shop/gateway/pkg/responser"
-	"github.com/alserov/device-shop/order-service/pkg/entity"
 	pb "github.com/alserov/device-shop/proto/gen"
 	"github.com/gin-gonic/gin"
 	"google.golang.org/grpc/status"
@@ -20,7 +19,7 @@ type Orderer interface {
 }
 
 func (h *handler) CreateOrder(c *gin.Context) {
-	msg, err := utils.RequestToPBMessage[entity.CreateOrderReq, pb.CreateOrderReq](c.Request, utils.CreateOrderToPB)
+	order, err := utils.Decode[pb.CreateOrderReq](c.Request)
 	if err != nil {
 		responser.UserError(c.Writer, err.Error())
 		return
@@ -36,7 +35,7 @@ func (h *handler) CreateOrder(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
 	defer cancel()
 
-	res, err := cl.CreateOrder(ctx, msg)
+	res, err := cl.CreateOrder(ctx, order)
 	if err != nil {
 		if st, ok := status.FromError(err); ok {
 			responser.UserError(c.Writer, st.Message())
@@ -52,9 +51,9 @@ func (h *handler) CreateOrder(c *gin.Context) {
 }
 
 func (h *handler) UpdateOrder(c *gin.Context) {
-	msg, err := utils.RequestToPBMessage[entity.UpdateOrderReq, pb.UpdateOrderReq](c.Request, utils.UpdateOrderToPB)
+	orderStatus, err := utils.Decode[pb.UpdateOrderReq](c.Request)
 	if err != nil {
-		responser.ServerError(c.Writer, h.logger, err)
+		responser.UserError(c.Writer, err.Error())
 		return
 	}
 
@@ -68,7 +67,7 @@ func (h *handler) UpdateOrder(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
 	defer cancel()
 
-	_, err = cl.UpdateOrder(ctx, msg)
+	_, err = cl.UpdateOrder(ctx, orderStatus)
 	if err != nil {
 		if st, ok := status.FromError(err); ok {
 			responser.UserError(c.Writer, st.Message())

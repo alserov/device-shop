@@ -2,12 +2,10 @@ package controller
 
 import (
 	"context"
-	device "github.com/alserov/device-shop/device-service/pkg/entity"
 	"github.com/alserov/device-shop/gateway/internal/utils"
 	"github.com/alserov/device-shop/gateway/pkg/client"
 	"github.com/alserov/device-shop/gateway/pkg/responser"
 	"github.com/alserov/device-shop/proto/gen"
-	user "github.com/alserov/device-shop/user-service/pkg/entity"
 	"github.com/gin-gonic/gin"
 	"google.golang.org/grpc/status"
 	"net/http"
@@ -25,9 +23,9 @@ type Collectioner interface {
 }
 
 func (h *handler) AddToFavourite(c *gin.Context) {
-	msg, err := utils.RequestToPBMessage[user.AddToCollectionReq, pb.AddReq](c.Request, utils.AddReqToPB)
+	addCred, err := utils.Decode[pb.AddToCollectionReq](c.Request)
 	if err != nil {
-		responser.ServerError(c.Writer, h.logger, err)
+		responser.UserError(c.Writer, err.Error())
 		return
 	}
 
@@ -41,7 +39,7 @@ func (h *handler) AddToFavourite(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), time.Second)
 	defer cancel()
 
-	_, err = cl.AddToFavourite(ctx, msg)
+	_, err = cl.AddToFavourite(ctx, addCred)
 	if err != nil {
 		if st, ok := status.FromError(err); ok {
 			responser.UserError(c.Writer, st.Message())
@@ -55,9 +53,9 @@ func (h *handler) AddToFavourite(c *gin.Context) {
 }
 
 func (h *handler) RemoveFromFavourite(c *gin.Context) {
-	msg, err := utils.RequestToPBMessage[device.RemoveDeviceReq, pb.RemoveReq](c.Request, utils.RemoveReqToPB)
+	removeCred, err := utils.Decode[pb.RemoveFromCollectionReq](c.Request)
 	if err != nil {
-		responser.ServerError(c.Writer, h.logger, err)
+		responser.UserError(c.Writer, err.Error())
 		return
 	}
 
@@ -71,7 +69,7 @@ func (h *handler) RemoveFromFavourite(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), time.Second)
 	defer cancel()
 
-	_, err = cl.RemoveFromFavourite(ctx, msg)
+	_, err = cl.RemoveFromFavourite(ctx, removeCred)
 	if err != nil {
 		if st, ok := status.FromError(err); ok {
 			responser.UserError(c.Writer, st.Message())
@@ -102,7 +100,7 @@ func (h *handler) GetFavourite(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), time.Second)
 	defer cancel()
 
-	coll, err := cl.GetFavourite(ctx, &pb.GetReq{UserUUID: userUUID})
+	coll, err := cl.GetFavourite(ctx, &pb.GetCollectionReq{UserUUID: userUUID})
 	if err != nil {
 		if st, ok := status.FromError(err); ok {
 			responser.UserError(c.Writer, st.Message())
@@ -119,9 +117,9 @@ func (h *handler) GetFavourite(c *gin.Context) {
 }
 
 func (h *handler) AddToCart(c *gin.Context) {
-	msg, err := utils.RequestToPBMessage[user.AddToCollectionReq, pb.AddReq](c.Request, utils.AddReqToPB)
+	addCred, err := utils.Decode[pb.AddToCollectionReq](c.Request)
 	if err != nil {
-		responser.ServerError(c.Writer, h.logger, err)
+		responser.UserError(c.Writer, err.Error())
 		return
 	}
 
@@ -135,7 +133,7 @@ func (h *handler) AddToCart(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), time.Second)
 	defer cancel()
 
-	_, err = cl.AddToCart(ctx, msg)
+	_, err = cl.AddToCart(ctx, addCred)
 	if err != nil {
 		if st, ok := status.FromError(err); ok {
 			responser.UserError(c.Writer, st.Message())
@@ -149,11 +147,12 @@ func (h *handler) AddToCart(c *gin.Context) {
 }
 
 func (h *handler) RemoveFromCart(c *gin.Context) {
-	msg, err := utils.RequestToPBMessage[device.RemoveDeviceReq, pb.RemoveReq](c.Request, utils.RemoveReqToPB)
+	removeCred, err := utils.Decode[pb.RemoveFromCollectionReq](c.Request)
 	if err != nil {
-		responser.ServerError(c.Writer, h.logger, err)
+		responser.UserError(c.Writer, err.Error())
 		return
 	}
+
 	cl, cc, err := client.DialUser(h.userAddr)
 	if err != nil {
 		responser.ServerError(c.Writer, h.logger, err)
@@ -164,7 +163,7 @@ func (h *handler) RemoveFromCart(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), time.Second)
 	defer cancel()
 
-	_, err = cl.RemoveFromCart(ctx, msg)
+	_, err = cl.RemoveFromCart(ctx, removeCred)
 	if err != nil {
 		if st, ok := status.FromError(err); ok {
 			responser.UserError(c.Writer, st.Message())
@@ -192,14 +191,12 @@ func (h *handler) GetCart(c *gin.Context) {
 	}
 	defer cc.Close()
 
-	r := &pb.GetReq{
-		UserUUID: userUUID,
-	}
-
 	ctx, cancel := context.WithTimeout(c.Request.Context(), time.Second)
 	defer cancel()
 
-	coll, err := cl.GetCart(ctx, r)
+	coll, err := cl.GetCart(ctx, &pb.GetCollectionReq{
+		UserUUID: userUUID,
+	})
 	if err != nil {
 		if st, ok := status.FromError(err); ok {
 			responser.UserError(c.Writer, st.Message())

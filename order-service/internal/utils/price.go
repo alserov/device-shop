@@ -11,8 +11,8 @@ import (
 func CountPrice(ctx context.Context, devices []*pb.OrderDevice) (float32, error) {
 	var (
 		price float32
-		wg    *sync.WaitGroup
-		mu    *sync.Mutex
+		wg    = &sync.WaitGroup{}
+		mu    = &sync.Mutex{}
 		chErr = make(chan error)
 	)
 
@@ -36,7 +36,7 @@ func CountPrice(ctx context.Context, devices []*pb.OrderDevice) (float32, error)
 			}
 			mu.Lock()
 			defer mu.Unlock()
-			price += d.Price
+			price += d.Price * float32(od.Amount)
 		}()
 	}
 

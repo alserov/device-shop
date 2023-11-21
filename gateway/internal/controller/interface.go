@@ -30,6 +30,7 @@ func NewHandler(c *redis.Client, lg *logrus.Logger) Handler {
 		userAddr   = os.Getenv("USER_ADDR")
 		deviceAddr = os.Getenv("DEVICE_ADDR")
 		orderAddr  = os.Getenv("ORDER_ADDR")
+		authAddr   = os.Getenv("AUTH_ADDR")
 	)
 
 	return &handler{
@@ -38,5 +39,6 @@ func NewHandler(c *redis.Client, lg *logrus.Logger) Handler {
 		userAddr:   userAddr,
 		deviceAddr: deviceAddr,
 		orderAddr:  orderAddr,
+		authAddr:   authAddr,
 	}
 }

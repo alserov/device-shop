@@ -9,6 +9,7 @@ import (
 	"google.golang.org/grpc"
 	"log"
 	"net"
+	"os"
 )
 
 func (a *App) Start(ctx context.Context) error {
@@ -35,7 +36,7 @@ func (a *App) Start(ctx context.Context) error {
 		return err
 	}
 
-	pb.RegisterOrdersServer(s, service.New(ordersDB, devicesDB, usersDB))
+	pb.RegisterOrdersServer(s, service.New(ordersDB, devicesDB, usersDB, os.Getenv("DEVICE_ADDR")))
 
 	chErr := make(chan error, 1)
 	go func() {
