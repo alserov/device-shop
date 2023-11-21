@@ -24,11 +24,11 @@ const _ = grpc.SupportPackageIsVersion7
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type UsersClient interface {
 	GetUserInfo(ctx context.Context, in *GetUserInfoReq, opts ...grpc.CallOption) (*GetUserInfoRes, error)
-	AddToFavourite(ctx context.Context, in *AddToCollectionReq, opts ...grpc.CallOption) (*emptypb.Empty, error)
-	RemoveFromFavourite(ctx context.Context, in *RemoveFromCollectionReq, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	AddToFavourite(ctx context.Context, in *ChangeCollectionReq, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	RemoveFromFavourite(ctx context.Context, in *ChangeCollectionReq, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	GetFavourite(ctx context.Context, in *GetCollectionReq, opts ...grpc.CallOption) (*GetCollectionRes, error)
-	AddToCart(ctx context.Context, in *AddToCollectionReq, opts ...grpc.CallOption) (*emptypb.Empty, error)
-	RemoveFromCart(ctx context.Context, in *RemoveFromCollectionReq, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	AddToCart(ctx context.Context, in *ChangeCollectionReq, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	RemoveFromCart(ctx context.Context, in *ChangeCollectionReq, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	GetCart(ctx context.Context, in *GetCollectionReq, opts ...grpc.CallOption) (*GetCollectionRes, error)
 	TopUpBalance(ctx context.Context, in *BalanceReq, opts ...grpc.CallOption) (*BalanceRes, error)
 	DebitBalance(ctx context.Context, in *BalanceReq, opts ...grpc.CallOption) (*BalanceRes, error)
@@ -52,7 +52,7 @@ func (c *usersClient) GetUserInfo(ctx context.Context, in *GetUserInfoReq, opts 
 	return out, nil
 }
 
-func (c *usersClient) AddToFavourite(ctx context.Context, in *AddToCollectionReq, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *usersClient) AddToFavourite(ctx context.Context, in *ChangeCollectionReq, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, "/user.Users/AddToFavourite", in, out, opts...)
 	if err != nil {
@@ -61,7 +61,7 @@ func (c *usersClient) AddToFavourite(ctx context.Context, in *AddToCollectionReq
 	return out, nil
 }
 
-func (c *usersClient) RemoveFromFavourite(ctx context.Context, in *RemoveFromCollectionReq, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *usersClient) RemoveFromFavourite(ctx context.Context, in *ChangeCollectionReq, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, "/user.Users/RemoveFromFavourite", in, out, opts...)
 	if err != nil {
@@ -79,7 +79,7 @@ func (c *usersClient) GetFavourite(ctx context.Context, in *GetCollectionReq, op
 	return out, nil
 }
 
-func (c *usersClient) AddToCart(ctx context.Context, in *AddToCollectionReq, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *usersClient) AddToCart(ctx context.Context, in *ChangeCollectionReq, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, "/user.Users/AddToCart", in, out, opts...)
 	if err != nil {
@@ -88,7 +88,7 @@ func (c *usersClient) AddToCart(ctx context.Context, in *AddToCollectionReq, opt
 	return out, nil
 }
 
-func (c *usersClient) RemoveFromCart(ctx context.Context, in *RemoveFromCollectionReq, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *usersClient) RemoveFromCart(ctx context.Context, in *ChangeCollectionReq, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, "/user.Users/RemoveFromCart", in, out, opts...)
 	if err != nil {
@@ -138,11 +138,11 @@ func (c *usersClient) RemoveDeviceFromCollections(ctx context.Context, in *Remov
 // for forward compatibility
 type UsersServer interface {
 	GetUserInfo(context.Context, *GetUserInfoReq) (*GetUserInfoRes, error)
-	AddToFavourite(context.Context, *AddToCollectionReq) (*emptypb.Empty, error)
-	RemoveFromFavourite(context.Context, *RemoveFromCollectionReq) (*emptypb.Empty, error)
+	AddToFavourite(context.Context, *ChangeCollectionReq) (*emptypb.Empty, error)
+	RemoveFromFavourite(context.Context, *ChangeCollectionReq) (*emptypb.Empty, error)
 	GetFavourite(context.Context, *GetCollectionReq) (*GetCollectionRes, error)
-	AddToCart(context.Context, *AddToCollectionReq) (*emptypb.Empty, error)
-	RemoveFromCart(context.Context, *RemoveFromCollectionReq) (*emptypb.Empty, error)
+	AddToCart(context.Context, *ChangeCollectionReq) (*emptypb.Empty, error)
+	RemoveFromCart(context.Context, *ChangeCollectionReq) (*emptypb.Empty, error)
 	GetCart(context.Context, *GetCollectionReq) (*GetCollectionRes, error)
 	TopUpBalance(context.Context, *BalanceReq) (*BalanceRes, error)
 	DebitBalance(context.Context, *BalanceReq) (*BalanceRes, error)
@@ -156,19 +156,19 @@ type UnimplementedUsersServer struct {
 func (UnimplementedUsersServer) GetUserInfo(context.Context, *GetUserInfoReq) (*GetUserInfoRes, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetUserInfo not implemented")
 }
-func (UnimplementedUsersServer) AddToFavourite(context.Context, *AddToCollectionReq) (*emptypb.Empty, error) {
+func (UnimplementedUsersServer) AddToFavourite(context.Context, *ChangeCollectionReq) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method AddToFavourite not implemented")
 }
-func (UnimplementedUsersServer) RemoveFromFavourite(context.Context, *RemoveFromCollectionReq) (*emptypb.Empty, error) {
+func (UnimplementedUsersServer) RemoveFromFavourite(context.Context, *ChangeCollectionReq) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RemoveFromFavourite not implemented")
 }
 func (UnimplementedUsersServer) GetFavourite(context.Context, *GetCollectionReq) (*GetCollectionRes, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetFavourite not implemented")
 }
-func (UnimplementedUsersServer) AddToCart(context.Context, *AddToCollectionReq) (*emptypb.Empty, error) {
+func (UnimplementedUsersServer) AddToCart(context.Context, *ChangeCollectionReq) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method AddToCart not implemented")
 }
-func (UnimplementedUsersServer) RemoveFromCart(context.Context, *RemoveFromCollectionReq) (*emptypb.Empty, error) {
+func (UnimplementedUsersServer) RemoveFromCart(context.Context, *ChangeCollectionReq) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RemoveFromCart not implemented")
 }
 func (UnimplementedUsersServer) GetCart(context.Context, *GetCollectionReq) (*GetCollectionRes, error) {
@@ -215,7 +215,7 @@ func _Users_GetUserInfo_Handler(srv interface{}, ctx context.Context, dec func(i
 }
 
 func _Users_AddToFavourite_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(AddToCollectionReq)
+	in := new(ChangeCollectionReq)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -227,13 +227,13 @@ func _Users_AddToFavourite_Handler(srv interface{}, ctx context.Context, dec fun
 		FullMethod: "/user.Users/AddToFavourite",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(UsersServer).AddToFavourite(ctx, req.(*AddToCollectionReq))
+		return srv.(UsersServer).AddToFavourite(ctx, req.(*ChangeCollectionReq))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
 func _Users_RemoveFromFavourite_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(RemoveFromCollectionReq)
+	in := new(ChangeCollectionReq)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -245,7 +245,7 @@ func _Users_RemoveFromFavourite_Handler(srv interface{}, ctx context.Context, de
 		FullMethod: "/user.Users/RemoveFromFavourite",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(UsersServer).RemoveFromFavourite(ctx, req.(*RemoveFromCollectionReq))
+		return srv.(UsersServer).RemoveFromFavourite(ctx, req.(*ChangeCollectionReq))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -269,7 +269,7 @@ func _Users_GetFavourite_Handler(srv interface{}, ctx context.Context, dec func(
 }
 
 func _Users_AddToCart_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(AddToCollectionReq)
+	in := new(ChangeCollectionReq)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -281,13 +281,13 @@ func _Users_AddToCart_Handler(srv interface{}, ctx context.Context, dec func(int
 		FullMethod: "/user.Users/AddToCart",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(UsersServer).AddToCart(ctx, req.(*AddToCollectionReq))
+		return srv.(UsersServer).AddToCart(ctx, req.(*ChangeCollectionReq))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
 func _Users_RemoveFromCart_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(RemoveFromCollectionReq)
+	in := new(ChangeCollectionReq)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -299,7 +299,7 @@ func _Users_RemoveFromCart_Handler(srv interface{}, ctx context.Context, dec fun
 		FullMethod: "/user.Users/RemoveFromCart",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(UsersServer).RemoveFromCart(ctx, req.(*RemoveFromCollectionReq))
+		return srv.(UsersServer).RemoveFromCart(ctx, req.(*ChangeCollectionReq))
 	}
 	return interceptor(ctx, in, info, handler)
 }

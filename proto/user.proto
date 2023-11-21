@@ -10,12 +10,12 @@ package user;
 service Users {
   rpc GetUserInfo(GetUserInfoReq) returns (GetUserInfoRes);
 
-  rpc AddToFavourite(AddToCollectionReq) returns (google.protobuf.Empty);
-  rpc RemoveFromFavourite(RemoveFromCollectionReq) returns (google.protobuf.Empty);
+  rpc AddToFavourite(ChangeCollectionReq) returns (google.protobuf.Empty);
+  rpc RemoveFromFavourite(ChangeCollectionReq) returns (google.protobuf.Empty);
   rpc GetFavourite(GetCollectionReq) returns(GetCollectionRes);
 
-  rpc AddToCart(AddToCollectionReq) returns (google.protobuf.Empty);
-  rpc RemoveFromCart(RemoveFromCollectionReq) returns (google.protobuf.Empty);
+  rpc AddToCart(ChangeCollectionReq) returns (google.protobuf.Empty);
+  rpc RemoveFromCart(ChangeCollectionReq) returns (google.protobuf.Empty);
   rpc GetCart(GetCollectionReq) returns(GetCollectionRes);
 
   rpc TopUpBalance(BalanceReq) returns(BalanceRes);
@@ -43,12 +43,7 @@ message GetCollectionRes {
   repeated device.Device Devices = 1;
 }
 
-message AddToCollectionReq {
-  string DeviceUUID = 1;
-  string UserUUID = 2;
-}
-
-message RemoveFromCollectionReq {
+message ChangeCollectionReq {
   string DeviceUUID = 1;
   string UserUUID = 2;
 }
