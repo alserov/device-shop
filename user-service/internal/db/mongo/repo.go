@@ -4,28 +4,17 @@ import (
 	"context"
 	device "github.com/alserov/device-shop/device-service/pkg/entity"
 	pb "github.com/alserov/device-shop/proto/gen"
+	"github.com/alserov/device-shop/user-service/internal/db"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"sync"
 )
 
-type Repository interface {
-	AddToFavourite(ctx context.Context, userUUID string, device *pb.Device) error
-	RemoveFromFavourite(ctx context.Context, req *pb.RemoveFromCollectionReq) error
-	GetFavourite(ctx context.Context, userUUID string) ([]*device.Device, error)
-
-	AddToCart(ctx context.Context, userUUID string, device *pb.Device) error
-	RemoveFromCart(ctx context.Context, req *pb.RemoveFromCollectionReq) error
-	GetCart(ctx context.Context, userUUID string) ([]*device.Device, error)
-
-	RemoveDeviceFromCollections(ctx context.Context, deviceUUID string) error
-}
-
 type repo struct {
 	db *mongo.Client
 }
 
-func NewRepo(db *mongo.Client) Repository {
+func NewRepo(db *mongo.Client) db.CollectionsRepo {
 	return &repo{
 		db: db,
 	}
@@ -50,7 +39,7 @@ func (r repo) AddToFavourite(ctx context.Context, userUUID string, device *pb.De
 	return nil
 }
 
-func (r repo) RemoveFromFavourite(ctx context.Context, req *pb.RemoveFromCollectionReq) error {
+func (r repo) RemoveFromFavourite(ctx context.Context, req *pb.ChangeCollectionReq) error {
 	coll := r.db.Database(DB_NAME).Collection(DB_FAVOURITE_COLLECTION)
 
 	_, err := coll.DeleteOne(ctx, bson.D{
@@ -103,7 +92,7 @@ func (r repo) AddToCart(ctx context.Context, userUUID string, device *pb.Device)
 	return nil
 }
 
-func (r repo) RemoveFromCart(ctx context.Context, req *pb.RemoveFromCollectionReq) error {
+func (r repo) RemoveFromCart(ctx context.Context, req *pb.ChangeCollectionReq) error {
 	coll := r.db.Database(DB_NAME).Collection(DB_CART_COLLECTION)
 
 	_, err := coll.DeleteOne(ctx, bson.D{

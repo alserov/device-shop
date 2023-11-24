@@ -1,4 +1,4 @@
-package controller
+package handlers
 
 import (
 	"context"
@@ -9,6 +9,7 @@ import (
 	"github.com/alserov/device-shop/gateway/pkg/responser"
 	"github.com/alserov/device-shop/proto/gen"
 	"github.com/gin-gonic/gin"
+	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc/status"
 	"log"
 	"strconv"
@@ -16,14 +17,28 @@ import (
 	"time"
 )
 
-type Devicer interface {
+type DevicesHandler interface {
 	GetAllDevices(*gin.Context)
 	GetDevicesByTitle(*gin.Context)
 	GetDevicesByManufacturer(*gin.Context)
 	GetDevicesByPrice(*gin.Context)
 }
 
-func (h *handler) GetAllDevices(c *gin.Context) {
+type devicesHandler struct {
+	deviceAddr string
+	cache      cache.Repository
+	logger     *logrus.Logger
+}
+
+func NewDevicesHandler(deviceAddr string, cache cache.Repository, logger *logrus.Logger) DevicesHandler {
+	return &devicesHandler{
+		deviceAddr: deviceAddr,
+		cache:      cache,
+		logger:     logger,
+	}
+}
+
+func (h *devicesHandler) GetAllDevices(c *gin.Context) {
 	getDevicesCred, err := utils.Decode[pb.GetAllDevicesReq](c.Request, utils.CheckGetAll)
 	if err != nil {
 		responser.UserError(c.Writer, err.Error())
@@ -84,7 +99,7 @@ func (h *handler) GetAllDevices(c *gin.Context) {
 	})
 }
 
-func (h *handler) GetDevicesByTitle(c *gin.Context) {
+func (h *devicesHandler) GetDevicesByTitle(c *gin.Context) {
 	title := strings.ToLower(c.Param("title"))
 
 	val, err := h.cache.GetValue(c.Request.Context(), title)
@@ -143,7 +158,7 @@ func (h *handler) GetDevicesByTitle(c *gin.Context) {
 	})
 }
 
-func (h *handler) GetDevicesByManufacturer(c *gin.Context) {
+func (h *devicesHandler) GetDevicesByManufacturer(c *gin.Context) {
 	manu := strings.ToLower(c.Param("manu"))
 	if manu == "" {
 		responser.UserError(c.Writer, "invalid manufacturer")
@@ -197,7 +212,7 @@ func (h *handler) GetDevicesByManufacturer(c *gin.Context) {
 	})
 }
 
-func (h *handler) GetDevicesByPrice(c *gin.Context) {
+func (h *devicesHandler) GetDevicesByPrice(c *gin.Context) {
 	minVal, err := strconv.Atoi(c.Query("min"))
 	if err != nil {
 		responser.UserError(c.Writer, "invalid value for 'min' param")

@@ -1,4 +1,4 @@
-package controller
+package handlers
 
 import (
 	"context"
@@ -7,18 +7,31 @@ import (
 	"github.com/alserov/device-shop/gateway/pkg/responser"
 	pb "github.com/alserov/device-shop/proto/gen"
 	"github.com/gin-gonic/gin"
+	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc/status"
 	"net/http"
 	"time"
 )
 
-type Orderer interface {
+type OrdersHandler interface {
 	CreateOrder(c *gin.Context)
 	UpdateOrder(c *gin.Context)
 	CheckOrder(c *gin.Context)
 }
 
-func (h *handler) CreateOrder(c *gin.Context) {
+type ordersHandler struct {
+	orderAddr string
+	logger    *logrus.Logger
+}
+
+func NewOrderHandler(orderAddr string, logger *logrus.Logger) OrdersHandler {
+	return &ordersHandler{
+		orderAddr: orderAddr,
+		logger:    logger,
+	}
+}
+
+func (h *ordersHandler) CreateOrder(c *gin.Context) {
 	order, err := utils.Decode[pb.CreateOrderReq](c.Request, utils.CheckCreateOrder)
 	if err != nil {
 		responser.UserError(c.Writer, err.Error())
@@ -50,7 +63,7 @@ func (h *handler) CreateOrder(c *gin.Context) {
 	})
 }
 
-func (h *handler) UpdateOrder(c *gin.Context) {
+func (h *ordersHandler) UpdateOrder(c *gin.Context) {
 	orderStatus, err := utils.Decode[pb.UpdateOrderReq](c.Request, utils.CheckUpdateOrder)
 	if err != nil {
 		responser.UserError(c.Writer, err.Error())
@@ -80,7 +93,7 @@ func (h *handler) UpdateOrder(c *gin.Context) {
 	c.Status(http.StatusOK)
 }
 
-func (h *handler) CheckOrder(c *gin.Context) {
+func (h *ordersHandler) CheckOrder(c *gin.Context) {
 	orderUUID := c.Param("orderUUID")
 	if orderUUID == "" {
 		responser.UserError(c.Writer, "invalid orderUUID param")

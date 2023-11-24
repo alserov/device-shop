@@ -1,4 +1,4 @@
-package controller
+package handlers
 
 import (
 	"context"
@@ -7,16 +7,29 @@ import (
 	"github.com/alserov/device-shop/gateway/pkg/responser"
 	pb "github.com/alserov/device-shop/proto/gen"
 	"github.com/gin-gonic/gin"
+	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc/status"
 	"time"
 )
 
-type Userer interface {
+type UsersHandler interface {
 	TopUpBalance(ctx *gin.Context)
 	GetInfo(ctx *gin.Context)
 }
 
-func (h *handler) TopUpBalance(c *gin.Context) {
+type usersHandler struct {
+	userAddr string
+	logger   *logrus.Logger
+}
+
+func NewUserHandler(userAddr string, logger *logrus.Logger) UsersHandler {
+	return &usersHandler{
+		userAddr: userAddr,
+		logger:   logger,
+	}
+}
+
+func (h *usersHandler) TopUpBalance(c *gin.Context) {
 	cashAmount, err := utils.Decode[pb.BalanceReq](c.Request, utils.CheckTopUpBalance)
 	if err != nil {
 		responser.UserError(c.Writer, err.Error())
@@ -48,7 +61,7 @@ func (h *handler) TopUpBalance(c *gin.Context) {
 	})
 }
 
-func (h *handler) GetInfo(c *gin.Context) {
+func (h *usersHandler) GetInfo(c *gin.Context) {
 	userUUID := c.Param("userUUID")
 
 	if userUUID == "" {

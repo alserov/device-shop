@@ -3,7 +3,6 @@ package utils
 import (
 	"errors"
 	pb "github.com/alserov/device-shop/proto/gen"
-	"github.com/google/uuid"
 	"net/mail"
 )
 
@@ -75,16 +74,15 @@ func CheckLogin(r *pb.LoginReq) error {
 
 // COLLECTION VALIDATOR
 func CheckCollection(r *pb.ChangeCollectionReq) error {
-	if _, err := uuid.FromBytes([]byte(r.DeviceUUID)); err != nil {
-		return errors.New("invalid device UUID")
+	if r.DeviceUUID == "" {
+		return errors.New("device uuid can't be empty")
 	}
 
-	if _, err := uuid.FromBytes([]byte(r.UserUUID)); err != nil {
-		return errors.New("invalid user UUID")
+	if r.UserUUID == "" {
+		return errors.New("user uuid can't be empty")
 	}
+
 	return nil
-
-	return errors.New("invalid type")
 }
 
 // DEVICE VALIDATORS
@@ -106,18 +104,14 @@ func CheckCreateOrder(r *pb.CreateOrderReq) error {
 		return errors.New("length of cart should be more than 0 to create an order")
 	}
 
-	if _, err := uuid.FromBytes([]byte(r.UserUUID)); err != nil {
-		return errors.New("invalid user UUID")
+	if r.UserUUID == "" {
+		return errors.New("user uuid can't be empty")
 	}
 
 	return nil
 }
 
 func CheckUpdateOrder(r *pb.UpdateOrderReq) error {
-	if _, err := uuid.FromBytes([]byte(r.OrderUUID)); err != nil {
-		return errors.New("invalid order UUID")
-	}
-
 	status := map[string]struct{}{
 		"canceled":   {},
 		"pending":    {},
@@ -138,8 +132,8 @@ func CheckTopUpBalance(r *pb.BalanceReq) error {
 		return errors.New("deposit should be more than 0")
 	}
 
-	if _, err := uuid.FromBytes([]byte(r.UserUUID)); err != nil {
-		return errors.New("invalid user UUID")
+	if r.UserUUID == "" {
+		return errors.New("user uuid can't be empty")
 	}
 
 	return nil

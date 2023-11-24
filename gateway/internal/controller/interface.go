@@ -2,30 +2,24 @@ package controller
 
 import (
 	"github.com/alserov/device-shop/gateway/internal/cache"
+	"github.com/alserov/device-shop/gateway/internal/controller/handlers"
 	"github.com/go-redis/redis"
 	"github.com/sirupsen/logrus"
 	"os"
 )
 
-type Handler interface {
-	Adminer
-	Auther
-	Collectioner
-	Devicer
-	Orderer
-	Userer
+type Controller struct {
+	cache              cache.Repository
+	logger             *logrus.Logger
+	authHandler        handlers.AuthHandler
+	adminHandler       handlers.AdminHandler
+	collectionsHandler handlers.CollectionsHandler
+	devicesHandler     handlers.DevicesHandler
+	orderHandler       handlers.OrdersHandler
+	userHandler        handlers.UsersHandler
 }
 
-type handler struct {
-	cache      cache.Repository
-	logger     *logrus.Logger
-	userAddr   string
-	deviceAddr string
-	orderAddr  string
-	authAddr   string
-}
-
-func NewHandler(c *redis.Client, lg *logrus.Logger) Handler {
+func NewController(c *redis.Client, lg *logrus.Logger) *Controller {
 	var (
 		userAddr   = os.Getenv("USER_ADDR")
 		deviceAddr = os.Getenv("DEVICE_ADDR")
@@ -33,12 +27,14 @@ func NewHandler(c *redis.Client, lg *logrus.Logger) Handler {
 		authAddr   = os.Getenv("AUTH_ADDR")
 	)
 
-	return &handler{
-		cache:      cache.NewRepo(c),
-		logger:     lg,
-		userAddr:   userAddr,
-		deviceAddr: deviceAddr,
-		orderAddr:  orderAddr,
-		authAddr:   authAddr,
+	return &Controller{
+		cache:              cache.NewRepo(c),
+		logger:             lg,
+		adminHandler:       handlers.NewAdminHandler(deviceAddr, userAddr, lg),
+		authHandler:        handlers.NewAuthHandler(authAddr, lg),
+		collectionsHandler: handlers.NewCollectionsHandler(userAddr, lg),
+		devicesHandler:     handlers.NewDevicesHandler(deviceAddr, cache.NewRepo(c), lg),
+		orderHandler:       handlers.NewOrderHandler(orderAddr, lg),
+		userHandler:        handlers.NewUserHandler(userAddr, lg),
 	}
 }

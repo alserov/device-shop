@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"github.com/alserov/device-shop/device-service/internal/db"
 	"github.com/alserov/device-shop/device-service/internal/db/postgres"
 	"github.com/alserov/device-shop/gateway/pkg/client"
 	"github.com/alserov/device-shop/proto/gen"
@@ -17,13 +18,15 @@ import (
 )
 
 type service struct {
-	postgres postgres.Repository
+	device   db.DeviceRepo
+	admin    db.AdminRepo
 	userAddr string
 }
 
-func New(pg *sql.DB) pb.DevicesServer {
+func New(db *sql.DB) pb.DevicesServer {
 	return &service{
-		postgres: postgres.NewRepo(pg),
+		device:   postgres.NewDeviceRepo(db),
+		admin:    postgres.NewAdminRepo(db),
 		userAddr: os.Getenv("USER_ADDR"),
 	}
 }
@@ -38,7 +41,7 @@ func (s *service) CreateDevice(ctx context.Context, req *pb.CreateDeviceReq) (*e
 		Amount:       req.Amount,
 	}
 
-	if err := s.postgres.CreateDevice(ctx, r); err != nil {
+	if err := s.admin.CreateDevice(ctx, r); err != nil {
 		return &emptypb.Empty{}, err
 	}
 
@@ -53,7 +56,7 @@ func (s *service) UpdateDevice(ctx context.Context, req *pb.UpdateDeviceReq) (*e
 		UUID:        req.UUID,
 	}
 
-	if err := s.postgres.UpdateDevice(ctx, r); err != nil {
+	if err := s.admin.UpdateDevice(ctx, r); err != nil {
 		return &emptypb.Empty{}, err
 	}
 
@@ -78,7 +81,7 @@ func (s *service) DeleteDevice(ctx context.Context, req *pb.DeleteDeviceReq) (*e
 		}
 	}()
 
-	if err := s.postgres.DeleteDevice(ctx, req.UUID); err != nil {
+	if err := s.admin.DeleteDevice(ctx, req.UUID); err != nil {
 		return &emptypb.Empty{}, err
 	}
 
@@ -90,7 +93,7 @@ func (s *service) DeleteDevice(ctx context.Context, req *pb.DeleteDeviceReq) (*e
 }
 
 func (s *service) GetAllDevices(ctx context.Context, req *pb.GetAllDevicesReq) (*pb.DevicesRes, error) {
-	d, err := s.postgres.GetAllDevices(ctx, req.Index, req.Amount)
+	d, err := s.device.GetAllDevices(ctx, req.Index, req.Amount)
 	if err != nil {
 		return &pb.DevicesRes{}, err
 	}
@@ -114,7 +117,7 @@ func (s *service) GetAllDevices(ctx context.Context, req *pb.GetAllDevicesReq) (
 }
 
 func (s *service) GetDevicesByTitle(ctx context.Context, req *pb.GetDeviceByTitleReq) (*pb.DevicesRes, error) {
-	d, err := s.postgres.GetDevicesByTitle(ctx, strings.ToLower(req.Title))
+	d, err := s.device.GetDevicesByTitle(ctx, strings.ToLower(req.Title))
 	if errors.Is(err, sql.ErrNoRows) {
 		return &pb.DevicesRes{}, status.Error(http.StatusBadRequest, fmt.Sprintf("Nothing found by %s", req.Title))
 	}
@@ -141,7 +144,7 @@ func (s *service) GetDevicesByTitle(ctx context.Context, req *pb.GetDeviceByTitl
 }
 
 func (s *service) GetDeviceByUUID(ctx context.Context, req *pb.GetDeviceByUUIDReq) (*pb.Device, error) {
-	dv, err := s.postgres.GetDeviceByUUID(ctx, req.UUID)
+	dv, err := s.device.GetDeviceByUUID(ctx, req.UUID)
 	if err != nil {
 		return nil, err
 	}
@@ -159,7 +162,7 @@ func (s *service) GetDeviceByUUID(ctx context.Context, req *pb.GetDeviceByUUIDRe
 }
 
 func (s *service) GetDevicesByManufacturer(ctx context.Context, req *pb.GetByManufacturer) (*pb.DevicesRes, error) {
-	d, err := s.postgres.GetDevicesByManufacturer(ctx, req.Manufacturer)
+	d, err := s.device.GetDevicesByManufacturer(ctx, req.Manufacturer)
 	if errors.Is(err, sql.ErrNoRows) {
 		return &pb.DevicesRes{}, status.Error(http.StatusBadRequest, fmt.Sprintf("Nothing found by %s", req.Manufacturer))
 	}
@@ -186,7 +189,7 @@ func (s *service) GetDevicesByManufacturer(ctx context.Context, req *pb.GetByMan
 }
 
 func (s *service) GetDevicesByPrice(ctx context.Context, req *pb.GetByPrice) (*pb.DevicesRes, error) {
-	d, err := s.postgres.GetDevicesByPrice(ctx, uint(req.Min), uint(req.Max))
+	d, err := s.device.GetDevicesByPrice(ctx, uint(req.Min), uint(req.Max))
 	if errors.Is(err, sql.ErrNoRows) {
 		return &pb.DevicesRes{}, status.Error(http.StatusBadRequest, fmt.Sprintf("Nothing found by price > %d and price < %d", req.Min, req.Max))
 	}

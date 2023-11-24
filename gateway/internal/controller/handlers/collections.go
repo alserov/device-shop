@@ -1,4 +1,4 @@
-package controller
+package handlers
 
 import (
 	"context"
@@ -7,12 +7,13 @@ import (
 	"github.com/alserov/device-shop/gateway/pkg/responser"
 	"github.com/alserov/device-shop/proto/gen"
 	"github.com/gin-gonic/gin"
+	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc/status"
 	"net/http"
 	"time"
 )
 
-type Collectioner interface {
+type CollectionsHandler interface {
 	AddToFavourite(c *gin.Context)
 	RemoveFromFavourite(c *gin.Context)
 	GetFavourite(c *gin.Context)
@@ -22,7 +23,19 @@ type Collectioner interface {
 	GetCart(c *gin.Context)
 }
 
-func (h *handler) AddToFavourite(c *gin.Context) {
+type collectionsHandler struct {
+	userAddr string
+	logger   *logrus.Logger
+}
+
+func NewCollectionsHandler(userAddr string, logger *logrus.Logger) CollectionsHandler {
+	return &collectionsHandler{
+		userAddr: userAddr,
+		logger:   logger,
+	}
+}
+
+func (h *collectionsHandler) AddToFavourite(c *gin.Context) {
 	addCred, err := utils.Decode[pb.ChangeCollectionReq](c.Request, utils.CheckCollection)
 	if err != nil {
 		responser.UserError(c.Writer, err.Error())
@@ -52,7 +65,7 @@ func (h *handler) AddToFavourite(c *gin.Context) {
 	c.Status(http.StatusOK)
 }
 
-func (h *handler) RemoveFromFavourite(c *gin.Context) {
+func (h *collectionsHandler) RemoveFromFavourite(c *gin.Context) {
 	removeCred, err := utils.Decode[pb.ChangeCollectionReq](c.Request, utils.CheckCollection)
 	if err != nil {
 		responser.UserError(c.Writer, err.Error())
@@ -82,7 +95,7 @@ func (h *handler) RemoveFromFavourite(c *gin.Context) {
 	c.Status(http.StatusOK)
 }
 
-func (h *handler) GetFavourite(c *gin.Context) {
+func (h *collectionsHandler) GetFavourite(c *gin.Context) {
 	userUUID := c.Param("userUUID")
 
 	if userUUID == "" {
@@ -116,7 +129,7 @@ func (h *handler) GetFavourite(c *gin.Context) {
 	})
 }
 
-func (h *handler) AddToCart(c *gin.Context) {
+func (h *collectionsHandler) AddToCart(c *gin.Context) {
 	addCred, err := utils.Decode[pb.ChangeCollectionReq](c.Request, utils.CheckCollection)
 	if err != nil {
 		responser.UserError(c.Writer, err.Error())
@@ -146,7 +159,7 @@ func (h *handler) AddToCart(c *gin.Context) {
 	c.Status(http.StatusOK)
 }
 
-func (h *handler) RemoveFromCart(c *gin.Context) {
+func (h *collectionsHandler) RemoveFromCart(c *gin.Context) {
 	removeCred, err := utils.Decode[pb.ChangeCollectionReq](c.Request, utils.CheckCollection)
 	if err != nil {
 		responser.UserError(c.Writer, err.Error())
@@ -176,7 +189,7 @@ func (h *handler) RemoveFromCart(c *gin.Context) {
 	c.Status(http.StatusOK)
 }
 
-func (h *handler) GetCart(c *gin.Context) {
+func (h *collectionsHandler) GetCart(c *gin.Context) {
 	userUUID := c.Param("userUUID")
 
 	if userUUID == "" {

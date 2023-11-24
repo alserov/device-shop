@@ -4,15 +4,10 @@ import (
 	"context"
 	"database/sql"
 	pb "github.com/alserov/device-shop/proto/gen"
+	"github.com/alserov/device-shop/user-service/internal/db"
 )
 
-type Repository interface {
-	GetInfo(context.Context, string) (*pb.GetUserInfoRes, error)
-	TopUpBalance(context.Context, *pb.BalanceReq) (float32, error)
-	DebitBalance(context.Context, *pb.BalanceReq) (float32, error)
-}
-
-func NewRepo(db *sql.DB) Repository {
+func NewRepo(db *sql.DB) db.UserRepo {
 	return &repo{
 		db: db,
 	}
@@ -22,7 +17,7 @@ type repo struct {
 	db *sql.DB
 }
 
-func (r *repo) GetInfo(ctx context.Context, userUUID string) (*pb.GetUserInfoRes, error) {
+func (r *repo) GetInfo(_ context.Context, userUUID string) (*pb.GetUserInfoRes, error) {
 	query := `SELECT username,email,uuid,cash FROM users WHERE uuid = $1`
 
 	var info pb.GetUserInfoRes
@@ -33,7 +28,7 @@ func (r *repo) GetInfo(ctx context.Context, userUUID string) (*pb.GetUserInfoRes
 	return &info, nil
 }
 
-func (r *repo) TopUpBalance(ctx context.Context, req *pb.BalanceReq) (float32, error) {
+func (r *repo) TopUpBalance(_ context.Context, req *pb.BalanceReq) (float32, error) {
 	query := `UPDATE users SET cash = cash + $1 WHERE uuid = $2 RETURNING cash`
 
 	var cash float32
@@ -44,7 +39,7 @@ func (r *repo) TopUpBalance(ctx context.Context, req *pb.BalanceReq) (float32, e
 	return cash, nil
 }
 
-func (r *repo) DebitBalance(ctx context.Context, req *pb.BalanceReq) (float32, error) {
+func (r *repo) DebitBalance(_ context.Context, req *pb.BalanceReq) (float32, error) {
 	query := `UPDATE users SET cash = cash - $1 WHERE uuid = $2 RETURNING cash`
 
 	var cash float32

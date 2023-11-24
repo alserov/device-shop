@@ -15,41 +15,41 @@ const (
 	ordersPath  = "/orders"
 )
 
-func LoadRoutes(r *gin.Engine, h Handler) {
+func LoadRoutes(r *gin.Engine, h *Controller) {
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	// AUTH
 	userAuth := r.Group(authPath)
-	userAuth.POST("/signup", h.Signup)
-	userAuth.POST("/login", h.Login)
+	userAuth.POST("/signup", h.authHandler.Signup)
+	userAuth.POST("/login", h.authHandler.Login)
 
 	// USER ACTIONS
 	userActions := r.Group(actionsPath).Use(middleware.CheckIfAuthorized())
-	userActions.PUT("/balance", h.TopUpBalance)
-	userActions.POST("/new-favourite", h.AddToFavourite)
-	userActions.DELETE("/delete-favourite", h.RemoveFromFavourite)
-	userActions.GET("/favourite/:userUUID", h.GetFavourite)
-	userActions.POST("/new-cart", h.AddToCart)
-	userActions.DELETE("/delete-cart", h.RemoveFromCart)
-	userActions.GET("/cart/:userUUID", h.GetCart)
-	userActions.GET("/info/:userUUID", h.GetInfo)
+	userActions.PUT("/balance", h.userHandler.TopUpBalance)
+	userActions.GET("/info/:userUUID", h.userHandler.GetInfo)
+	userActions.POST("/new-favourite", h.collectionsHandler.AddToFavourite)
+	userActions.DELETE("/delete-favourite", h.collectionsHandler.RemoveFromFavourite)
+	userActions.GET("/favourite/:userUUID", h.collectionsHandler.GetFavourite)
+	userActions.POST("/new-cart", h.collectionsHandler.AddToCart)
+	userActions.DELETE("/delete-cart", h.collectionsHandler.RemoveFromCart)
+	userActions.GET("/cart/:userUUID", h.collectionsHandler.GetCart)
 
 	// ORDERS
 	order := r.Group(ordersPath).Use(middleware.CheckIfAuthorized())
-	order.POST("/new", h.CreateOrder)
-	order.PUT("/update", h.UpdateOrder)
-	order.GET("/:orderUUID", h.CheckOrder)
+	order.POST("/new", h.orderHandler.CreateOrder)
+	order.PUT("/update", h.orderHandler.UpdateOrder)
+	order.GET("/:orderUUID", h.orderHandler.CheckOrder)
 
 	// ADMIN routes
 	admin := r.Group(adminPath).Use(middleware.CheckIfAllowed())
-	admin.POST("/new-device", h.CreateDevice)
-	admin.DELETE("/delete-device/:deviceUUID", h.DeleteDevice)
-	admin.PUT("/update-device", h.UpdateDevice)
+	admin.POST("/new-device", h.adminHandler.CreateDevice)
+	admin.DELETE("/delete-device/:deviceUUID", h.adminHandler.DeleteDevice)
+	admin.PUT("/update-device", h.adminHandler.UpdateDevice)
 
 	// DEVICE ROUTES
 	device := r.Group(devicesPath)
-	device.GET("/", h.GetAllDevices)
-	device.GET("/title/:title", h.GetDevicesByTitle)
-	device.GET("/manufacturer/:manu", h.GetDevicesByManufacturer)
-	device.GET("/price", h.GetDevicesByPrice)
+	device.GET("/", h.devicesHandler.GetAllDevices)
+	device.GET("/title/:title", h.devicesHandler.GetDevicesByTitle)
+	device.GET("/manufacturer/:manu", h.devicesHandler.GetDevicesByManufacturer)
+	device.GET("/price", h.devicesHandler.GetDevicesByPrice)
 }

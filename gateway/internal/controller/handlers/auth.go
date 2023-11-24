@@ -1,4 +1,4 @@
-package controller
+package handlers
 
 import (
 	"context"
@@ -8,16 +8,29 @@ import (
 	"github.com/alserov/device-shop/proto/gen"
 	"github.com/asaskevich/govalidator"
 	"github.com/gin-gonic/gin"
+	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc/status"
 	"time"
 )
 
-type Auther interface {
+type AuthHandler interface {
 	Signup(c *gin.Context)
 	Login(c *gin.Context)
 }
 
-func (h *handler) Signup(c *gin.Context) {
+type authHandler struct {
+	logger   *logrus.Logger
+	authAddr string
+}
+
+func NewAuthHandler(authAddr string, logger *logrus.Logger) AuthHandler {
+	return &authHandler{
+		logger:   logger,
+		authAddr: authAddr,
+	}
+}
+
+func (h *authHandler) Signup(c *gin.Context) {
 	userInfo, err := utils.Decode[pb.SignupReq](c.Request, utils.CheckSignup)
 	if err != nil {
 		responser.UserError(c.Writer, err.Error())
@@ -53,7 +66,7 @@ func (h *handler) Signup(c *gin.Context) {
 	responser.Value(c.Writer, user)
 }
 
-func (h *handler) Login(c *gin.Context) {
+func (h *authHandler) Login(c *gin.Context) {
 	userInfo, err := utils.Decode[pb.LoginReq](c.Request, utils.CheckLogin)
 	if err != nil {
 		responser.UserError(c.Writer, err.Error())

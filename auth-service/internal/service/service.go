@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"database/sql"
+	"github.com/alserov/device-shop/auth-service/internal/db"
 	"github.com/alserov/device-shop/auth-service/internal/db/postgres"
 	"github.com/alserov/device-shop/auth-service/internal/entity"
 	"github.com/alserov/device-shop/auth-service/internal/utils"
@@ -14,17 +15,17 @@ import (
 )
 
 type service struct {
-	postgres postgres.Repository
+	auth db.AuthRepo
 }
 
 func New(pg *sql.DB) pb.AuthServer {
 	return &service{
-		postgres: postgres.NewRepo(pg),
+		auth: postgres.NewAuthRepo(pg),
 	}
 }
 
 func (s *service) Signup(ctx context.Context, req *pb.SignupReq) (*pb.SignupRes, error) {
-	if _, _, err := s.postgres.GetInfoByUsername(ctx, req.Username); err == nil {
+	if _, _, err := s.auth.GetPasswordAndRoleByUsername(ctx, req.Username); err == nil {
 		return &pb.SignupRes{}, err
 	}
 
@@ -47,7 +48,7 @@ func (s *service) Signup(ctx context.Context, req *pb.SignupReq) (*pb.SignupRes,
 		return &pb.SignupRes{}, err
 	}
 
-	if err = s.postgres.Signup(ctx, req, info); err != nil {
+	if err = s.auth.Signup(ctx, req, info); err != nil {
 		return &pb.SignupRes{}, err
 	}
 
@@ -66,7 +67,7 @@ func (s *service) Signup(ctx context.Context, req *pb.SignupReq) (*pb.SignupRes,
 }
 
 func (s *service) Login(ctx context.Context, req *pb.LoginReq) (*pb.LoginRes, error) {
-	password, role, err := s.postgres.GetInfoByUsername(ctx, req.Username)
+	password, role, err := s.auth.GetPasswordAndRoleByUsername(ctx, req.Username)
 	if err != nil {
 		return &pb.LoginRes{}, err
 	}
@@ -80,7 +81,7 @@ func (s *service) Login(ctx context.Context, req *pb.LoginReq) (*pb.LoginRes, er
 		return &pb.LoginRes{}, err
 	}
 
-	userUUID, err := s.postgres.Login(ctx, req, rToken)
+	userUUID, err := s.auth.Login(ctx, req, rToken)
 	if err != nil {
 		return &pb.LoginRes{}, err
 	}

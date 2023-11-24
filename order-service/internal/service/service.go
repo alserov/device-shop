@@ -3,7 +3,9 @@ package service
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"github.com/alserov/device-shop/gateway/pkg/client"
+	"github.com/alserov/device-shop/order-service/internal/db"
 	"github.com/alserov/device-shop/order-service/internal/db/postgres"
 	"github.com/alserov/device-shop/order-service/internal/entity"
 	"github.com/alserov/device-shop/order-service/internal/utils"
@@ -16,15 +18,26 @@ import (
 
 type service struct {
 	deviceAddr string
-	db         postgres.Repository
+	order      db.OrderRepo
+	user       db.UserRepo
+	device     db.DeviceRepo
 }
 
 func New(ordersDB, devicesDB, usersDB *sql.DB, deviceAddr string) pb.OrdersServer {
 	return &service{
 		deviceAddr: deviceAddr,
-		db:         postgres.New(ordersDB, devicesDB, usersDB),
+		order:      postgres.NewOrderRepo(ordersDB),
+		device:     postgres.NewDeviceRepo(devicesDB),
+		user:       postgres.NewUserRepo(usersDB),
 	}
 }
+
+const (
+	_ = iota
+	txOne
+	txTwo
+	txThree
+)
 
 func (s service) CreateOrder(ctx context.Context, req *pb.CreateOrderReq) (*pb.CreateOrderRes, error) {
 	var (
@@ -37,6 +50,7 @@ func (s service) CreateOrder(ctx context.Context, req *pb.CreateOrderReq) (*pb.C
 		}
 		wg    = &sync.WaitGroup{}
 		chErr = make(chan error)
+		txCh  = make(chan *sql.Tx, txThree)
 	)
 
 	info.TotalPrice, err = utils.CountPrice(ctx, req.Devices)
@@ -44,39 +58,25 @@ func (s service) CreateOrder(ctx context.Context, req *pb.CreateOrderReq) (*pb.C
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	orderTx, err := s.db.GetOrdersDB().Begin()
-	if err != nil {
-		return &pb.CreateOrderRes{}, err
-	}
+	wg.Add(txThree)
 
-	deviceTx, err := s.db.GetDevicesDB().Begin()
-	if err != nil {
-		return &pb.CreateOrderRes{}, err
-	}
-
-	balanceTx, err := s.db.GetUsersDB().Begin()
-	if err != nil {
-		return &pb.CreateOrderRes{}, err
-	}
-
-	wg.Add(3)
 	go func() {
 		defer wg.Done()
-		if err := s.db.CreateOrder(ctx, orderTx, req, info); err != nil {
+		if err := s.order.CreateOrder(ctx, txCh, req, info); err != nil {
 			chErr <- err
 		}
 	}()
 
 	go func() {
 		defer wg.Done()
-		if err = s.db.DecreaseDevicesAmount(ctx, deviceTx, req.Devices); err != nil {
+		if err := s.device.DecreaseDevicesAmount(ctx, txCh, req.Devices); err != nil {
 			chErr <- err
 		}
 	}()
 
 	go func() {
 		defer wg.Done()
-		if err = s.db.DebitBalance(ctx, balanceTx, req.UserUUID, info.TotalPrice); err != nil {
+		if err := s.user.DebitBalance(ctx, txCh, req.UserUUID, info.TotalPrice); err != nil {
 			chErr <- err
 		}
 	}()
@@ -84,19 +84,20 @@ func (s service) CreateOrder(ctx context.Context, req *pb.CreateOrderReq) (*pb.C
 	go func() {
 		wg.Wait()
 		close(chErr)
+		close(txCh)
 	}()
 
 	for err = range chErr {
 		cancel()
-		orderTx.Rollback()
-		balanceTx.Rollback()
-		deviceTx.Rollback()
+		for tx := range txCh {
+			tx.Rollback()
+		}
 		return &pb.CreateOrderRes{}, err
 	}
 
-	orderTx.Commit()
-	balanceTx.Commit()
-	deviceTx.Commit()
+	for tx := range txCh {
+		tx.Commit()
+	}
 
 	return &pb.CreateOrderRes{
 		OrderUUID: info.OrderUUID,
@@ -104,7 +105,7 @@ func (s service) CreateOrder(ctx context.Context, req *pb.CreateOrderReq) (*pb.C
 }
 
 func (s service) CheckOrder(ctx context.Context, req *pb.CheckOrderReq) (*pb.CheckOrderRes, error) {
-	order, err := s.db.CheckOrder(ctx, req.OrderUUID)
+	order, err := s.order.CheckOrder(ctx, req.OrderUUID)
 	if err != nil {
 		return &pb.CheckOrderRes{}, err
 	}
@@ -164,7 +165,7 @@ func (s service) CheckOrder(ctx context.Context, req *pb.CheckOrderReq) (*pb.Che
 
 func (s service) UpdateOrder(ctx context.Context, req *pb.UpdateOrderReq) (*pb.UpdateOrderRes, error) {
 	if utils.StatusToCode(req.Status) == utils.CANCELED_CODE {
-		order, err := s.db.CheckOrder(ctx, req.OrderUUID)
+		order, err := s.order.CheckOrder(ctx, req.OrderUUID)
 		if err != nil {
 			return &pb.UpdateOrderRes{}, err
 		}
@@ -172,32 +173,28 @@ func (s service) UpdateOrder(ctx context.Context, req *pb.UpdateOrderReq) (*pb.U
 		ctx, cancel := context.WithCancel(ctx)
 		defer cancel()
 
-		deviceTx, err := s.db.GetDevicesDB().Begin()
-		if err != nil {
-			return &pb.UpdateOrderRes{}, err
-		}
-
-		balanceTx, err := s.db.GetUsersDB().Begin()
-		if err != nil {
-			return &pb.UpdateOrderRes{}, err
-		}
-
 		var (
 			chErr = make(chan error)
 			wg    = &sync.WaitGroup{}
 		)
-		wg.Add(2)
+		wg.Add(txTwo)
+		txCh := make(chan *sql.Tx, txTwo)
 
 		go func() {
 			defer wg.Done()
-			if err = s.db.RollbackDevices(ctx, deviceTx, order.Devices); err != nil {
+			if err = s.device.RollbackDevices(ctx, txCh, order.Devices); err != nil {
 				chErr <- err
 			}
 		}()
 
 		go func() {
 			defer wg.Done()
-			if err = s.db.RollbackBalance(ctx, balanceTx, order.UserUUID, order.UUID, order.TotalPrice); err != nil {
+			o, err := s.order.CheckOrder(ctx, req.OrderUUID)
+			if o.Status == utils.CANCELED_CODE {
+				chErr <- errors.New("order is already canceled")
+				return
+			}
+			if err = s.user.RollbackBalance(ctx, txCh, order.UserUUID, order.UUID, order.TotalPrice); err != nil {
 				chErr <- err
 			}
 		}()
@@ -205,16 +202,21 @@ func (s service) UpdateOrder(ctx context.Context, req *pb.UpdateOrderReq) (*pb.U
 		go func() {
 			wg.Wait()
 			close(chErr)
+			close(txCh)
 		}()
 
 		for err = range chErr {
+			for tx := range txCh {
+				tx.Rollback()
+			}
 			return &pb.UpdateOrderRes{}, err
 		}
 
-		balanceTx.Commit()
-		deviceTx.Commit()
+		for tx := range txCh {
+			tx.Commit()
+		}
 	}
-	if err := s.db.UpdateOrder(ctx, req.Status, req.OrderUUID); err != nil {
+	if err := s.order.UpdateOrder(ctx, req.Status, req.OrderUUID); err != nil {
 		return &pb.UpdateOrderRes{}, err
 	}
 	return &pb.UpdateOrderRes{}, nil

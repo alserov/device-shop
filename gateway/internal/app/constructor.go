@@ -16,7 +16,7 @@ type App struct {
 	port    int
 	timeout int
 	router  *gin.Engine
-	handler controller.Handler
+	handler *controller.Controller
 }
 
 const (
@@ -79,7 +79,7 @@ func New() (*App, error) {
 		timeout: timeout,
 		//router:  gin.Default(),
 		router:  gin.New(),
-		handler: controller.NewHandler(cl, l),
+		handler: controller.NewController(cl, l),
 		port:    port,
 		host:    host,
 	}

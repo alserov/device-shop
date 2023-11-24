@@ -1,4 +1,4 @@
-package controller
+package handlers
 
 import (
 	"context"
@@ -7,18 +7,33 @@ import (
 	"github.com/alserov/device-shop/gateway/pkg/responser"
 	"github.com/alserov/device-shop/proto/gen"
 	"github.com/gin-gonic/gin"
+	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc/status"
 	"net/http"
 	"time"
 )
 
-type Adminer interface {
+type AdminHandler interface {
 	CreateDevice(c *gin.Context)
 	DeleteDevice(c *gin.Context)
 	UpdateDevice(c *gin.Context)
 }
 
-func (h *handler) CreateDevice(c *gin.Context) {
+func NewAdminHandler(deviceAddr, userAddr string, logger *logrus.Logger) AdminHandler {
+	return &adminHandler{
+		logger:     logger,
+		deviceAddr: deviceAddr,
+		userAddr:   userAddr,
+	}
+}
+
+type adminHandler struct {
+	deviceAddr string
+	userAddr   string
+	logger     *logrus.Logger
+}
+
+func (h *adminHandler) CreateDevice(c *gin.Context) {
 	device, err := utils.Decode[pb.CreateDeviceReq](c.Request, utils.CheckCreateDevice)
 	if err != nil {
 		responser.UserError(c.Writer, err.Error())
@@ -48,7 +63,7 @@ func (h *handler) CreateDevice(c *gin.Context) {
 	c.Status(http.StatusOK)
 }
 
-func (h *handler) DeleteDevice(c *gin.Context) {
+func (h *adminHandler) DeleteDevice(c *gin.Context) {
 	deviceUUID := c.Param("deviceUUID")
 
 	if deviceUUID == "" {
@@ -79,7 +94,7 @@ func (h *handler) DeleteDevice(c *gin.Context) {
 	c.Status(http.StatusOK)
 }
 
-func (h *handler) UpdateDevice(c *gin.Context) {
+func (h *adminHandler) UpdateDevice(c *gin.Context) {
 	device, err := utils.Decode[pb.UpdateDeviceReq](c.Request, utils.CheckUpdateDevice)
 	if err != nil {
 		responser.UserError(c.Writer, err.Error())

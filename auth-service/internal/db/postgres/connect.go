@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"database/sql"
+	"github.com/alserov/device-shop/auth-service/internal/db/postgres/migrations"
 	"log"
 )
 
@@ -16,7 +17,7 @@ func Connect(dsn string) (*sql.DB, error) {
 	}
 	log.Println("postgres connected")
 
-	if err = Migrate(dsn); err != nil {
+	if err = migrations.Migrate(dsn); err != nil {
 		return nil, err
 	}
 
