@@ -2,8 +2,6 @@ package mongo
 
 import (
 	"context"
-	device "github.com/alserov/device-shop/device-service/pkg/entity"
-	pb "github.com/alserov/device-shop/proto/gen"
 	"github.com/alserov/device-shop/user-service/internal/db"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -26,7 +24,7 @@ const (
 	DB_CART_COLLECTION      = "cart"
 )
 
-func (r repo) AddToFavourite(ctx context.Context, userUUID string, device *pb.Device) error {
+func (r *repo) AddToFavourite(ctx context.Context, userUUID string, device db.Device) error {
 	coll := r.db.Database(DB_NAME).Collection(DB_FAVOURITE_COLLECTION)
 
 	_, err := coll.InsertOne(ctx, bson.M{
@@ -39,7 +37,7 @@ func (r repo) AddToFavourite(ctx context.Context, userUUID string, device *pb.De
 	return nil
 }
 
-func (r repo) RemoveFromFavourite(ctx context.Context, req *pb.ChangeCollectionReq) error {
+func (r *repo) RemoveFromFavourite(ctx context.Context, req db.ChangeCollectionReq) error {
 	coll := r.db.Database(DB_NAME).Collection(DB_FAVOURITE_COLLECTION)
 
 	_, err := coll.DeleteOne(ctx, bson.D{
@@ -54,10 +52,10 @@ func (r repo) RemoveFromFavourite(ctx context.Context, req *pb.ChangeCollectionR
 }
 
 type CollectionRes struct {
-	Device *device.Device `bson:"device"`
+	Device db.Device `bson:"device"`
 }
 
-func (r repo) GetFavourite(ctx context.Context, userUUID string) ([]*device.Device, error) {
+func (r *repo) GetFavourite(ctx context.Context, userUUID string) ([]*db.Device, error) {
 	coll := r.db.Database(DB_NAME).Collection(DB_FAVOURITE_COLLECTION)
 
 	cur, err := coll.Find(ctx, bson.D{{"userUUID", userUUID}})
@@ -70,16 +68,15 @@ func (r repo) GetFavourite(ctx context.Context, userUUID string) ([]*device.Devi
 		return nil, err
 	}
 
-	var devices []*device.Device
-
+	var devices []*db.Device
 	for _, v := range d {
-		devices = append(devices, v.Device)
+		devices = append(devices, &v.Device)
 	}
 
 	return devices, nil
 }
 
-func (r repo) AddToCart(ctx context.Context, userUUID string, device *pb.Device) error {
+func (r *repo) AddToCart(ctx context.Context, userUUID string, device db.Device) error {
 	coll := r.db.Database(DB_NAME).Collection(DB_CART_COLLECTION)
 
 	_, err := coll.InsertOne(ctx, bson.M{
@@ -92,7 +89,7 @@ func (r repo) AddToCart(ctx context.Context, userUUID string, device *pb.Device)
 	return nil
 }
 
-func (r repo) RemoveFromCart(ctx context.Context, req *pb.ChangeCollectionReq) error {
+func (r *repo) RemoveFromCart(ctx context.Context, req db.ChangeCollectionReq) error {
 	coll := r.db.Database(DB_NAME).Collection(DB_CART_COLLECTION)
 
 	_, err := coll.DeleteOne(ctx, bson.D{
@@ -106,7 +103,7 @@ func (r repo) RemoveFromCart(ctx context.Context, req *pb.ChangeCollectionReq) e
 	return nil
 }
 
-func (r repo) GetCart(ctx context.Context, userUUID string) ([]*device.Device, error) {
+func (r *repo) GetCart(ctx context.Context, userUUID string) ([]*db.Device, error) {
 	coll := r.db.Database(DB_NAME).Collection(DB_CART_COLLECTION)
 
 	cur, err := coll.Find(ctx, bson.D{{"userUUID", userUUID}})
@@ -119,16 +116,16 @@ func (r repo) GetCart(ctx context.Context, userUUID string) ([]*device.Device, e
 		return nil, err
 	}
 
-	var devices []*device.Device
+	var devices []*db.Device
 
 	for _, v := range d {
-		devices = append(devices, v.Device)
+		devices = append(devices, &v.Device)
 	}
 
 	return devices, nil
 }
 
-func (r repo) RemoveDeviceFromCollections(ctx context.Context, deviceUUID string) error {
+func (r *repo) RemoveDeviceFromCollections(ctx context.Context, deviceUUID string) error {
 	chErr := make(chan error, 1)
 	var wg sync.WaitGroup
 
