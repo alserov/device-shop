@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"github.com/alserov/device-shop/device-service/internal/db"
-	pb "github.com/alserov/device-shop/proto/gen"
 )
 
 func NewAdminRepo(db *sql.DB) db.AdminRepo {
@@ -17,7 +16,7 @@ type adminRepo struct {
 	db *sql.DB
 }
 
-func (r *adminRepo) CreateDevice(_ context.Context, device *pb.Device) error {
+func (r *adminRepo) CreateDevice(_ context.Context, device db.Device) error {
 	query := `INSERT INTO devices (uuid, title, description, price, manufacturer, amount) VALUES($1,$2,$3,$4,$5,$6)`
 
 	_, err := r.db.Exec(query, device.UUID, device.Title, device.Description, device.Price, device.Manufacturer, device.Amount)
@@ -39,7 +38,7 @@ func (r *adminRepo) DeleteDevice(_ context.Context, uuid string) error {
 	return nil
 }
 
-func (r *adminRepo) UpdateDevice(_ context.Context, device *pb.UpdateDeviceReq) error {
+func (r *adminRepo) UpdateDevice(_ context.Context, device db.UpdateDevice) error {
 	query := `UPDATE devices SET title = $1, description = $2, price = $3 WHERE uuid = $4`
 
 	_, err := r.db.Exec(query, device.Title, device.Description, device.Price, device.UUID)

@@ -2,12 +2,27 @@ package db
 
 import (
 	"context"
-	pb "github.com/alserov/device-shop/proto/gen"
 )
 
 type AdminRepo interface {
-	CreateDevice(context.Context, *pb.Device) error
+	CreateDevice(context.Context, Device) error
 	DeleteDevice(context.Context, string) error
-	UpdateDevice(context.Context, *pb.UpdateDeviceReq) error
+	UpdateDevice(context.Context, UpdateDevice) error
 	IncreaseDeviceAmountByUUID(ctx context.Context, deviceUUID string, amount uint32) error
+}
+
+type Device struct {
+	UUID         string
+	Title        string
+	Description  string
+	Price        float32
+	Manufacturer string
+	Amount       uint32
+}
+
+type UpdateDevice struct {
+	Title       string
+	Description string
+	Price       float32
+	UUID        string
 }

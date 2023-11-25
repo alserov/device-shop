@@ -7,9 +7,9 @@ import (
 	"fmt"
 	"github.com/alserov/device-shop/device-service/internal/db"
 	"github.com/alserov/device-shop/device-service/internal/db/postgres"
+	conv "github.com/alserov/device-shop/device-service/internal/utils/proto_converter"
 	"github.com/alserov/device-shop/gateway/pkg/client"
 	"github.com/alserov/device-shop/proto/gen"
-	"github.com/google/uuid"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"net/http"
@@ -32,14 +32,7 @@ func New(db *sql.DB) pb.DevicesServer {
 }
 
 func (s *service) CreateDevice(ctx context.Context, req *pb.CreateDeviceReq) (*emptypb.Empty, error) {
-	r := &pb.Device{
-		UUID:         uuid.New().String(),
-		Title:        strings.ToLower(req.Title),
-		Description:  req.Description,
-		Price:        req.Price,
-		Manufacturer: strings.ToLower(req.Manufacturer),
-		Amount:       req.Amount,
-	}
+	r := conv.CreateDeviceToRepoStruct(req)
 
 	if err := s.admin.CreateDevice(ctx, r); err != nil {
 		return &emptypb.Empty{}, err
@@ -49,12 +42,7 @@ func (s *service) CreateDevice(ctx context.Context, req *pb.CreateDeviceReq) (*e
 }
 
 func (s *service) UpdateDevice(ctx context.Context, req *pb.UpdateDeviceReq) (*emptypb.Empty, error) {
-	r := &pb.UpdateDeviceReq{
-		Title:       strings.ToLower(req.Title),
-		Description: req.Description,
-		Price:       req.Price,
-		UUID:        req.UUID,
-	}
+	r := conv.UpdateDeviceToRepoStruct(req)
 
 	if err := s.admin.UpdateDevice(ctx, r); err != nil {
 		return &emptypb.Empty{}, err

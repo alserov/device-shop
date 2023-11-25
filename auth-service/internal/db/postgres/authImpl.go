@@ -5,8 +5,6 @@ import (
 	"database/sql"
 	"errors"
 	"github.com/alserov/device-shop/auth-service/internal/db"
-	"github.com/alserov/device-shop/auth-service/internal/entity"
-	pb "github.com/alserov/device-shop/proto/gen"
 	"google.golang.org/grpc/status"
 	"net/http"
 )
@@ -21,7 +19,7 @@ func NewAuthRepo(db *sql.DB) db.AuthRepo {
 	}
 }
 
-func (r *authRepo) Signup(_ context.Context, req *pb.SignupReq, info *entity.SignupAdditional) error {
+func (r *authRepo) Signup(_ context.Context, req db.SignupReq, info db.SignupInfo) error {
 	query := `INSERT INTO users (uuid,username,password,email,cash,refresh_token,role,created_at) VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`
 
 	_, err := r.db.Exec(query, info.UUID, req.Username, req.Password, req.Email, info.Cash, info.RefreshToken, info.Role, info.CreatedAt)
@@ -32,7 +30,7 @@ func (r *authRepo) Signup(_ context.Context, req *pb.SignupReq, info *entity.Sig
 	return nil
 }
 
-func (r *authRepo) Login(_ context.Context, req *pb.LoginReq, rToken string) (string, error) {
+func (r *authRepo) Login(_ context.Context, req db.LoginReq, rToken string) (string, error) {
 	query := `UPDATE users SET refresh_token = $1 WHERE username = $2 RETURNING uuid`
 
 	var uuid string

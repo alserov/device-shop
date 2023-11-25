@@ -5,8 +5,8 @@ import (
 	"database/sql"
 	"github.com/alserov/device-shop/auth-service/internal/db"
 	"github.com/alserov/device-shop/auth-service/internal/db/postgres"
-	"github.com/alserov/device-shop/auth-service/internal/entity"
 	"github.com/alserov/device-shop/auth-service/internal/utils"
+	conv "github.com/alserov/device-shop/auth-service/internal/utils/proto_converter"
 	pb "github.com/alserov/device-shop/proto/gen"
 	"github.com/google/uuid"
 	"google.golang.org/grpc/status"
@@ -24,31 +24,35 @@ func New(pg *sql.DB) pb.AuthServer {
 	}
 }
 
+const defaultRole = "user"
+
 func (s *service) Signup(ctx context.Context, req *pb.SignupReq) (*pb.SignupRes, error) {
 	if _, _, err := s.auth.GetPasswordAndRoleByUsername(ctx, req.Username); err == nil {
 		return &pb.SignupRes{}, err
 	}
 
-	now := time.Now().UTC()
-	token, rToken, err := utils.GenerateTokens("user")
+	now := time.Now().UTC() /*createdAt*/
+
+	token, rToken, err := utils.GenerateTokens(defaultRole)
 	if err != nil {
 		return &pb.SignupRes{}, err
 	}
 
-	info := &entity.SignupAdditional{
+	r := conv.SignupReqToRepoStruct(req)
+	r.Password, err = utils.HashPassword(req.Password)
+	if err != nil {
+		return &pb.SignupRes{}, err
+	}
+
+	info := db.SignupInfo{
 		UUID:         uuid.New().String(),
 		Cash:         0,
-		Role:         "user",
+		Role:         defaultRole,
 		CreatedAt:    &now,
 		RefreshToken: rToken,
 	}
 
-	req.Password, err = utils.HashPassword(req.Password)
-	if err != nil {
-		return &pb.SignupRes{}, err
-	}
-
-	if err = s.auth.Signup(ctx, req, info); err != nil {
+	if err = s.auth.Signup(ctx, r, info); err != nil {
 		return &pb.SignupRes{}, err
 	}
 
@@ -81,7 +85,8 @@ func (s *service) Login(ctx context.Context, req *pb.LoginReq) (*pb.LoginRes, er
 		return &pb.LoginRes{}, err
 	}
 
-	userUUID, err := s.auth.Login(ctx, req, rToken)
+	r := conv.LoginReqToRepoStruct(req)
+	userUUID, err := s.auth.Login(ctx, r, rToken)
 	if err != nil {
 		return &pb.LoginRes{}, err
 	}

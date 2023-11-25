@@ -8,6 +8,7 @@ import (
 	"github.com/alserov/device-shop/user-service/internal/db"
 	"github.com/alserov/device-shop/user-service/internal/db/mongo"
 	"github.com/alserov/device-shop/user-service/internal/db/postgres"
+	conv "github.com/alserov/device-shop/user-service/internal/utils/proto_converter"
 	mg "go.mongodb.org/mongo-driver/mongo"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"os"
@@ -42,7 +43,7 @@ func (s *service) GetUserInfo(ctx context.Context, req *pb.GetUserInfoReq) (*pb.
 }
 
 func (s *service) TopUpBalance(ctx context.Context, req *pb.BalanceReq) (*pb.BalanceRes, error) {
-	cash, err := s.user.TopUpBalance(ctx, &pb.BalanceReq{
+	cash, err := s.user.TopUpBalance(ctx, db.BalanceReq{
 		Cash:     req.Cash,
 		UserUUID: req.UserUUID,
 	})
@@ -56,7 +57,7 @@ func (s *service) TopUpBalance(ctx context.Context, req *pb.BalanceReq) (*pb.Bal
 }
 
 func (s *service) DebitBalance(ctx context.Context, req *pb.BalanceReq) (*pb.BalanceRes, error) {
-	cash, err := s.user.DebitBalance(ctx, &pb.BalanceReq{
+	cash, err := s.user.DebitBalance(ctx, db.BalanceReq{
 		Cash:     req.Cash,
 		UserUUID: req.UserUUID,
 	})
@@ -80,12 +81,14 @@ func (s *service) AddToFavourite(ctx context.Context, req *pb.ChangeCollectionRe
 		UUID: req.DeviceUUID,
 	}
 
-	dvc, err := cl.GetDeviceByUUID(ctx, getDeviceReq)
+	res, err := cl.GetDeviceByUUID(ctx, getDeviceReq)
 	if err != nil {
 		return &emptypb.Empty{}, err
 	}
 
-	if err = s.collections.AddToFavourite(ctx, req.UserUUID, dvc); err != nil {
+	d := conv.DeviceToRepoStruct(res)
+
+	if err = s.collections.AddToFavourite(ctx, req.UserUUID, d); err != nil {
 		return &emptypb.Empty{}, err
 	}
 
@@ -93,7 +96,7 @@ func (s *service) AddToFavourite(ctx context.Context, req *pb.ChangeCollectionRe
 }
 
 func (s *service) RemoveFromFavourite(ctx context.Context, req *pb.ChangeCollectionReq) (*emptypb.Empty, error) {
-	err := s.collections.RemoveFromFavourite(ctx, &pb.ChangeCollectionReq{
+	err := s.collections.RemoveFromFavourite(ctx, db.ChangeCollectionReq{
 		UserUUID:   req.UserUUID,
 		DeviceUUID: req.DeviceUUID,
 	})
@@ -139,12 +142,14 @@ func (s *service) AddToCart(ctx context.Context, req *pb.ChangeCollectionReq) (*
 		UUID: req.DeviceUUID,
 	}
 
-	dvc, err := cl.GetDeviceByUUID(ctx, getDeviceReq)
+	res, err := cl.GetDeviceByUUID(ctx, getDeviceReq)
 	if err != nil {
 		return &emptypb.Empty{}, err
 	}
 
-	if err = s.collections.AddToCart(ctx, req.UserUUID, dvc); err != nil {
+	d := conv.DeviceToRepoStruct(res)
+
+	if err = s.collections.AddToCart(ctx, req.UserUUID, d); err != nil {
 		return &emptypb.Empty{}, err
 	}
 
@@ -152,7 +157,7 @@ func (s *service) AddToCart(ctx context.Context, req *pb.ChangeCollectionReq) (*
 }
 
 func (s *service) RemoveFromCart(ctx context.Context, req *pb.ChangeCollectionReq) (*emptypb.Empty, error) {
-	err := s.collections.RemoveFromCart(ctx, &pb.ChangeCollectionReq{
+	err := s.collections.RemoveFromCart(ctx, db.ChangeCollectionReq{
 		UserUUID:   req.UserUUID,
 		DeviceUUID: req.GetDeviceUUID(),
 	})
