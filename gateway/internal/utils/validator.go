@@ -40,6 +40,9 @@ func CheckUpdateDevice(r *pb.UpdateDeviceReq) error {
 	if r.Price <= 0 {
 		return errors.New("price should be more than 0")
 	}
+	if r.UUID == "" {
+		return errors.New("uuid can't be empty")
+	}
 
 	return nil
 }
