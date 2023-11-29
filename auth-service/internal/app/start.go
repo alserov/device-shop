@@ -25,7 +25,7 @@ func (a *app) Start(ctx context.Context) error {
 		return err
 	}
 
-	pb.RegisterAuthServer(s, service.New(pg))
+	pb.RegisterAuthServer(s, service.New(pg, a.emailTopic, a.emailBrokerAddr))
 
 	chErr := make(chan error, 1)
 	go func() {

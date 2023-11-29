@@ -5,8 +5,8 @@ import (
 	"database/sql"
 	"errors"
 	"github.com/alserov/device-shop/auth-service/internal/db"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	"net/http"
 )
 
 type authRepo struct {
@@ -35,7 +35,7 @@ func (r *authRepo) Login(_ context.Context, req db.LoginReq, rToken string) (str
 
 	var uuid string
 	if err := r.db.QueryRow(query, rToken, req.Username).Scan(&uuid); err != nil {
-		return "", err
+		return "", status.Error(codes.Internal, err.Error())
 	}
 
 	return uuid, nil
@@ -50,9 +50,9 @@ func (r *authRepo) GetPasswordAndRoleByUsername(_ context.Context, uname string)
 	)
 	if err := r.db.QueryRow(query, uname).Scan(&password, &role); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return "", "", status.Error(http.StatusBadRequest, "user not found")
+			return "", "", errors.New("user not found")
 		}
-		return "", "", err
+		return "", "", status.Error(codes.Internal, err.Error())
 	}
 	return password, role, nil
 }

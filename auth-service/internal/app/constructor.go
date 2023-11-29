@@ -14,10 +14,12 @@ type App interface {
 }
 
 type app struct {
-	port        int
-	host        string
-	connType    string
-	postgresDsn string
+	port            int
+	host            string
+	connType        string
+	postgresDsn     string
+	emailTopic      string
+	emailBrokerAddr string
 }
 
 const (
@@ -64,6 +66,8 @@ func New() (App, error) {
 			os.Getenv("DB_NAME"),
 			os.Getenv("DB_SSLMODE"),
 		),
+		emailTopic:      os.Getenv("TOPIC"),
+		emailBrokerAddr: os.Getenv("BROKER_ADDR"),
 	}
 
 	return a, nil

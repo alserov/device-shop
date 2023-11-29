@@ -9,13 +9,8 @@ import (
 	_ "github.com/lib/pq"
 )
 
-func Migrate(dsn string) error {
-	conn, err := sql.Open("postgres", dsn)
-	if err != nil {
-		return err
-	}
-
-	driver, err := pg.WithInstance(conn, &pg.Config{})
+func Migrate(db *sql.DB) error {
+	driver, err := pg.WithInstance(db, &pg.Config{})
 	if err != nil {
 		return err
 	}

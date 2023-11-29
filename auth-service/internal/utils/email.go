@@ -2,6 +2,7 @@ package utils
 
 import (
 	"fmt"
+	"github.com/joho/godotenv"
 	"github.com/jordan-wright/email"
 	"net/smtp"
 	"os"
@@ -12,7 +13,10 @@ const (
 	smtpServerAddr = "smtp.gmail.com:587"
 )
 
-func SendEmail(to string) error {
+func SendEmail(toEmail string) error {
+	if err := godotenv.Load(".env"); err != nil {
+		return err
+	}
 	var (
 		sender = os.Getenv("SENDER_NAME")
 		mail   = os.Getenv("SENDER_EMAIL")
@@ -30,8 +34,8 @@ func SendEmail(to string) error {
 				<button style="width:200px;height:60px;border-radius:10px;background-color:#601473;color:white;font-weight:bold;border:none">Back</button>
 			</a>
 		</div>
-	`, to))
-	e.To = []string{to}
+	`, toEmail))
+	e.To = []string{toEmail}
 	smtpAuth := smtp.PlainAuth("", mail, pass, smtpAuthAddr)
 
 	return e.Send(smtpServerAddr, smtpAuth)

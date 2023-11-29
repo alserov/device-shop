@@ -3,32 +3,42 @@ package service
 import (
 	"context"
 	"database/sql"
+	"fmt"
+	"github.com/IBM/sarama"
+	"github.com/alserov/device-shop/auth-service/internal/broker"
 	"github.com/alserov/device-shop/auth-service/internal/db"
 	"github.com/alserov/device-shop/auth-service/internal/db/postgres"
 	"github.com/alserov/device-shop/auth-service/internal/utils"
 	conv "github.com/alserov/device-shop/auth-service/internal/utils/proto_converter"
 	pb "github.com/alserov/device-shop/proto/gen"
 	"github.com/google/uuid"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	"net/http"
 	"time"
 )
 
 type service struct {
-	auth db.AuthRepo
+	auth        db.AuthRepo
+	emailTopic  string
+	emailBroker string
 }
 
-func New(pg *sql.DB) pb.AuthServer {
+func New(pg *sql.DB, topic string, brokerAddr string) pb.AuthServer {
 	return &service{
-		auth: postgres.NewAuthRepo(pg),
+		auth:        postgres.NewAuthRepo(pg),
+		emailTopic:  topic,
+		emailBroker: brokerAddr,
 	}
 }
 
-const defaultRole = "user"
+const (
+	defaultRole   = "user"
+	kafkaClientID = "SIGNUP_RPC"
+)
 
 func (s *service) Signup(ctx context.Context, req *pb.SignupReq) (*pb.SignupRes, error) {
 	if _, _, err := s.auth.GetPasswordAndRoleByUsername(ctx, req.Username); err == nil {
-		return &pb.SignupRes{}, err
+		return &pb.SignupRes{}, status.Error(codes.AlreadyExists, "user with this username already exists")
 	}
 
 	now := time.Now().UTC() /*createdAt*/
@@ -56,9 +66,18 @@ func (s *service) Signup(ctx context.Context, req *pb.SignupReq) (*pb.SignupRes,
 		return &pb.SignupRes{}, err
 	}
 
-	//if err = utils.SendEmail(r.Email); err != nil {
-	//	log.Println("FAILED TO SEND EMAIL: ", err.Error())
-	//}
+	producer, err := broker.NewProducer([]string{s.emailBroker}, kafkaClientID)
+	if err != nil {
+		return &pb.SignupRes{}, fmt.Errorf("failed to send a message to: %s", req.Email)
+	}
+
+	_, _, err = producer.SendMessage(&sarama.ProducerMessage{
+		Value: sarama.StringEncoder(req.Email),
+		Topic: s.emailTopic,
+	})
+	if err != nil {
+		return &pb.SignupRes{}, fmt.Errorf("failed to send a message to: %s", req.Email)
+	}
 
 	return &pb.SignupRes{
 		Username:     req.Username,
@@ -77,7 +96,7 @@ func (s *service) Login(ctx context.Context, req *pb.LoginReq) (*pb.LoginRes, er
 	}
 
 	if err = utils.CheckPassword(req.Password, password); err != nil {
-		return nil, status.Error(http.StatusBadRequest, "invalid password")
+		return nil, err
 	}
 
 	token, rToken, err := utils.GenerateTokens(role)

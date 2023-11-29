@@ -1,6 +1,5 @@
-[INFO]: 2023-11-24 17:03:13 - logger initialized
-[INFO]: 2023-11-24 17:37:31 - logger initialized
-[INFO]: 2023-11-24 17:38:21 - logger initialized
-[INFO]: 2023-11-24 17:40:46 - logger initialized
-[INFO]: 2023-11-24 17:50:39 - logger initialized
-[INFO]: 2023-11-24 17:51:29 - logger initialized
+[INFO]: 2023-11-29 19:08:53 - logger initialized
+[ERROR]: 2023-11-29 19:08:54 - rpc error: code = Unknown desc = error
+[INFO]: 2023-11-29 19:09:18 - logger initialized
+[ERROR]: 2023-11-29 19:09:19 - rpc error: code = Unknown desc = error
+[INFO]: 2023-11-29 19:09:47 - logger initialized

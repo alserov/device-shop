@@ -17,7 +17,7 @@ func Connect(dsn string) (*sql.DB, error) {
 	}
 	log.Println("postgres connected")
 
-	if err = migrations.Migrate(dsn); err != nil {
+	if err = migrations.Migrate(conn); err != nil {
 		return nil, err
 	}
 
