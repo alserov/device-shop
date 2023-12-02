@@ -2,9 +2,9 @@
 // versions:
 // - protoc-gen-go-grpc v1.2.0
 // - protoc             v4.24.1
-// source: proto/user.proto
+// source: proto/protos/user.proto
 
-package pb
+package user
 
 import (
 	context "context"
@@ -23,7 +23,6 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type UsersClient interface {
-	GetUserInfo(ctx context.Context, in *GetUserInfoReq, opts ...grpc.CallOption) (*GetUserInfoRes, error)
 	AddToFavourite(ctx context.Context, in *ChangeCollectionReq, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	RemoveFromFavourite(ctx context.Context, in *ChangeCollectionReq, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	GetFavourite(ctx context.Context, in *GetCollectionReq, opts ...grpc.CallOption) (*GetCollectionRes, error)
@@ -41,15 +40,6 @@ type usersClient struct {
 
 func NewUsersClient(cc grpc.ClientConnInterface) UsersClient {
 	return &usersClient{cc}
-}
-
-func (c *usersClient) GetUserInfo(ctx context.Context, in *GetUserInfoReq, opts ...grpc.CallOption) (*GetUserInfoRes, error) {
-	out := new(GetUserInfoRes)
-	err := c.cc.Invoke(ctx, "/user.Users/GetUserInfo", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
 }
 
 func (c *usersClient) AddToFavourite(ctx context.Context, in *ChangeCollectionReq, opts ...grpc.CallOption) (*emptypb.Empty, error) {
@@ -137,7 +127,6 @@ func (c *usersClient) RemoveDeviceFromCollections(ctx context.Context, in *Remov
 // All implementations must embed UnimplementedUsersServer
 // for forward compatibility
 type UsersServer interface {
-	GetUserInfo(context.Context, *GetUserInfoReq) (*GetUserInfoRes, error)
 	AddToFavourite(context.Context, *ChangeCollectionReq) (*emptypb.Empty, error)
 	RemoveFromFavourite(context.Context, *ChangeCollectionReq) (*emptypb.Empty, error)
 	GetFavourite(context.Context, *GetCollectionReq) (*GetCollectionRes, error)
@@ -147,15 +136,13 @@ type UsersServer interface {
 	TopUpBalance(context.Context, *BalanceReq) (*BalanceRes, error)
 	DebitBalance(context.Context, *BalanceReq) (*BalanceRes, error)
 	RemoveDeviceFromCollections(context.Context, *RemoveDeletedDeviceReq) (*emptypb.Empty, error)
+	mustEmbedUnimplementedUsersServer()
 }
 
 // UnimplementedUsersServer must be embedded to have forward compatible implementations.
 type UnimplementedUsersServer struct {
 }
 
-func (UnimplementedUsersServer) GetUserInfo(context.Context, *GetUserInfoReq) (*GetUserInfoRes, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetUserInfo not implemented")
-}
 func (UnimplementedUsersServer) AddToFavourite(context.Context, *ChangeCollectionReq) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method AddToFavourite not implemented")
 }
@@ -194,24 +181,6 @@ type UnsafeUsersServer interface {
 
 func RegisterUsersServer(s grpc.ServiceRegistrar, srv UsersServer) {
 	s.RegisterService(&Users_ServiceDesc, srv)
-}
-
-func _Users_GetUserInfo_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetUserInfoReq)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(UsersServer).GetUserInfo(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/user.Users/GetUserInfo",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(UsersServer).GetUserInfo(ctx, req.(*GetUserInfoReq))
-	}
-	return interceptor(ctx, in, info, handler)
 }
 
 func _Users_AddToFavourite_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -384,10 +353,6 @@ var Users_ServiceDesc = grpc.ServiceDesc{
 	HandlerType: (*UsersServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "GetUserInfo",
-			Handler:    _Users_GetUserInfo_Handler,
-		},
-		{
 			MethodName: "AddToFavourite",
 			Handler:    _Users_AddToFavourite_Handler,
 		},
@@ -425,5 +390,5 @@ var Users_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "proto/user.proto",
+	Metadata: "proto/protos/user.proto",
 }

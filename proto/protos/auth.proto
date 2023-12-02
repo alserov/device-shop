@@ -1,12 +1,33 @@
 syntax="proto3";
 
-option go_package = "/";
+option go_package = "./auth";
 
 package auth;
 
 service Auth {
   rpc Signup(SignupReq) returns (SignupRes);
   rpc Login(LoginReq) returns (LoginRes);
+  rpc GetUserInfo(GetUserInfoReq) returns (GetUserInfoRes);
+  rpc CheckIfAdmin(CheckIfAdminReq) returns (CheckIfAdminRes);
+}
+
+message CheckIfAdminReq {
+  string UserUUID = 1;
+}
+
+message CheckIfAdminRes {
+  bool IsAdmin = 1;
+}
+
+message GetUserInfoReq {
+  string UserUUID = 1;
+}
+
+message GetUserInfoRes {
+  string Username = 1;
+  string Email = 2;
+  string UUID = 3;
+  float  Cash = 4;
 }
 
 message SignupRes {

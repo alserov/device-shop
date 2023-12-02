@@ -1,15 +1,13 @@
 syntax = "proto3";
 
-option go_package = "/";
+option go_package = "./user";
 
 import "google/protobuf/empty.proto";
-import "proto/device.proto";
+import "proto/protos/device.proto";
 
 package user;
 
 service Users {
-  rpc GetUserInfo(GetUserInfoReq) returns (GetUserInfoRes);
-
   rpc AddToFavourite(ChangeCollectionReq) returns (google.protobuf.Empty);
   rpc RemoveFromFavourite(ChangeCollectionReq) returns (google.protobuf.Empty);
   rpc GetFavourite(GetCollectionReq) returns(GetCollectionRes);
@@ -22,17 +20,6 @@ service Users {
   rpc DebitBalance(BalanceReq) returns(BalanceRes);
 
   rpc RemoveDeviceFromCollections(RemoveDeletedDeviceReq) returns(google.protobuf.Empty);
-}
-
-message GetUserInfoReq {
-  string UserUUID = 1;
-}
-
-message GetUserInfoRes {
-  string Username = 1;
-  string Email = 2;
-  string UUID = 3;
-  float  Cash = 4;
 }
 
 message GetCollectionReq {

@@ -2,16 +2,15 @@
 // versions:
 // - protoc-gen-go-grpc v1.2.0
 // - protoc             v4.24.1
-// source: proto/device.proto
+// source: proto/protos/device.proto
 
-package pb
+package device
 
 import (
 	context "context"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
-	emptypb "google.golang.org/protobuf/types/known/emptypb"
 )
 
 // This is a compile-time assertion to ensure that this generated file
@@ -23,9 +22,6 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type DevicesClient interface {
-	CreateDevice(ctx context.Context, in *CreateDeviceReq, opts ...grpc.CallOption) (*emptypb.Empty, error)
-	DeleteDevice(ctx context.Context, in *DeleteDeviceReq, opts ...grpc.CallOption) (*emptypb.Empty, error)
-	UpdateDevice(ctx context.Context, in *UpdateDeviceReq, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	GetAllDevices(ctx context.Context, in *GetAllDevicesReq, opts ...grpc.CallOption) (*DevicesRes, error)
 	GetDevicesByTitle(ctx context.Context, in *GetDeviceByTitleReq, opts ...grpc.CallOption) (*DevicesRes, error)
 	GetDevicesByManufacturer(ctx context.Context, in *GetByManufacturer, opts ...grpc.CallOption) (*DevicesRes, error)
@@ -39,33 +35,6 @@ type devicesClient struct {
 
 func NewDevicesClient(cc grpc.ClientConnInterface) DevicesClient {
 	return &devicesClient{cc}
-}
-
-func (c *devicesClient) CreateDevice(ctx context.Context, in *CreateDeviceReq, opts ...grpc.CallOption) (*emptypb.Empty, error) {
-	out := new(emptypb.Empty)
-	err := c.cc.Invoke(ctx, "/device.Devices/CreateDevice", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *devicesClient) DeleteDevice(ctx context.Context, in *DeleteDeviceReq, opts ...grpc.CallOption) (*emptypb.Empty, error) {
-	out := new(emptypb.Empty)
-	err := c.cc.Invoke(ctx, "/device.Devices/DeleteDevice", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *devicesClient) UpdateDevice(ctx context.Context, in *UpdateDeviceReq, opts ...grpc.CallOption) (*emptypb.Empty, error) {
-	out := new(emptypb.Empty)
-	err := c.cc.Invoke(ctx, "/device.Devices/UpdateDevice", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
 }
 
 func (c *devicesClient) GetAllDevices(ctx context.Context, in *GetAllDevicesReq, opts ...grpc.CallOption) (*DevicesRes, error) {
@@ -117,29 +86,18 @@ func (c *devicesClient) GetDeviceByUUID(ctx context.Context, in *GetDeviceByUUID
 // All implementations must embed UnimplementedDevicesServer
 // for forward compatibility
 type DevicesServer interface {
-	CreateDevice(context.Context, *CreateDeviceReq) (*emptypb.Empty, error)
-	DeleteDevice(context.Context, *DeleteDeviceReq) (*emptypb.Empty, error)
-	UpdateDevice(context.Context, *UpdateDeviceReq) (*emptypb.Empty, error)
 	GetAllDevices(context.Context, *GetAllDevicesReq) (*DevicesRes, error)
 	GetDevicesByTitle(context.Context, *GetDeviceByTitleReq) (*DevicesRes, error)
 	GetDevicesByManufacturer(context.Context, *GetByManufacturer) (*DevicesRes, error)
 	GetDevicesByPrice(context.Context, *GetByPrice) (*DevicesRes, error)
 	GetDeviceByUUID(context.Context, *GetDeviceByUUIDReq) (*Device, error)
+	mustEmbedUnimplementedDevicesServer()
 }
 
 // UnimplementedDevicesServer must be embedded to have forward compatible implementations.
 type UnimplementedDevicesServer struct {
 }
 
-func (UnimplementedDevicesServer) CreateDevice(context.Context, *CreateDeviceReq) (*emptypb.Empty, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method CreateDevice not implemented")
-}
-func (UnimplementedDevicesServer) DeleteDevice(context.Context, *DeleteDeviceReq) (*emptypb.Empty, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method DeleteDevice not implemented")
-}
-func (UnimplementedDevicesServer) UpdateDevice(context.Context, *UpdateDeviceReq) (*emptypb.Empty, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method UpdateDevice not implemented")
-}
 func (UnimplementedDevicesServer) GetAllDevices(context.Context, *GetAllDevicesReq) (*DevicesRes, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetAllDevices not implemented")
 }
@@ -166,60 +124,6 @@ type UnsafeDevicesServer interface {
 
 func RegisterDevicesServer(s grpc.ServiceRegistrar, srv DevicesServer) {
 	s.RegisterService(&Devices_ServiceDesc, srv)
-}
-
-func _Devices_CreateDevice_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(CreateDeviceReq)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(DevicesServer).CreateDevice(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/device.Devices/CreateDevice",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(DevicesServer).CreateDevice(ctx, req.(*CreateDeviceReq))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _Devices_DeleteDevice_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(DeleteDeviceReq)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(DevicesServer).DeleteDevice(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/device.Devices/DeleteDevice",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(DevicesServer).DeleteDevice(ctx, req.(*DeleteDeviceReq))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _Devices_UpdateDevice_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(UpdateDeviceReq)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(DevicesServer).UpdateDevice(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/device.Devices/UpdateDevice",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(DevicesServer).UpdateDevice(ctx, req.(*UpdateDeviceReq))
-	}
-	return interceptor(ctx, in, info, handler)
 }
 
 func _Devices_GetAllDevices_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -320,18 +224,6 @@ var Devices_ServiceDesc = grpc.ServiceDesc{
 	HandlerType: (*DevicesServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "CreateDevice",
-			Handler:    _Devices_CreateDevice_Handler,
-		},
-		{
-			MethodName: "DeleteDevice",
-			Handler:    _Devices_DeleteDevice_Handler,
-		},
-		{
-			MethodName: "UpdateDevice",
-			Handler:    _Devices_UpdateDevice_Handler,
-		},
-		{
 			MethodName: "GetAllDevices",
 			Handler:    _Devices_GetAllDevices_Handler,
 		},
@@ -353,5 +245,5 @@ var Devices_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "proto/device.proto",
+	Metadata: "proto/protos/device.proto",
 }

@@ -2,9 +2,9 @@
 // versions:
 // - protoc-gen-go-grpc v1.2.0
 // - protoc             v4.24.1
-// source: proto/order.proto
+// source: proto/protos/order.proto
 
-package pb
+package order
 
 import (
 	context "context"
@@ -69,6 +69,7 @@ type OrdersServer interface {
 	CreateOrder(context.Context, *CreateOrderReq) (*CreateOrderRes, error)
 	CheckOrder(context.Context, *CheckOrderReq) (*CheckOrderRes, error)
 	UpdateOrder(context.Context, *UpdateOrderReq) (*UpdateOrderRes, error)
+	mustEmbedUnimplementedOrdersServer()
 }
 
 // UnimplementedOrdersServer must be embedded to have forward compatible implementations.
@@ -172,5 +173,5 @@ var Orders_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "proto/order.proto",
+	Metadata: "proto/protos/order.proto",
 }
