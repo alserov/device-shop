@@ -1,10 +1,9 @@
 package main
 
 import (
-	"github.com/alserov/admin-service/internal/app"
-	"github.com/alserov/admin-service/internal/config"
-	"github.com/alserov/admin-service/internal/logger"
-	"log/slog"
+	"github.com/alserov/device-shop/auth-service/internal/app"
+	"github.com/alserov/device-shop/auth-service/internal/config"
+	"github.com/alserov/device-shop/auth-service/internal/logger"
 	"os"
 	"os/signal"
 	"syscall"
@@ -23,5 +22,5 @@ func main() {
 
 	sign := <-chStop
 	application.Stop()
-	log.Info("app was stopped", slog.String("signal", sign.String()))
+	log.Info("application was stopped due to: " + sign.String())
 }

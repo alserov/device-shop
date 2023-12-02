@@ -7,137 +7,84 @@ import (
 	"fmt"
 	"github.com/alserov/device-shop/device-service/internal/db"
 	"github.com/alserov/device-shop/device-service/internal/db/postgres"
-	conv "github.com/alserov/device-shop/device-service/internal/utils/proto_converter"
-	"github.com/alserov/device-shop/gateway/pkg/client"
-	"github.com/alserov/device-shop/proto/gen"
 	"google.golang.org/grpc/status"
-	"google.golang.org/protobuf/types/known/emptypb"
 	"net/http"
-	"os"
 	"strings"
 )
 
 type service struct {
-	device   db.DeviceRepo
-	admin    db.AdminRepo
+	db       db.DeviceRepo
 	userAddr string
 }
 
-func New(db *sql.DB) pb.DevicesServer {
+func NewService(db *sql.DB) Service {
 	return &service{
-		device:   postgres.NewDeviceRepo(db),
-		admin:    postgres.NewAdminRepo(db),
-		userAddr: os.Getenv("USER_ADDR"),
+		db: postgres.NewRepo(db),
 	}
 }
 
-func (s *service) CreateDevice(ctx context.Context, req *pb.CreateDeviceReq) (*emptypb.Empty, error) {
-	r := conv.CreateDeviceToRepoStruct(req)
-
-	if err := s.admin.CreateDevice(ctx, r); err != nil {
-		return &emptypb.Empty{}, err
-	}
-
-	return &emptypb.Empty{}, nil
+type Service interface {
+	GetDevicesByManufacturer(ctx context.Context, req GetByManufacturer) ([]*Device, error)
+	GetAllDevices(ctx context.Context, req GetAllDevicesReq) ([]*Device, error)
+	GetDevicesByTitle(ctx context.Context, req GetDeviceByTitleReq) ([]*Device, error)
+	GetDeviceByUUID(ctx context.Context, req GetDeviceByUUIDReq) (Device, error)
+	GetDevicesByPrice(ctx context.Context, req GetByPrice) ([]*Device, error)
 }
 
-func (s *service) UpdateDevice(ctx context.Context, req *pb.UpdateDeviceReq) (*emptypb.Empty, error) {
-	r := conv.UpdateDeviceToRepoStruct(req)
-
-	if err := s.admin.UpdateDevice(ctx, r); err != nil {
-		return &emptypb.Empty{}, err
-	}
-
-	return &emptypb.Empty{}, nil
-}
-
-func (s *service) DeleteDevice(ctx context.Context, req *pb.DeleteDeviceReq) (*emptypb.Empty, error) {
-	chErr := make(chan error)
-	go func() {
-		defer close(chErr)
-		cl, cc, err := client.DialUser(s.userAddr)
-		if err != nil {
-			chErr <- err
-		}
-		defer cc.Close()
-
-		_, err = cl.RemoveDeviceFromCollections(ctx, &pb.RemoveDeletedDeviceReq{
-			DeviceUUID: req.UUID,
-		})
-		if err != nil {
-			chErr <- err
-		}
-	}()
-
-	if err := s.admin.DeleteDevice(ctx, req.UUID); err != nil {
-		return &emptypb.Empty{}, err
-	}
-
-	for err := range chErr {
-		return &emptypb.Empty{}, err
-	}
-
-	return &emptypb.Empty{}, nil
-}
-
-func (s *service) GetAllDevices(ctx context.Context, req *pb.GetAllDevicesReq) (*pb.DevicesRes, error) {
-	d, err := s.device.GetAllDevices(ctx, req.Index, req.Amount)
-	if err != nil {
-		return &pb.DevicesRes{}, err
-	}
-
-	devices := make([]*pb.Device, 0, len(d))
-	for _, dv := range d {
-		pbDevice := &pb.Device{
-			UUID:         dv.UUID,
-			Title:        dv.Title,
-			Description:  dv.Description,
-			Manufacturer: dv.Manufacturer,
-			Price:        dv.Price,
-			Amount:       dv.Amount,
-		}
-		devices = append(devices, pbDevice)
-	}
-
-	return &pb.DevicesRes{
-		Devices: devices,
-	}, nil
-}
-
-func (s *service) GetDevicesByTitle(ctx context.Context, req *pb.GetDeviceByTitleReq) (*pb.DevicesRes, error) {
-	d, err := s.device.GetDevicesByTitle(ctx, strings.ToLower(req.Title))
-	if errors.Is(err, sql.ErrNoRows) {
-		return &pb.DevicesRes{}, status.Error(http.StatusBadRequest, fmt.Sprintf("Nothing found by %s", req.Title))
-	}
-	if err != nil {
-		return &pb.DevicesRes{}, err
-	}
-
-	devices := make([]*pb.Device, 0, len(d))
-	for _, dv := range d {
-		pbDevice := &pb.Device{
-			UUID:         dv.UUID,
-			Title:        dv.Title,
-			Description:  dv.Description,
-			Manufacturer: dv.Manufacturer,
-			Price:        dv.Price,
-			Amount:       dv.Amount,
-		}
-		devices = append(devices, pbDevice)
-	}
-
-	return &pb.DevicesRes{
-		Devices: devices,
-	}, nil
-}
-
-func (s *service) GetDeviceByUUID(ctx context.Context, req *pb.GetDeviceByUUIDReq) (*pb.Device, error) {
-	dv, err := s.device.GetDeviceByUUID(ctx, req.UUID)
+func (s *service) GetAllDevices(ctx context.Context, req GetAllDevicesReq) ([]*Device, error) {
+	d, err := s.db.GetAllDevices(ctx, req.Index, req.Amount)
 	if err != nil {
 		return nil, err
 	}
 
-	device := &pb.Device{
+	devices := make([]*Device, 0, len(d))
+	for _, dv := range d {
+		pbDevice := &Device{
+			UUID:         dv.UUID,
+			Title:        dv.Title,
+			Description:  dv.Description,
+			Manufacturer: dv.Manufacturer,
+			Price:        dv.Price,
+			Amount:       dv.Amount,
+		}
+		devices = append(devices, pbDevice)
+	}
+
+	return devices, nil
+}
+
+func (s *service) GetDevicesByTitle(ctx context.Context, req GetDeviceByTitleReq) ([]*Device, error) {
+	d, err := s.db.GetDevicesByTitle(ctx, strings.ToLower(req.Title))
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil, status.Error(http.StatusBadRequest, fmt.Sprintf("Nothing found by %s", req.Title))
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	devices := make([]*Device, 0, len(d))
+	for _, dv := range d {
+		pbDevice := &Device{
+			UUID:         dv.UUID,
+			Title:        dv.Title,
+			Description:  dv.Description,
+			Manufacturer: dv.Manufacturer,
+			Price:        dv.Price,
+			Amount:       dv.Amount,
+		}
+		devices = append(devices, pbDevice)
+	}
+
+	return devices, nil
+}
+
+func (s *service) GetDeviceByUUID(ctx context.Context, req GetDeviceByUUIDReq) (Device, error) {
+	dv, err := s.db.GetDeviceByUUID(ctx, req.UUID)
+	if err != nil {
+		return Device{}, err
+	}
+
+	device := Device{
 		UUID:         dv.UUID,
 		Title:        dv.Title,
 		Description:  dv.Description,
@@ -149,18 +96,18 @@ func (s *service) GetDeviceByUUID(ctx context.Context, req *pb.GetDeviceByUUIDRe
 	return device, nil
 }
 
-func (s *service) GetDevicesByManufacturer(ctx context.Context, req *pb.GetByManufacturer) (*pb.DevicesRes, error) {
-	d, err := s.device.GetDevicesByManufacturer(ctx, req.Manufacturer)
+func (s *service) GetDevicesByManufacturer(ctx context.Context, req GetByManufacturer) ([]*Device, error) {
+	d, err := s.db.GetDevicesByManufacturer(ctx, req.Manufacturer)
 	if errors.Is(err, sql.ErrNoRows) {
-		return &pb.DevicesRes{}, status.Error(http.StatusBadRequest, fmt.Sprintf("Nothing found by %s", req.Manufacturer))
+		return []*Device{}, status.Error(http.StatusBadRequest, fmt.Sprintf("Nothing found by %s", req.Manufacturer))
 	}
 	if err != nil {
-		return &pb.DevicesRes{}, err
+		return []*Device{}, err
 	}
 
-	devices := make([]*pb.Device, 0, len(d))
+	devices := make([]*Device, 0, len(d))
 	for _, dv := range d {
-		pbDevice := &pb.Device{
+		pbDevice := &Device{
 			UUID:         dv.UUID,
 			Title:        dv.Title,
 			Description:  dv.Description,
@@ -171,23 +118,21 @@ func (s *service) GetDevicesByManufacturer(ctx context.Context, req *pb.GetByMan
 		devices = append(devices, pbDevice)
 	}
 
-	return &pb.DevicesRes{
-		Devices: devices,
-	}, nil
+	return devices, nil
 }
 
-func (s *service) GetDevicesByPrice(ctx context.Context, req *pb.GetByPrice) (*pb.DevicesRes, error) {
-	d, err := s.device.GetDevicesByPrice(ctx, uint(req.Min), uint(req.Max))
+func (s *service) GetDevicesByPrice(ctx context.Context, req GetByPrice) ([]*Device, error) {
+	d, err := s.db.GetDevicesByPrice(ctx, uint(req.Min), uint(req.Max))
 	if errors.Is(err, sql.ErrNoRows) {
-		return &pb.DevicesRes{}, status.Error(http.StatusBadRequest, fmt.Sprintf("Nothing found by price > %d and price < %d", req.Min, req.Max))
+		return []*Device{}, status.Error(http.StatusBadRequest, fmt.Sprintf("Nothing found by price > %d and price < %d", req.Min, req.Max))
 	}
 	if err != nil {
-		return &pb.DevicesRes{}, err
+		return []*Device{}, err
 	}
 
-	devices := make([]*pb.Device, 0, len(d))
+	devices := make([]*Device, 0, len(d))
 	for _, dv := range d {
-		pbDevice := &pb.Device{
+		pbDevice := &Device{
 			UUID:         dv.UUID,
 			Title:        dv.Title,
 			Description:  dv.Description,
@@ -197,7 +142,5 @@ func (s *service) GetDevicesByPrice(ctx context.Context, req *pb.GetByPrice) (*p
 		devices = append(devices, pbDevice)
 	}
 
-	return &pb.DevicesRes{
-		Devices: devices,
-	}, nil
+	return devices, nil
 }

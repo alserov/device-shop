@@ -1,0 +1,11 @@
+env: local
+grpc:
+  port: 3001
+  timeout: 5s
+db:
+  port: 3000
+  name: template1
+  password: 1787
+  user: postgres
+  sslmode: disable
+  host: 127.0.0.1

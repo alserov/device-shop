@@ -8,18 +8,24 @@ import (
 )
 
 type Config struct {
-	Env  string     `yaml:"env" env-default:"local"`
-	GRPC GRPCConfig `yaml:"server"`
-	DB   DBConfig   `yaml:"db"`
+	Env   string      `yaml:"env"`
+	GRPC  GRPCConfig  `yaml:"grpc"`
+	DB    DBConfig    `yaml:"db"`
+	Kafka KafkaConfig `yaml:"kafka"`
 }
 
 type DBConfig struct {
-	User     string `yaml:"user"`
-	Password string `yaml:"password"`
 	Port     int    `yaml:"port"`
-	Name     string `yaml:"name"`
-	SSLMode  string `yaml:"sslmode"`
 	Host     string `yaml:"host"`
+	Name     string `yaml:"name"`
+	Password string `yaml:"password"`
+	SSLMode  string `yaml:"sslmode"`
+	User     string `yaml:"user"`
+}
+
+type KafkaConfig struct {
+	Topic      string `yaml:"topic"`
+	BrokerAddr string `yaml:"brokerAddr"`
 }
 
 type GRPCConfig struct {

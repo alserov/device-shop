@@ -8,24 +8,32 @@ import (
 	"github.com/alserov/device-shop/auth-service/internal/broker"
 	"github.com/alserov/device-shop/auth-service/internal/db"
 	"github.com/alserov/device-shop/auth-service/internal/db/postgres"
+	"github.com/alserov/device-shop/auth-service/internal/entity"
 	"github.com/alserov/device-shop/auth-service/internal/utils"
-	conv "github.com/alserov/device-shop/auth-service/internal/utils/proto_converter"
-	pb "github.com/alserov/device-shop/proto/gen"
+	"github.com/alserov/device-shop/proto/gen/auth"
 	"github.com/google/uuid"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"time"
 )
 
+type Service interface {
+	Signup(ctx context.Context, req *entity.SignupReq) (*entity.SignupRes, error)
+	Login(ctx context.Context, req *entity.LoginReq) (*entity.LoginRes, error)
+	GetUserInfo(ctx context.Context, req *entity.GetUserInfoReq) (*entity.GetUserInfoRes, error)
+	CheckIfAdmin(ctx context.Context, req *entity.CheckIfAdminReq) (*entity.CheckIfAdminRes, error)
+}
+
 type service struct {
-	auth        db.AuthRepo
+	auth.UnimplementedAuthServer
+	db          db.AuthRepo
 	emailTopic  string
 	emailBroker string
 }
 
-func New(pg *sql.DB, topic string, brokerAddr string) pb.AuthServer {
+func NewService(pg *sql.DB, topic string, brokerAddr string) Service {
 	return &service{
-		auth:        postgres.NewAuthRepo(pg),
+		db:          postgres.NewAuthRepo(pg),
 		emailTopic:  topic,
 		emailBroker: brokerAddr,
 	}
@@ -36,22 +44,21 @@ const (
 	kafkaClientID = "SIGNUP_RPC"
 )
 
-func (s *service) Signup(ctx context.Context, req *pb.SignupReq) (*pb.SignupRes, error) {
-	if _, _, err := s.auth.GetPasswordAndRoleByUsername(ctx, req.Username); err == nil {
-		return &pb.SignupRes{}, status.Error(codes.AlreadyExists, "user with this username already exists")
+func (s *service) Signup(ctx context.Context, req *entity.SignupReq) (*entity.SignupRes, error) {
+	if _, _, err := s.db.GetPasswordAndRoleByUsername(ctx, req.Username); err == nil {
+		return nil, status.Error(codes.AlreadyExists, "user with this username already exists")
 	}
 
 	now := time.Now().UTC() /*createdAt*/
 
 	token, rToken, err := utils.GenerateTokens(defaultRole)
 	if err != nil {
-		return &pb.SignupRes{}, err
+		return nil, status.Error(codes.Internal, fmt.Sprintf("failed to generate tokens: %v", err))
 	}
 
-	r := conv.SignupReqToRepoStruct(req)
-	r.Password, err = utils.HashPassword(req.Password)
+	req.Password, err = utils.HashPassword(req.Password)
 	if err != nil {
-		return &pb.SignupRes{}, err
+		return nil, status.Error(codes.Internal, fmt.Sprintf("failed to hash password: %v", err))
 	}
 
 	info := db.SignupInfo{
@@ -61,14 +68,13 @@ func (s *service) Signup(ctx context.Context, req *pb.SignupReq) (*pb.SignupRes,
 		CreatedAt:    &now,
 		RefreshToken: rToken,
 	}
-
-	if err = s.auth.Signup(ctx, r, info); err != nil {
-		return &pb.SignupRes{}, err
+	if err = s.db.Signup(ctx, req, info); err != nil {
+		return nil, status.Error(codes.Internal, fmt.Sprintf("failed to insert user: %v", err))
 	}
 
 	producer, err := broker.NewProducer([]string{s.emailBroker}, kafkaClientID)
 	if err != nil {
-		return &pb.SignupRes{}, fmt.Errorf("failed to send a message to: %s", req.Email)
+		return nil, status.Error(codes.Internal, fmt.Sprintf("failed to send a message to: %s", req.Email))
 	}
 
 	_, _, err = producer.SendMessage(&sarama.ProducerMessage{
@@ -76,10 +82,10 @@ func (s *service) Signup(ctx context.Context, req *pb.SignupReq) (*pb.SignupRes,
 		Topic: s.emailTopic,
 	})
 	if err != nil {
-		return &pb.SignupRes{}, fmt.Errorf("failed to send a message to: %s", req.Email)
+		return nil, status.Error(codes.Internal, fmt.Sprintf("failed to send a message to: %s", req.Email))
 	}
 
-	return &pb.SignupRes{
+	return &entity.SignupRes{
 		Username:     req.Username,
 		Email:        req.Email,
 		UUID:         info.UUID,
@@ -89,10 +95,10 @@ func (s *service) Signup(ctx context.Context, req *pb.SignupReq) (*pb.SignupRes,
 	}, nil
 }
 
-func (s *service) Login(ctx context.Context, req *pb.LoginReq) (*pb.LoginRes, error) {
-	password, role, err := s.auth.GetPasswordAndRoleByUsername(ctx, req.Username)
+func (s *service) Login(ctx context.Context, req *entity.LoginReq) (*entity.LoginRes, error) {
+	password, role, err := s.db.GetPasswordAndRoleByUsername(ctx, req.Username)
 	if err != nil {
-		return &pb.LoginRes{}, err
+		return nil, err
 	}
 
 	if err = utils.CheckPassword(req.Password, password); err != nil {
@@ -101,18 +107,34 @@ func (s *service) Login(ctx context.Context, req *pb.LoginReq) (*pb.LoginRes, er
 
 	token, rToken, err := utils.GenerateTokens(role)
 	if err != nil {
-		return &pb.LoginRes{}, err
+		return nil, err
 	}
-
-	r := conv.LoginReqToRepoStruct(req)
-	userUUID, err := s.auth.Login(ctx, r, rToken)
+	userUUID, err := s.db.Login(ctx, req, rToken)
 	if err != nil {
-		return &pb.LoginRes{}, err
+		return nil, err
 	}
 
-	return &pb.LoginRes{
+	return &entity.LoginRes{
 		RefreshToken: rToken,
 		Token:        token,
 		UUID:         userUUID,
 	}, nil
+}
+
+func (s *service) GetUserInfo(ctx context.Context, req *entity.GetUserInfoReq) (*entity.GetUserInfoRes, error) {
+	info, err := s.db.GetUserInfo(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+
+	return info, nil
+}
+
+func (s *service) CheckIfAdmin(ctx context.Context, req *entity.CheckIfAdminReq) (*entity.CheckIfAdminRes, error) {
+	isAdmin, err := s.db.CheckIfAdmin(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+
+	return isAdmin, nil
 }
