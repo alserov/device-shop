@@ -1,0 +1,37 @@
+syntax="proto3";
+
+option go_package = "github.com/alserov/device-shop/proto/gen/collection";
+
+package collection;
+
+import "protos/device.proto";
+import "google/protobuf/empty.proto";
+
+service Collections {
+  rpc AddToFavourite(ChangeCollectionReq) returns (google.protobuf.Empty);
+  rpc RemoveFromFavourite(ChangeCollectionReq) returns (google.protobuf.Empty);
+  rpc GetFavourite(GetCollectionReq) returns(GetCollectionRes);
+
+  rpc AddToCart(ChangeCollectionReq) returns (google.protobuf.Empty);
+  rpc RemoveFromCart(ChangeCollectionReq) returns (google.protobuf.Empty);
+  rpc GetCart(GetCollectionReq) returns(GetCollectionRes);
+
+  rpc RemoveDeviceFromCollections(RemoveDeletedDeviceReq) returns(google.protobuf.Empty);
+}
+
+message GetCollectionReq {
+  string UserUUID = 1;
+}
+
+message GetCollectionRes {
+  repeated device.Device Devices = 1;
+}
+
+message ChangeCollectionReq {
+  string DeviceUUID = 1;
+  string UserUUID = 2;
+}
+
+message RemoveDeletedDeviceReq {
+  string DeviceUUID = 1;
+}

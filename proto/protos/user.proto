@@ -1,38 +1,12 @@
 syntax = "proto3";
 
-option go_package = "./user";
-
-import "google/protobuf/empty.proto";
-import "proto/protos/device.proto";
+option go_package = "github.com/alserov/device-shop/proto/gen/user";
 
 package user;
 
 service Users {
-  rpc AddToFavourite(ChangeCollectionReq) returns (google.protobuf.Empty);
-  rpc RemoveFromFavourite(ChangeCollectionReq) returns (google.protobuf.Empty);
-  rpc GetFavourite(GetCollectionReq) returns(GetCollectionRes);
-
-  rpc AddToCart(ChangeCollectionReq) returns (google.protobuf.Empty);
-  rpc RemoveFromCart(ChangeCollectionReq) returns (google.protobuf.Empty);
-  rpc GetCart(GetCollectionReq) returns(GetCollectionRes);
-
   rpc TopUpBalance(BalanceReq) returns(BalanceRes);
   rpc DebitBalance(BalanceReq) returns(BalanceRes);
-
-  rpc RemoveDeviceFromCollections(RemoveDeletedDeviceReq) returns(google.protobuf.Empty);
-}
-
-message GetCollectionReq {
-  string UserUUID = 1;
-}
-
-message GetCollectionRes {
-  repeated device.Device Devices = 1;
-}
-
-message ChangeCollectionReq {
-  string DeviceUUID = 1;
-  string UserUUID = 2;
 }
 
 message BalanceReq {
@@ -42,8 +16,4 @@ message BalanceReq {
 
 message BalanceRes {
   float Cash = 1;
-}
-
-message RemoveDeletedDeviceReq {
-  string DeviceUUID = 1;
 }

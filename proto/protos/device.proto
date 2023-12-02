@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-option go_package = "./device";
+option go_package = "github.com/alserov/device-shop/proto/gen/device";
 
 package device;
 

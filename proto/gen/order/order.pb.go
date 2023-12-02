@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.28.1
 // 	protoc        v4.24.1
-// source: proto/protos/order.proto
+// source: proto/device/order.proto
 
 package order
 

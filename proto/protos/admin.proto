@@ -2,7 +2,7 @@ syntax="proto3";
 
 import "google/protobuf/empty.proto";
 
-option go_package = "./admin";
+option go_package = "github.com/alserov/device-shop/proto/gen/admin";
 
 service Admin {
   rpc CreateDevice(CreateDeviceReq) returns(google.protobuf.Empty);
