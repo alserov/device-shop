@@ -3,9 +3,9 @@ package handlers
 import (
 	"context"
 	"github.com/alserov/device-shop/gateway/internal/utils"
+	"github.com/alserov/device-shop/gateway/internal/utils/validation"
 	"github.com/alserov/device-shop/gateway/pkg/client"
 	"github.com/alserov/device-shop/gateway/pkg/responser"
-	"github.com/alserov/device-shop/proto/gen"
 	"github.com/asaskevich/govalidator"
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
@@ -32,7 +32,7 @@ func NewAuthHandler(authAddr string, logger *logrus.Logger) AuthHandler {
 }
 
 func (h *authHandler) Signup(c *gin.Context) {
-	userInfo, err := utils.Decode[pb.SignupReq](c.Request, utils.CheckSignup)
+	userInfo, err := utils.Decode[pb.SignupReq](c.Request, validation.CheckSignup)
 	if err != nil {
 		responser.UserError(c.Writer, err.Error())
 		return
@@ -71,7 +71,7 @@ func (h *authHandler) Signup(c *gin.Context) {
 }
 
 func (h *authHandler) Login(c *gin.Context) {
-	userInfo, err := utils.Decode[pb.LoginReq](c.Request, utils.CheckLogin)
+	userInfo, err := utils.Decode[pb.LoginReq](c.Request, validation.CheckLogin)
 	if err != nil {
 		responser.UserError(c.Writer, err.Error())
 		return

@@ -2,26 +2,22 @@ package cache
 
 import (
 	"github.com/go-redis/redis"
-	"log"
-	"os"
 	"time"
 )
 
-func Connect() (*redis.Client, error) {
+func MustConnect(addr string) *redis.Client {
 	cl := redis.NewClient(&redis.Options{
-		Addr:        os.Getenv("REDIS_ADDR"),
+		Addr:        addr,
 		Password:    "",
 		DB:          0,
 		DialTimeout: 3 * time.Second,
 		ReadTimeout: 3 * time.Second,
 	})
 
-	res, err := cl.Ping().Result()
+	_, err := cl.Ping().Result()
 	if err != nil {
-		return nil, err
+		panic("failed to ping redis: " + err.Error())
 	}
-	log.Println("REDIS PING ", res)
 
-	log.Println("REDIS connected")
-	return cl, nil
+	return cl
 }

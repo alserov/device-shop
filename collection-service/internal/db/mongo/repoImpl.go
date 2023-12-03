@@ -2,7 +2,7 @@ package mongo
 
 import (
 	"context"
-	"github.com/alserov/device-shop/user-service/internal/db"
+	"github.com/alserov/device-shop/collection-service/internal/db"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"sync"
@@ -12,7 +12,7 @@ type repo struct {
 	db *mongo.Client
 }
 
-func NewRepo(db *mongo.Client) db.CollectionsRepo {
+func NewCollectionsRepo(db *mongo.Client) db.CollectionsRepo {
 	return &repo{
 		db: db,
 	}
@@ -37,7 +37,7 @@ func (r *repo) AddToFavourite(ctx context.Context, userUUID string, device db.De
 	return nil
 }
 
-func (r *repo) RemoveFromFavourite(ctx context.Context, req db.ChangeCollectionReq) error {
+func (r *repo) RemoveFromFavourite(ctx context.Context, req *db.ChangeCollectionReq) error {
 	coll := r.db.Database(DB_NAME).Collection(DB_FAVOURITE_COLLECTION)
 
 	_, err := coll.DeleteOne(ctx, bson.D{
@@ -89,7 +89,7 @@ func (r *repo) AddToCart(ctx context.Context, userUUID string, device db.Device)
 	return nil
 }
 
-func (r *repo) RemoveFromCart(ctx context.Context, req db.ChangeCollectionReq) error {
+func (r *repo) RemoveFromCart(ctx context.Context, req *db.ChangeCollectionReq) error {
 	coll := r.db.Database(DB_NAME).Collection(DB_CART_COLLECTION)
 
 	_, err := coll.DeleteOne(ctx, bson.D{

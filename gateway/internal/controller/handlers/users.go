@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	"github.com/alserov/device-shop/gateway/internal/utils"
+	"github.com/alserov/device-shop/gateway/internal/utils/validation"
 	"github.com/alserov/device-shop/gateway/pkg/client"
 	"github.com/alserov/device-shop/gateway/pkg/responser"
 	pb "github.com/alserov/device-shop/proto/gen"
@@ -30,7 +31,7 @@ func NewUserHandler(userAddr string, logger *logrus.Logger) UsersHandler {
 }
 
 func (h *usersHandler) TopUpBalance(c *gin.Context) {
-	cashAmount, err := utils.Decode[pb.BalanceReq](c.Request, utils.CheckTopUpBalance)
+	cashAmount, err := utils.Decode[pb.BalanceReq](c.Request, validation.CheckTopUpBalance)
 	if err != nil {
 		responser.UserError(c.Writer, err.Error())
 		return

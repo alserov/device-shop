@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	"github.com/alserov/device-shop/gateway/internal/utils"
+	"github.com/alserov/device-shop/gateway/internal/utils/validation"
 	"github.com/alserov/device-shop/gateway/pkg/client"
 	"github.com/alserov/device-shop/gateway/pkg/responser"
 	pb "github.com/alserov/device-shop/proto/gen"
@@ -32,7 +33,7 @@ func NewOrderHandler(orderAddr string, logger *logrus.Logger) OrdersHandler {
 }
 
 func (h *ordersHandler) CreateOrder(c *gin.Context) {
-	order, err := utils.Decode[pb.CreateOrderReq](c.Request, utils.CheckCreateOrder)
+	order, err := utils.Decode[pb.CreateOrderReq](c.Request, validation.CheckCreateOrder)
 	if err != nil {
 		responser.UserError(c.Writer, err.Error())
 		return
@@ -64,7 +65,7 @@ func (h *ordersHandler) CreateOrder(c *gin.Context) {
 }
 
 func (h *ordersHandler) UpdateOrder(c *gin.Context) {
-	orderStatus, err := utils.Decode[pb.UpdateOrderReq](c.Request, utils.CheckUpdateOrder)
+	orderStatus, err := utils.Decode[pb.UpdateOrderReq](c.Request, validation.CheckUpdateOrder)
 	if err != nil {
 		responser.UserError(c.Writer, err.Error())
 		return

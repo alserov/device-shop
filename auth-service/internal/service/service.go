@@ -7,9 +7,11 @@ import (
 	"github.com/IBM/sarama"
 	"github.com/alserov/device-shop/auth-service/internal/broker"
 	"github.com/alserov/device-shop/auth-service/internal/db"
+	repo "github.com/alserov/device-shop/auth-service/internal/db/models"
 	"github.com/alserov/device-shop/auth-service/internal/db/postgres"
-	"github.com/alserov/device-shop/auth-service/internal/entity"
+	"github.com/alserov/device-shop/auth-service/internal/service/models"
 	"github.com/alserov/device-shop/auth-service/internal/utils"
+	"github.com/alserov/device-shop/auth-service/internal/utils/converter"
 	"github.com/alserov/device-shop/proto/gen/auth"
 	"github.com/google/uuid"
 	"google.golang.org/grpc/codes"
@@ -18,10 +20,10 @@ import (
 )
 
 type Service interface {
-	Signup(ctx context.Context, req *entity.SignupReq) (*entity.SignupRes, error)
-	Login(ctx context.Context, req *entity.LoginReq) (*entity.LoginRes, error)
-	GetUserInfo(ctx context.Context, req *entity.GetUserInfoReq) (*entity.GetUserInfoRes, error)
-	CheckIfAdmin(ctx context.Context, req *entity.CheckIfAdminReq) (*entity.CheckIfAdminRes, error)
+	Signup(ctx context.Context, req *models.SignupReq) (*models.SignupRes, error)
+	Login(ctx context.Context, req *models.LoginReq) (*models.LoginRes, error)
+	GetUserInfo(ctx context.Context, uuid string) (*models.GetUserInfoRes, error)
+	CheckIfAdmin(ctx context.Context, uuid string) (bool, error)
 }
 
 type service struct {
@@ -44,7 +46,7 @@ const (
 	kafkaClientID = "SIGNUP_RPC"
 )
 
-func (s *service) Signup(ctx context.Context, req *entity.SignupReq) (*entity.SignupRes, error) {
+func (s *service) Signup(ctx context.Context, req *models.SignupReq) (*models.SignupRes, error) {
 	if _, _, err := s.db.GetPasswordAndRoleByUsername(ctx, req.Username); err == nil {
 		return nil, status.Error(codes.AlreadyExists, "user with this username already exists")
 	}
@@ -61,14 +63,14 @@ func (s *service) Signup(ctx context.Context, req *entity.SignupReq) (*entity.Si
 		return nil, status.Error(codes.Internal, fmt.Sprintf("failed to hash password: %v", err))
 	}
 
-	info := db.SignupInfo{
+	info := repo.SignupInfo{
 		UUID:         uuid.New().String(),
 		Cash:         0,
 		Role:         defaultRole,
 		CreatedAt:    &now,
 		RefreshToken: rToken,
 	}
-	if err = s.db.Signup(ctx, req, info); err != nil {
+	if err = s.db.Signup(ctx, converter.ServiceSignupReqToRepo(req), info); err != nil {
 		return nil, status.Error(codes.Internal, fmt.Sprintf("failed to insert user: %v", err))
 	}
 
@@ -85,7 +87,7 @@ func (s *service) Signup(ctx context.Context, req *entity.SignupReq) (*entity.Si
 		return nil, status.Error(codes.Internal, fmt.Sprintf("failed to send a message to: %s", req.Email))
 	}
 
-	return &entity.SignupRes{
+	return &models.SignupRes{
 		Username:     req.Username,
 		Email:        req.Email,
 		UUID:         info.UUID,
@@ -95,7 +97,7 @@ func (s *service) Signup(ctx context.Context, req *entity.SignupReq) (*entity.Si
 	}, nil
 }
 
-func (s *service) Login(ctx context.Context, req *entity.LoginReq) (*entity.LoginRes, error) {
+func (s *service) Login(ctx context.Context, req *models.LoginReq) (*models.LoginRes, error) {
 	password, role, err := s.db.GetPasswordAndRoleByUsername(ctx, req.Username)
 	if err != nil {
 		return nil, err
@@ -109,31 +111,31 @@ func (s *service) Login(ctx context.Context, req *entity.LoginReq) (*entity.Logi
 	if err != nil {
 		return nil, err
 	}
-	userUUID, err := s.db.Login(ctx, req, rToken)
+	userUUID, err := s.db.Login(ctx, converter.ServiceLoginReqToRepo(req), rToken)
 	if err != nil {
 		return nil, err
 	}
 
-	return &entity.LoginRes{
+	return &models.LoginRes{
 		RefreshToken: rToken,
 		Token:        token,
 		UUID:         userUUID,
 	}, nil
 }
 
-func (s *service) GetUserInfo(ctx context.Context, req *entity.GetUserInfoReq) (*entity.GetUserInfoRes, error) {
-	info, err := s.db.GetUserInfo(ctx, req)
+func (s *service) GetUserInfo(ctx context.Context, uuid string) (*models.GetUserInfoRes, error) {
+	info, err := s.db.GetUserInfo(ctx, uuid)
 	if err != nil {
 		return nil, err
 	}
 
-	return info, nil
+	return converter.RepoUserInfoResToService(info), nil
 }
 
-func (s *service) CheckIfAdmin(ctx context.Context, req *entity.CheckIfAdminReq) (*entity.CheckIfAdminRes, error) {
-	isAdmin, err := s.db.CheckIfAdmin(ctx, req)
+func (s *service) CheckIfAdmin(ctx context.Context, uuid string) (bool, error) {
+	isAdmin, err := s.db.CheckIfAdmin(ctx, uuid)
 	if err != nil {
-		return nil, err
+		return false, err
 	}
 
 	return isAdmin, nil

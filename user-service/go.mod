@@ -5,7 +5,7 @@ go 1.21.0
 require (
 	github.com/alserov/device-shop/device-service v0.0.0-20231116144431-722d556d6d67
 	github.com/alserov/device-shop/gateway v0.0.0-20231117183329-6c90d6422f13
-	github.com/alserov/device-shop/proto v0.0.0-20231121175101-e9f3b96f0aa8
+	github.com/alserov/device-shop/proto v0.0.0-20231202173253-6aa813902f61
 	github.com/joho/godotenv v1.5.1
 	github.com/lib/pq v1.10.9
 	github.com/stretchr/testify v1.8.1

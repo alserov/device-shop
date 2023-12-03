@@ -3,9 +3,9 @@ package handlers
 import (
 	"context"
 	"github.com/alserov/device-shop/gateway/internal/utils"
+	"github.com/alserov/device-shop/gateway/internal/utils/validation"
 	"github.com/alserov/device-shop/gateway/pkg/client"
 	"github.com/alserov/device-shop/gateway/pkg/responser"
-	"github.com/alserov/device-shop/proto/gen"
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc/status"
@@ -36,7 +36,7 @@ func NewCollectionsHandler(userAddr string, logger *logrus.Logger) CollectionsHa
 }
 
 func (h *collectionsHandler) AddToFavourite(c *gin.Context) {
-	addCred, err := utils.Decode[pb.ChangeCollectionReq](c.Request, utils.CheckCollection)
+	addCred, err := utils.Decode[pb.ChangeCollectionReq](c.Request, validation.CheckCollection)
 	if err != nil {
 		responser.UserError(c.Writer, err.Error())
 		return
@@ -66,7 +66,7 @@ func (h *collectionsHandler) AddToFavourite(c *gin.Context) {
 }
 
 func (h *collectionsHandler) RemoveFromFavourite(c *gin.Context) {
-	removeCred, err := utils.Decode[pb.ChangeCollectionReq](c.Request, utils.CheckCollection)
+	removeCred, err := utils.Decode[pb.ChangeCollectionReq](c.Request, validation.CheckCollection)
 	if err != nil {
 		responser.UserError(c.Writer, err.Error())
 		return
@@ -130,7 +130,7 @@ func (h *collectionsHandler) GetFavourite(c *gin.Context) {
 }
 
 func (h *collectionsHandler) AddToCart(c *gin.Context) {
-	addCred, err := utils.Decode[pb.ChangeCollectionReq](c.Request, utils.CheckCollection)
+	addCred, err := utils.Decode[pb.ChangeCollectionReq](c.Request, validation.CheckCollection)
 	if err != nil {
 		responser.UserError(c.Writer, err.Error())
 		return
@@ -160,7 +160,7 @@ func (h *collectionsHandler) AddToCart(c *gin.Context) {
 }
 
 func (h *collectionsHandler) RemoveFromCart(c *gin.Context) {
-	removeCred, err := utils.Decode[pb.ChangeCollectionReq](c.Request, utils.CheckCollection)
+	removeCred, err := utils.Decode[pb.ChangeCollectionReq](c.Request, validation.CheckCollection)
 	if err != nil {
 		responser.UserError(c.Writer, err.Error())
 		return

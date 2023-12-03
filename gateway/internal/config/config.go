@@ -8,25 +8,32 @@ import (
 )
 
 type Config struct {
-	Env  string     `yaml:"env"`
-	DB   DBConfig   `yaml:"db"`
-	GRPC GRPCConfig `yaml:"grpc"`
-}
-
-type GRPCConfig struct {
+	Env     string        `yaml:"env"`
 	Port    int           `yaml:"port"`
 	Timeout time.Duration `yaml:"timeout"`
+	Cache   Cache         `yaml:"cache"`
 }
 
-type DBConfig struct {
-	Uri string `yaml:"dbUri"`
+type Services struct {
+	Auth Service `yaml:"auth"`
+}
+
+type Service struct {
+	Addr string `yaml:"addr"`
+}
+
+type Cache struct {
+	Addr string `yaml:"addr"`
 }
 
 func MustLoad() *Config {
 	path := fetchConfigPath()
+	if path == "" {
+		panic("config path is empty")
+	}
 
 	if _, err := os.Stat(path); err != nil {
-		panic("config file not found: " + path)
+		panic("config file does not exist: " + path)
 	}
 
 	var cfg Config
@@ -45,7 +52,7 @@ func fetchConfigPath() string {
 	flag.Parse()
 
 	if path == "" {
-		os.Getenv("CONFIG_PATH")
+		path = os.Getenv("CONFIG_PATH")
 	}
 
 	return path

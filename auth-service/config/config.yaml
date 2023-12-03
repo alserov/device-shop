@@ -1,0 +1,19 @@
+env: "local"
+grpc:
+  port: 3005
+  timeout: 5s
+db:
+  port: 4005
+  host: 127.0.0.1
+  name: template1
+  password: 1787
+  sslmode: disable
+  user: postgres
+kafka:
+  topic: NEW_USER_EMAILS
+  brokerAddr: 127.0.0.1:9092
+
+email:
+  password: bwch rbes cemw ayyc
+  name: Device - Online Device Shop
+  email: asroka4ev@gmail.com

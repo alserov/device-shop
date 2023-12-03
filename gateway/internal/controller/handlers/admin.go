@@ -3,12 +3,14 @@ package handlers
 import (
 	"context"
 	"github.com/alserov/device-shop/gateway/internal/utils"
+	"github.com/alserov/device-shop/gateway/internal/utils/validation"
 	"github.com/alserov/device-shop/gateway/pkg/client"
 	"github.com/alserov/device-shop/gateway/pkg/responser"
-	"github.com/alserov/device-shop/proto/gen"
+	pb "github.com/alserov/device-shop/proto/gen"
+	"github.com/alserov/device-shop/proto/gen/admin"
 	"github.com/gin-gonic/gin"
-	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc/status"
+	"log/slog"
 	"net/http"
 	"time"
 )
@@ -19,7 +21,7 @@ type AdminHandler interface {
 	UpdateDevice(c *gin.Context)
 }
 
-func NewAdminHandler(deviceAddr, userAddr string, logger *logrus.Logger) AdminHandler {
+func NewAdminHandler(deviceAddr, userAddr string, logger *slog.Logger) AdminHandler {
 	return &adminHandler{
 		logger:     logger,
 		deviceAddr: deviceAddr,
@@ -30,11 +32,11 @@ func NewAdminHandler(deviceAddr, userAddr string, logger *logrus.Logger) AdminHa
 type adminHandler struct {
 	deviceAddr string
 	userAddr   string
-	logger     *logrus.Logger
+	logger     *slog.Logger
 }
 
 func (h *adminHandler) CreateDevice(c *gin.Context) {
-	device, err := utils.Decode[pb.CreateDeviceReq](c.Request, utils.CheckCreateDevice)
+	device, err := utils.Decode[admin.CreateDeviceReq](c.Request, validation.CheckCreateDevice)
 	if err != nil {
 		responser.UserError(c.Writer, err.Error())
 		return
@@ -95,7 +97,7 @@ func (h *adminHandler) DeleteDevice(c *gin.Context) {
 }
 
 func (h *adminHandler) UpdateDevice(c *gin.Context) {
-	device, err := utils.Decode[pb.UpdateDeviceReq](c.Request, utils.CheckUpdateDevice)
+	device, err := utils.Decode[pb.UpdateDeviceReq](c.Request, validation.CheckUpdateDevice)
 	if err != nil {
 		responser.UserError(c.Writer, err.Error())
 		return

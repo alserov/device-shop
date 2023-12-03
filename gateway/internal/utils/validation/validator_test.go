@@ -1,4 +1,4 @@
-package utils
+package validation
 
 import (
 	pb "github.com/alserov/device-shop/proto/gen"

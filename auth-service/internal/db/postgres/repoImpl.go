@@ -6,7 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/alserov/device-shop/auth-service/internal/db"
-	"github.com/alserov/device-shop/auth-service/internal/entity"
+	"github.com/alserov/device-shop/auth-service/internal/db/models"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -21,7 +21,7 @@ func NewAuthRepo(db *sql.DB) db.AuthRepo {
 	}
 }
 
-func (r *authRepo) Signup(_ context.Context, req *entity.SignupReq, info db.SignupInfo) error {
+func (r *authRepo) Signup(_ context.Context, req *models.SignupReq, info models.SignupInfo) error {
 	query := `INSERT INTO users (uuid,username,password,email,cash,refresh_token,role,created_at) VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`
 
 	_, err := r.db.Exec(query, info.UUID, req.Username, req.Password, req.Email, info.Cash, info.RefreshToken, info.Role, info.CreatedAt)
@@ -32,7 +32,7 @@ func (r *authRepo) Signup(_ context.Context, req *entity.SignupReq, info db.Sign
 	return nil
 }
 
-func (r *authRepo) Login(_ context.Context, req *entity.LoginReq, rToken string) (string, error) {
+func (r *authRepo) Login(_ context.Context, req *models.LoginReq, rToken string) (string, error) {
 	query := `UPDATE users SET refresh_token = $1 WHERE username = $2 RETURNING uuid`
 
 	var uuid string
@@ -59,12 +59,12 @@ func (r *authRepo) GetPasswordAndRoleByUsername(_ context.Context, uname string)
 	return password, role, nil
 }
 
-func (r *authRepo) GetUserInfo(ctx context.Context, req *entity.GetUserInfoReq) (*entity.GetUserInfoRes, error) {
+func (r *authRepo) GetUserInfo(ctx context.Context, uuid string) (*models.GetUserInfoRes, error) {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (r *authRepo) CheckIfAdmin(ctx context.Context, req *entity.CheckIfAdminReq) (*entity.CheckIfAdminRes, error) {
+func (r *authRepo) CheckIfAdmin(ctx context.Context, uuid string) (bool, error) {
 	//TODO implement me
 	panic("implement me")
 }

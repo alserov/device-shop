@@ -2,22 +2,13 @@ package db
 
 import (
 	"context"
-	"github.com/alserov/device-shop/auth-service/internal/entity"
-	"time"
+	"github.com/alserov/device-shop/auth-service/internal/db/models"
 )
 
 type AuthRepo interface {
-	Signup(ctx context.Context, req *entity.SignupReq, info SignupInfo) error
-	Login(ctx context.Context, req *entity.LoginReq, rToken string) (string, error)
+	Signup(ctx context.Context, req *models.SignupReq, info models.SignupInfo) error
+	Login(ctx context.Context, req *models.LoginReq, rToken string) (string, error)
 	GetPasswordAndRoleByUsername(ctx context.Context, uname string) (string, string, error)
-	GetUserInfo(context.Context, *entity.GetUserInfoReq) (*entity.GetUserInfoRes, error)
-	CheckIfAdmin(context.Context, *entity.CheckIfAdminReq) (*entity.CheckIfAdminRes, error)
-}
-
-type SignupInfo struct {
-	UUID         string
-	Cash         float32
-	RefreshToken string
-	Role         string
-	CreatedAt    *time.Time
+	GetUserInfo(ctx context.Context, uuid string) (*models.GetUserInfoRes, error)
+	CheckIfAdmin(ctx context.Context, uuid string) (bool, error)
 }

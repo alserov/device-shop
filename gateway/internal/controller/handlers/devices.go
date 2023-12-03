@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"github.com/alserov/device-shop/gateway/internal/cache"
 	"github.com/alserov/device-shop/gateway/internal/utils"
+	"github.com/alserov/device-shop/gateway/internal/utils/validation"
 	"github.com/alserov/device-shop/gateway/pkg/client"
 	"github.com/alserov/device-shop/gateway/pkg/responser"
-	"github.com/alserov/device-shop/proto/gen"
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc/status"
@@ -39,7 +39,7 @@ func NewDevicesHandler(deviceAddr string, cache cache.Repository, logger *logrus
 }
 
 func (h *devicesHandler) GetAllDevices(c *gin.Context) {
-	getDevicesCred, err := utils.Decode[pb.GetAllDevicesReq](c.Request, utils.CheckGetAll)
+	getDevicesCred, err := utils.Decode[pb.GetAllDevicesReq](c.Request, validation.CheckGetAll)
 	if err != nil {
 		responser.UserError(c.Writer, err.Error())
 		return

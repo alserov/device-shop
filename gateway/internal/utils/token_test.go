@@ -1,12 +1,13 @@
 package utils
 
 import (
+	"github.com/alserov/device-shop/gateway/internal/utils/validation"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
 
 func TestValidateToken(t *testing.T) {
-	tests := []test[string]{
+	tests := []validation.test[string]{
 		{
 			testName:         "empty token",
 			in:               "",

@@ -5,6 +5,7 @@ import (
 	"github.com/alserov/device-shop/gateway/internal/controller/handlers"
 	"github.com/go-redis/redis"
 	"github.com/sirupsen/logrus"
+	"log/slog"
 	"os"
 )
 
@@ -19,7 +20,7 @@ type Controller struct {
 	userHandler        handlers.UsersHandler
 }
 
-func NewController(c *redis.Client, lg *logrus.Logger) *Controller {
+func NewController(c *redis.Client, lg *slog.Logger) *Controller {
 	var (
 		userAddr   = os.Getenv("USER_ADDR")
 		deviceAddr = os.Getenv("DEVICE_ADDR")

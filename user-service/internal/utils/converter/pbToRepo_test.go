@@ -1,4 +1,4 @@
-package proto_converter
+package converter
 
 import (
 	pb "github.com/alserov/device-shop/proto/gen"

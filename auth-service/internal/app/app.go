@@ -47,7 +47,7 @@ func New(cfg *config.Config, log *slog.Logger) *App {
 }
 
 func (a *App) MustStart() {
-	a.log.Info("starting server on port", slog.Int("port", a.port))
+	a.log.Info("starting server", slog.Int("port", a.port))
 
 	db := postgres.MustConnect(a.dbDsn)
 	a.log.Info("db connected")
@@ -59,6 +59,7 @@ func (a *App) MustStart() {
 		panic("failed to start a server: " + err.Error())
 	}
 
+	a.log.Info("app has started", slog.Int("port", a.port))
 	if err = a.gRPCServer.Serve(l); err != nil {
 		panic("app has stopped due to the error: " + err.Error())
 	}

@@ -3,23 +3,20 @@ package main
 import (
 	"github.com/IBM/sarama"
 	"github.com/alserov/device-shop/auth-service/internal/broker"
+	"github.com/alserov/device-shop/auth-service/internal/config"
 	"github.com/alserov/device-shop/auth-service/internal/utils"
-	"github.com/joho/godotenv"
 	"log"
-	"os"
 )
 
 func main() {
-	if err := godotenv.Load(".env"); err != nil {
-		log.Println(".env file not found")
-	}
+	cfg := config.MustLoadEmail()
 
-	cons, err := sarama.NewConsumer([]string{os.Getenv("BROKER_ADDR")}, nil)
+	cons, err := sarama.NewConsumer([]string{cfg.Kafka.BrokerAddr}, nil)
 	if err != nil {
 		log.Fatal("failed to create a consumer: ", err)
 	}
 
-	msgs, err := broker.Subscribe(os.Getenv("TOPIC"), cons)
+	msgs, err := broker.Subscribe(cfg.Kafka.Topic, cons)
 	if err != nil {
 		log.Fatal("failed to subscribe for a topic: ", err)
 	}

@@ -55,7 +55,7 @@ func (s server) GetUserInfo(ctx context.Context, req *auth.GetUserInfoReq) (*aut
 		return nil, err
 	}
 
-	res, err := s.auth.GetUserInfo(ctx, converter.GetUserInfoReqToServiceStruct(req))
+	res, err := s.auth.GetUserInfo(ctx, req.UserUUID)
 	if err != nil {
 		return nil, err
 	}
@@ -68,7 +68,7 @@ func (s server) CheckIfAdmin(ctx context.Context, req *auth.CheckIfAdminReq) (*a
 		return nil, err
 	}
 
-	res, err := s.auth.CheckIfAdmin(ctx, converter.CheckIfAdminReqToServiceStruct(req))
+	res, err := s.auth.CheckIfAdmin(ctx, req.UserUUID)
 	if err != nil {
 		return nil, err
 	}

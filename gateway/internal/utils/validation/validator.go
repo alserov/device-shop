@@ -1,13 +1,18 @@
-package utils
+package validation
 
 import (
 	"errors"
-	pb "github.com/alserov/device-shop/proto/gen"
+	"github.com/alserov/device-shop/proto/gen/admin"
+	"github.com/alserov/device-shop/proto/gen/auth"
+	"github.com/alserov/device-shop/proto/gen/collection"
+	"github.com/alserov/device-shop/proto/gen/device"
+	"github.com/alserov/device-shop/proto/gen/order"
+	"github.com/alserov/device-shop/proto/gen/user"
 	"net/mail"
 )
 
 // ADMIN VALIDATORS
-func CheckCreateDevice(r *pb.CreateDeviceReq) error {
+func CheckCreateDevice(r *admin.CreateDeviceReq) error {
 	if len(r.Title) < 5 {
 		return errors.New("title too short")
 	}
@@ -30,7 +35,7 @@ func CheckCreateDevice(r *pb.CreateDeviceReq) error {
 
 	return nil
 }
-func CheckUpdateDevice(r *pb.UpdateDeviceReq) error {
+func CheckUpdateDevice(r *admin.UpdateDeviceReq) error {
 	if len(r.Title) < 5 {
 		return errors.New("title too short")
 	}
@@ -48,7 +53,7 @@ func CheckUpdateDevice(r *pb.UpdateDeviceReq) error {
 }
 
 // AUTH VALIDATORS
-func CheckSignup(r *pb.SignupReq) error {
+func CheckSignup(r *auth.SignupReq) error {
 	if len(r.Password) < 5 {
 		return errors.New("password is too short")
 	}
@@ -63,7 +68,7 @@ func CheckSignup(r *pb.SignupReq) error {
 
 	return nil
 }
-func CheckLogin(r *pb.LoginReq) error {
+func CheckLogin(r *auth.LoginReq) error {
 	if len(r.Password) < 5 {
 		return errors.New("password is too short")
 	}
@@ -76,7 +81,7 @@ func CheckLogin(r *pb.LoginReq) error {
 }
 
 // COLLECTION VALIDATOR
-func CheckCollection(r *pb.ChangeCollectionReq) error {
+func CheckCollection(r *collection.ChangeCollectionReq) error {
 	if r.DeviceUUID == "" {
 		return errors.New("device uuid can't be empty")
 	}
@@ -89,7 +94,7 @@ func CheckCollection(r *pb.ChangeCollectionReq) error {
 }
 
 // DEVICE VALIDATORS
-func CheckGetAll(r *pb.GetAllDevicesReq) error {
+func CheckGetAll(r *device.GetAllDevicesReq) error {
 	if r.Index < 0 {
 		return errors.New("index should be >= 0")
 	}
@@ -102,7 +107,7 @@ func CheckGetAll(r *pb.GetAllDevicesReq) error {
 }
 
 // ORDER VALIDATORS
-func CheckCreateOrder(r *pb.CreateOrderReq) error {
+func CheckCreateOrder(r *order.CreateOrderReq) error {
 	if len(r.Devices) < 1 {
 		return errors.New("length of cart should be more than 0 to create an order")
 	}
@@ -114,7 +119,7 @@ func CheckCreateOrder(r *pb.CreateOrderReq) error {
 	return nil
 }
 
-func CheckUpdateOrder(r *pb.UpdateOrderReq) error {
+func CheckUpdateOrder(r *order.UpdateOrderReq) error {
 	status := map[string]struct{}{
 		"canceled":   {},
 		"pending":    {},
@@ -130,7 +135,7 @@ func CheckUpdateOrder(r *pb.UpdateOrderReq) error {
 	return nil
 }
 
-func CheckTopUpBalance(r *pb.BalanceReq) error {
+func CheckTopUpBalance(r *user.BalanceReq) error {
 	if r.Cash <= 0 {
 		return errors.New("deposit should be more than 0")
 	}
