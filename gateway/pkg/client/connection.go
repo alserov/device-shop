@@ -1,7 +1,10 @@
 package client
 
 import (
-	"github.com/alserov/device-shop/proto/gen"
+	"github.com/alserov/device-shop/proto/gen/auth"
+	"github.com/alserov/device-shop/proto/gen/device"
+	"github.com/alserov/device-shop/proto/gen/order"
+	"github.com/alserov/device-shop/proto/gen/user"
 	"google.golang.org/grpc"
 )
 
@@ -13,46 +16,46 @@ func dial(addr string) (*grpc.ClientConn, error) {
 	return cc, nil
 }
 
-func DialUser(addr string) (pb.UsersClient, *grpc.ClientConn, error) {
+func DialUser(addr string) (user.UsersClient, *grpc.ClientConn, error) {
 	cc, err := dial(addr)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	client := pb.NewUsersClient(cc)
+	client := user.NewUsersClient(cc)
 
 	return client, cc, nil
 }
 
-func DialDevice(addr string) (pb.DevicesClient, *grpc.ClientConn, error) {
+func DialDevice(addr string) (device.DevicesClient, *grpc.ClientConn, error) {
 	cc, err := dial(addr)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	client := pb.NewDevicesClient(cc)
+	client := device.NewDevicesClient(cc)
 
 	return client, cc, nil
 }
 
-func DialOrder(addr string) (pb.OrdersClient, *grpc.ClientConn, error) {
+func DialOrder(addr string) (order.OrdersClient, *grpc.ClientConn, error) {
 	cc, err := dial(addr)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	client := pb.NewOrdersClient(cc)
+	client := order.NewOrdersClient(cc)
 
 	return client, cc, nil
 }
 
-func DialAuth(addr string) (pb.AuthClient, *grpc.ClientConn, error) {
+func DialAuth(addr string) (auth.AuthClient, *grpc.ClientConn, error) {
 	cc, err := dial(addr)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	client := pb.NewAuthClient(cc)
+	client := auth.NewAuthClient(cc)
 
 	return client, cc, err
 }
