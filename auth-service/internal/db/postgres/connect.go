@@ -2,7 +2,7 @@ package postgres
 
 import (
 	"database/sql"
-	"github.com/alserov/device-shop/auth-service/internal/db/postgres/migrations"
+	"github.com/alserov/device-shop/user-service/internal/db/postgres/migrations"
 )
 
 func MustConnect(dsn string) *sql.DB {

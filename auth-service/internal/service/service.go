@@ -5,14 +5,14 @@ import (
 	"database/sql"
 	"fmt"
 	"github.com/IBM/sarama"
-	"github.com/alserov/device-shop/auth-service/internal/broker"
 	"github.com/alserov/device-shop/auth-service/internal/db"
-	repo "github.com/alserov/device-shop/auth-service/internal/db/models"
 	"github.com/alserov/device-shop/auth-service/internal/db/postgres"
-	"github.com/alserov/device-shop/auth-service/internal/service/models"
-	"github.com/alserov/device-shop/auth-service/internal/utils"
-	"github.com/alserov/device-shop/auth-service/internal/utils/converter"
 	"github.com/alserov/device-shop/proto/gen/auth"
+	"github.com/alserov/device-shop/user-service/internal/broker"
+	repo "github.com/alserov/device-shop/user-service/internal/db/models"
+	"github.com/alserov/device-shop/user-service/internal/service/models"
+	utils2 "github.com/alserov/device-shop/user-service/internal/utils"
+	"github.com/alserov/device-shop/user-service/internal/utils/converter"
 	"github.com/google/uuid"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -53,12 +53,12 @@ func (s *service) Signup(ctx context.Context, req *models.SignupReq) (*models.Si
 
 	now := time.Now().UTC() /*createdAt*/
 
-	token, rToken, err := utils.GenerateTokens(defaultRole)
+	token, rToken, err := utils2.GenerateTokens(defaultRole)
 	if err != nil {
 		return nil, status.Error(codes.Internal, fmt.Sprintf("failed to generate tokens: %v", err))
 	}
 
-	req.Password, err = utils.HashPassword(req.Password)
+	req.Password, err = utils2.HashPassword(req.Password)
 	if err != nil {
 		return nil, status.Error(codes.Internal, fmt.Sprintf("failed to hash password: %v", err))
 	}
@@ -103,11 +103,11 @@ func (s *service) Login(ctx context.Context, req *models.LoginReq) (*models.Logi
 		return nil, err
 	}
 
-	if err = utils.CheckPassword(req.Password, password); err != nil {
+	if err = utils2.CheckPassword(req.Password, password); err != nil {
 		return nil, err
 	}
 
-	token, rToken, err := utils.GenerateTokens(role)
+	token, rToken, err := utils2.GenerateTokens(role)
 	if err != nil {
 		return nil, err
 	}

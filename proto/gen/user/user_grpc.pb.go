@@ -24,6 +24,10 @@ const _ = grpc.SupportPackageIsVersion7
 type UsersClient interface {
 	TopUpBalance(ctx context.Context, in *BalanceReq, opts ...grpc.CallOption) (*BalanceRes, error)
 	DebitBalance(ctx context.Context, in *BalanceReq, opts ...grpc.CallOption) (*BalanceRes, error)
+	Signup(ctx context.Context, in *SignupReq, opts ...grpc.CallOption) (*SignupRes, error)
+	Login(ctx context.Context, in *LoginReq, opts ...grpc.CallOption) (*LoginRes, error)
+	GetUserInfo(ctx context.Context, in *GetUserInfoReq, opts ...grpc.CallOption) (*GetUserInfoRes, error)
+	CheckIfAdmin(ctx context.Context, in *CheckIfAdminReq, opts ...grpc.CallOption) (*CheckIfAdminRes, error)
 }
 
 type usersClient struct {
@@ -52,12 +56,52 @@ func (c *usersClient) DebitBalance(ctx context.Context, in *BalanceReq, opts ...
 	return out, nil
 }
 
+func (c *usersClient) Signup(ctx context.Context, in *SignupReq, opts ...grpc.CallOption) (*SignupRes, error) {
+	out := new(SignupRes)
+	err := c.cc.Invoke(ctx, "/user.Users/Signup", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *usersClient) Login(ctx context.Context, in *LoginReq, opts ...grpc.CallOption) (*LoginRes, error) {
+	out := new(LoginRes)
+	err := c.cc.Invoke(ctx, "/user.Users/Login", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *usersClient) GetUserInfo(ctx context.Context, in *GetUserInfoReq, opts ...grpc.CallOption) (*GetUserInfoRes, error) {
+	out := new(GetUserInfoRes)
+	err := c.cc.Invoke(ctx, "/user.Users/GetUserInfo", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *usersClient) CheckIfAdmin(ctx context.Context, in *CheckIfAdminReq, opts ...grpc.CallOption) (*CheckIfAdminRes, error) {
+	out := new(CheckIfAdminRes)
+	err := c.cc.Invoke(ctx, "/user.Users/CheckIfAdmin", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // UsersServer is the server API for Users service.
 // All implementations must embed UnimplementedUsersServer
 // for forward compatibility
 type UsersServer interface {
 	TopUpBalance(context.Context, *BalanceReq) (*BalanceRes, error)
 	DebitBalance(context.Context, *BalanceReq) (*BalanceRes, error)
+	Signup(context.Context, *SignupReq) (*SignupRes, error)
+	Login(context.Context, *LoginReq) (*LoginRes, error)
+	GetUserInfo(context.Context, *GetUserInfoReq) (*GetUserInfoRes, error)
+	CheckIfAdmin(context.Context, *CheckIfAdminReq) (*CheckIfAdminRes, error)
 	mustEmbedUnimplementedUsersServer()
 }
 
@@ -70,6 +114,18 @@ func (UnimplementedUsersServer) TopUpBalance(context.Context, *BalanceReq) (*Bal
 }
 func (UnimplementedUsersServer) DebitBalance(context.Context, *BalanceReq) (*BalanceRes, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DebitBalance not implemented")
+}
+func (UnimplementedUsersServer) Signup(context.Context, *SignupReq) (*SignupRes, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Signup not implemented")
+}
+func (UnimplementedUsersServer) Login(context.Context, *LoginReq) (*LoginRes, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Login not implemented")
+}
+func (UnimplementedUsersServer) GetUserInfo(context.Context, *GetUserInfoReq) (*GetUserInfoRes, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetUserInfo not implemented")
+}
+func (UnimplementedUsersServer) CheckIfAdmin(context.Context, *CheckIfAdminReq) (*CheckIfAdminRes, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CheckIfAdmin not implemented")
 }
 func (UnimplementedUsersServer) mustEmbedUnimplementedUsersServer() {}
 
@@ -120,6 +176,78 @@ func _Users_DebitBalance_Handler(srv interface{}, ctx context.Context, dec func(
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Users_Signup_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SignupReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UsersServer).Signup(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/user.Users/Signup",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UsersServer).Signup(ctx, req.(*SignupReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Users_Login_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(LoginReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UsersServer).Login(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/user.Users/Login",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UsersServer).Login(ctx, req.(*LoginReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Users_GetUserInfo_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetUserInfoReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UsersServer).GetUserInfo(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/user.Users/GetUserInfo",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UsersServer).GetUserInfo(ctx, req.(*GetUserInfoReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Users_CheckIfAdmin_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CheckIfAdminReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UsersServer).CheckIfAdmin(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/user.Users/CheckIfAdmin",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UsersServer).CheckIfAdmin(ctx, req.(*CheckIfAdminReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Users_ServiceDesc is the grpc.ServiceDesc for Users service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -134,6 +262,22 @@ var Users_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "DebitBalance",
 			Handler:    _Users_DebitBalance_Handler,
+		},
+		{
+			MethodName: "Signup",
+			Handler:    _Users_Signup_Handler,
+		},
+		{
+			MethodName: "Login",
+			Handler:    _Users_Login_Handler,
+		},
+		{
+			MethodName: "GetUserInfo",
+			Handler:    _Users_GetUserInfo_Handler,
+		},
+		{
+			MethodName: "CheckIfAdmin",
+			Handler:    _Users_CheckIfAdmin_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

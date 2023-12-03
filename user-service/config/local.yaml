@@ -1,12 +1,18 @@
-port: 8002
-
+env: local
+grpc:
+  port: 3005
+  timeout: 5s
 db:
   host: 127.0.0.1
-  port: 4000
+  port: 4005
   user: postgres
   password: 1787
   name: template1
   sslmode: disable
+
+kafka:
+  topic: NEW_USER_EMAILS
+  brokerAddr: 127.0.0.1:9092
 
 services:
   device:

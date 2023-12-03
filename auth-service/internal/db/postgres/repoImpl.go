@@ -6,7 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/alserov/device-shop/auth-service/internal/db"
-	"github.com/alserov/device-shop/auth-service/internal/db/models"
+	"github.com/alserov/device-shop/user-service/internal/db/models"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )

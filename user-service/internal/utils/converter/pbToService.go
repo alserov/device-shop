@@ -1,8 +1,8 @@
 package converter
 
 import (
-	"github.com/alserov/device-shop/auth-service/internal/service/models"
 	"github.com/alserov/device-shop/proto/gen/auth"
+	"github.com/alserov/device-shop/user-service/internal/service/models"
 )
 
 func SignupReqToServiceStruct(req *auth.SignupReq) *models.SignupReq {

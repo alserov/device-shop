@@ -1,5 +1,20 @@
 package models
 
+import "time"
+
+type BalanceReq struct {
+	Cash     float32
+	UserUUID string
+}
+
+type SignupInfo struct {
+	UUID         string
+	Cash         float32
+	RefreshToken string
+	Role         string
+	CreatedAt    *time.Time
+}
+
 type SignupReq struct {
 	Username string
 	Email    string
