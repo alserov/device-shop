@@ -11,6 +11,7 @@ import (
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
+	emptypb "google.golang.org/protobuf/types/known/emptypb"
 )
 
 // This is a compile-time assertion to ensure that this generated file
@@ -26,6 +27,9 @@ type DevicesClient interface {
 	GetDevicesByTitle(ctx context.Context, in *GetDeviceByTitleReq, opts ...grpc.CallOption) (*DevicesRes, error)
 	GetDevicesByManufacturer(ctx context.Context, in *GetByManufacturer, opts ...grpc.CallOption) (*DevicesRes, error)
 	GetDevicesByPrice(ctx context.Context, in *GetByPrice, opts ...grpc.CallOption) (*DevicesRes, error)
+	CreateDevice(ctx context.Context, in *CreateDeviceReq, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	DeleteDevice(ctx context.Context, in *DeleteDeviceReq, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	UpdateDevice(ctx context.Context, in *UpdateDeviceReq, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	GetDeviceByUUID(ctx context.Context, in *GetDeviceByUUIDReq, opts ...grpc.CallOption) (*Device, error)
 }
 
@@ -73,6 +77,33 @@ func (c *devicesClient) GetDevicesByPrice(ctx context.Context, in *GetByPrice, o
 	return out, nil
 }
 
+func (c *devicesClient) CreateDevice(ctx context.Context, in *CreateDeviceReq, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, "/device.Devices/CreateDevice", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *devicesClient) DeleteDevice(ctx context.Context, in *DeleteDeviceReq, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, "/device.Devices/DeleteDevice", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *devicesClient) UpdateDevice(ctx context.Context, in *UpdateDeviceReq, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, "/device.Devices/UpdateDevice", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *devicesClient) GetDeviceByUUID(ctx context.Context, in *GetDeviceByUUIDReq, opts ...grpc.CallOption) (*Device, error) {
 	out := new(Device)
 	err := c.cc.Invoke(ctx, "/device.Devices/GetDeviceByUUID", in, out, opts...)
@@ -90,6 +121,9 @@ type DevicesServer interface {
 	GetDevicesByTitle(context.Context, *GetDeviceByTitleReq) (*DevicesRes, error)
 	GetDevicesByManufacturer(context.Context, *GetByManufacturer) (*DevicesRes, error)
 	GetDevicesByPrice(context.Context, *GetByPrice) (*DevicesRes, error)
+	CreateDevice(context.Context, *CreateDeviceReq) (*emptypb.Empty, error)
+	DeleteDevice(context.Context, *DeleteDeviceReq) (*emptypb.Empty, error)
+	UpdateDevice(context.Context, *UpdateDeviceReq) (*emptypb.Empty, error)
 	GetDeviceByUUID(context.Context, *GetDeviceByUUIDReq) (*Device, error)
 	mustEmbedUnimplementedDevicesServer()
 }
@@ -109,6 +143,15 @@ func (UnimplementedDevicesServer) GetDevicesByManufacturer(context.Context, *Get
 }
 func (UnimplementedDevicesServer) GetDevicesByPrice(context.Context, *GetByPrice) (*DevicesRes, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetDevicesByPrice not implemented")
+}
+func (UnimplementedDevicesServer) CreateDevice(context.Context, *CreateDeviceReq) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CreateDevice not implemented")
+}
+func (UnimplementedDevicesServer) DeleteDevice(context.Context, *DeleteDeviceReq) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteDevice not implemented")
+}
+func (UnimplementedDevicesServer) UpdateDevice(context.Context, *UpdateDeviceReq) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateDevice not implemented")
 }
 func (UnimplementedDevicesServer) GetDeviceByUUID(context.Context, *GetDeviceByUUIDReq) (*Device, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetDeviceByUUID not implemented")
@@ -198,6 +241,60 @@ func _Devices_GetDevicesByPrice_Handler(srv interface{}, ctx context.Context, de
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Devices_CreateDevice_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateDeviceReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DevicesServer).CreateDevice(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/device.Devices/CreateDevice",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DevicesServer).CreateDevice(ctx, req.(*CreateDeviceReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Devices_DeleteDevice_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteDeviceReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DevicesServer).DeleteDevice(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/device.Devices/DeleteDevice",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DevicesServer).DeleteDevice(ctx, req.(*DeleteDeviceReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Devices_UpdateDevice_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateDeviceReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DevicesServer).UpdateDevice(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/device.Devices/UpdateDevice",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DevicesServer).UpdateDevice(ctx, req.(*UpdateDeviceReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _Devices_GetDeviceByUUID_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetDeviceByUUIDReq)
 	if err := dec(in); err != nil {
@@ -238,6 +335,18 @@ var Devices_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetDevicesByPrice",
 			Handler:    _Devices_GetDevicesByPrice_Handler,
+		},
+		{
+			MethodName: "CreateDevice",
+			Handler:    _Devices_CreateDevice_Handler,
+		},
+		{
+			MethodName: "DeleteDevice",
+			Handler:    _Devices_DeleteDevice_Handler,
+		},
+		{
+			MethodName: "UpdateDevice",
+			Handler:    _Devices_UpdateDevice_Handler,
 		},
 		{
 			MethodName: "GetDeviceByUUID",
