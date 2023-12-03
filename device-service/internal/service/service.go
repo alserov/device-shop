@@ -16,8 +16,7 @@ import (
 )
 
 type service struct {
-	db       db.DeviceRepo
-	userAddr string
+	db db.DeviceRepo
 }
 
 func NewService(db *sql.DB) Service {
@@ -33,13 +32,13 @@ type Service interface {
 	GetDeviceByUUID(ctx context.Context, uuid string) (models.Device, error)
 	GetDevicesByPrice(ctx context.Context, req models.GetByPrice) ([]*models.Device, error)
 
-	CreateDevice(context.Context, models.Device) error
+	CreateDevice(context.Context, models.CreateDeviceReq) error
 	DeleteDevice(context.Context, string) error
 	UpdateDevice(context.Context, models.UpdateDeviceReq) error
 	IncreaseDeviceAmountByUUID(ctx context.Context, deviceUUID string, amount uint32) error
 }
 
-func (s *service) CreateDevice(ctx context.Context, req models.Device) error {
+func (s *service) CreateDevice(ctx context.Context, req models.CreateDeviceReq) error {
 	err := s.db.CreateDevice(ctx, repo.Device{
 		Title:        req.Title,
 		Price:        req.Price,
@@ -191,6 +190,10 @@ func (s *service) GetDevicesByPrice(ctx context.Context, req models.GetByPrice) 
 }
 
 func (s *service) IncreaseDeviceAmountByUUID(ctx context.Context, deviceUUID string, amount uint32) error {
-	//TODO implement me
-	panic("implement me")
+	err := s.db.IncreaseDeviceAmountByUUID(ctx, deviceUUID, amount)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

@@ -3,7 +3,7 @@ module github.com/alserov/device-shop/device-service
 go 1.21.0
 
 require (
-	github.com/alserov/device-shop/proto v0.0.0-20231203142151-ecec37a14ba4
+	github.com/alserov/device-shop/proto v0.0.0-20231203170823-2302be3ba4ed
 	github.com/golang-migrate/migrate/v4 v4.16.2
 	github.com/ilyakaznacheev/cleanenv v1.5.0
 	github.com/lib/pq v1.10.9

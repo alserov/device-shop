@@ -36,7 +36,7 @@ func DeviceToPb(d models.Device) *device.Device {
 	}
 }
 
-func GetByPriceToService(req *device.GetByPrice) models.GetByPrice {
+func GetDevicesByPriceToService(req *device.GetByPrice) models.GetByPrice {
 	return models.GetByPrice{
 		Max: req.Max,
 		Min: req.Min,

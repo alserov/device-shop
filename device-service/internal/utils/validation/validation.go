@@ -92,3 +92,10 @@ func ValidateGetDevicesByPrice(req *device.GetByPrice) error {
 	}
 	return nil
 }
+
+func ValidateGetDeviceByUUID(req *device.GetDeviceByUUIDReq) error {
+	if req.GetUUID() == "" {
+		return status.Error(codes.InvalidArgument, emptyUUID)
+	}
+	return nil
+}

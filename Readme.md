@@ -6,5 +6,6 @@
 3. Postgresql
 4. Redis
 5. Docker
+6. Kafka (sarama)
 
 ![Image not found](docs/schema.png)

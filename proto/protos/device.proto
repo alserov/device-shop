@@ -63,8 +63,8 @@ message IncreaseDeviceAmountByUUIDReq {
 }
 
 message GetByPrice {
-  fixed32 Min = 1;
-  fixed32 Max = 2;
+  float Min = 1;
+  float Max = 2;
 }
 
 message GetByManufacturer {

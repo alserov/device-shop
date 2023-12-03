@@ -114,12 +114,33 @@ func (s *server) GetDevicesByPrice(ctx context.Context, req *device.GetByPrice) 
 		return nil, err
 	}
 
-	foundDevices, er := s.device.GetDevicesByPrice(ctx, converter.GetDevicesByPriceToRepo(req))
+	foundDevices, err := s.device.GetDevicesByPrice(ctx, converter.GetDevicesByPriceToService(req))
+	if err != nil {
+		return nil, err
+	}
+
+	var devices []*device.Device
+	for _, d := range foundDevices {
+		device := converter.DeviceToPb(*d)
+		devices = append(devices, device)
+	}
+
+	return &device.DevicesRes{
+		Devices: devices,
+	}, nil
 }
 
 func (s *server) GetDeviceByUUID(ctx context.Context, req *device.GetDeviceByUUIDReq) (*device.Device, error) {
-	//TODO implement me
-	panic("implement me")
+	if err := validation.ValidateGetDeviceByUUID(req); err != nil {
+		return nil, err
+	}
+
+	foundDevice, err := s.device.GetDeviceByUUID(ctx, req.UUID)
+	if err != nil {
+		return nil, err
+	}
+
+	return converter.DeviceToPb(foundDevice), nil
 }
 
 func (s *server) CreateDevice(ctx context.Context, req *device.CreateDeviceReq) (*emptypb.Empty, error) {

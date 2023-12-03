@@ -1,0 +1,13 @@
+port: 8002
+
+db:
+  host: 127.0.0.1
+  port: 4000
+  user: postgres
+  password: 1787
+  name: template1
+  sslmode: disable
+
+services:
+  device:
+    addr: 127.0.0.1:3003
