@@ -4,8 +4,12 @@ github.com/BurntSushi/toml v1.2.1 h1:9F2/+DoOYIOksmaJFPw1tGFy1eDnIJXg+UHjuD8lTak
 github.com/BurntSushi/toml v1.2.1/go.mod h1:CxXYINrC8qIiEnFrOxCa7Jy5BFHlXnUU2pbicEuybxQ=
 github.com/Microsoft/go-winio v0.6.1 h1:9/kr64B9VUZrLm5YYwbGtUJnMgqWVOdUAXu6Migciow=
 github.com/Microsoft/go-winio v0.6.1/go.mod h1:LRdKpFKfdobln8UmuiYcKPot9D2v6svN5+sAH+4kjUM=
+github.com/alserov/device-shop/gateway v0.0.0-20231203142151-ecec37a14ba4 h1:MQNC8IL+fc/zl3boDs02KcC95I425dFo6OZ/+YL8AOo=
+github.com/alserov/device-shop/gateway v0.0.0-20231203142151-ecec37a14ba4/go.mod h1:DKNZskXIBmWK3vrjXCVW7auzsZvSXEqQ4ZUUkJD3Bhs=
 github.com/alserov/device-shop/proto v0.0.0-20231202103705-8ecdad2acb36 h1:qT3BlebJvJEJVl8MTwZaSbv63hQbrSoU3ytByaP5bcY=
 github.com/alserov/device-shop/proto v0.0.0-20231202103705-8ecdad2acb36/go.mod h1:jTRYFmTaJqxlcsigo+73JGY8OQJ0e5uTv1D3bTDAPV4=
+github.com/alserov/device-shop/proto v0.0.0-20231203142151-ecec37a14ba4 h1:S9Cm5pOeRE1QIpYz/6yMEaoxKx4I4h/oYfKuAwd5CpM=
+github.com/alserov/device-shop/proto v0.0.0-20231203142151-ecec37a14ba4/go.mod h1:jTRYFmTaJqxlcsigo+73JGY8OQJ0e5uTv1D3bTDAPV4=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=

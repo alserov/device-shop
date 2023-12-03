@@ -6,10 +6,10 @@ import (
 	"github.com/alserov/device-shop/gateway/internal/utils/validation"
 	"github.com/alserov/device-shop/gateway/pkg/client"
 	"github.com/alserov/device-shop/gateway/pkg/responser"
-	pb "github.com/alserov/device-shop/proto/gen"
+	"github.com/alserov/device-shop/proto/gen/order"
 	"github.com/gin-gonic/gin"
-	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc/status"
+	"log/slog"
 	"net/http"
 	"time"
 )
@@ -20,20 +20,20 @@ type OrdersHandler interface {
 	CheckOrder(c *gin.Context)
 }
 
-type ordersHandler struct {
-	orderAddr string
-	logger    *logrus.Logger
-}
-
-func NewOrderHandler(orderAddr string, logger *logrus.Logger) OrdersHandler {
+func NewOrderHandler(orderAddr string, logger *slog.Logger) OrdersHandler {
 	return &ordersHandler{
 		orderAddr: orderAddr,
 		logger:    logger,
 	}
 }
 
+type ordersHandler struct {
+	orderAddr string
+	logger    *slog.Logger
+}
+
 func (h *ordersHandler) CreateOrder(c *gin.Context) {
-	order, err := utils.Decode[pb.CreateOrderReq](c.Request, validation.CheckCreateOrder)
+	order, err := utils.Decode[order.CreateOrderReq](c.Request, validation.CheckCreateOrder)
 	if err != nil {
 		responser.UserError(c.Writer, err.Error())
 		return
@@ -65,7 +65,7 @@ func (h *ordersHandler) CreateOrder(c *gin.Context) {
 }
 
 func (h *ordersHandler) UpdateOrder(c *gin.Context) {
-	orderStatus, err := utils.Decode[pb.UpdateOrderReq](c.Request, validation.CheckUpdateOrder)
+	orderStatus, err := utils.Decode[order.UpdateOrderReq](c.Request, validation.CheckUpdateOrder)
 	if err != nil {
 		responser.UserError(c.Writer, err.Error())
 		return
@@ -111,7 +111,7 @@ func (h *ordersHandler) CheckOrder(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
 	defer cancel()
 
-	order, err := cl.CheckOrder(ctx, &pb.CheckOrderReq{OrderUUID: orderUUID})
+	order, err := cl.CheckOrder(ctx, &order.CheckOrderReq{OrderUUID: orderUUID})
 	if err != nil {
 		if st, ok := status.FromError(err); ok {
 			responser.UserError(c.Writer, st.Message())

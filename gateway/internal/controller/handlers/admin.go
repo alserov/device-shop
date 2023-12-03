@@ -6,7 +6,6 @@ import (
 	"github.com/alserov/device-shop/gateway/internal/utils/validation"
 	"github.com/alserov/device-shop/gateway/pkg/client"
 	"github.com/alserov/device-shop/gateway/pkg/responser"
-	pb "github.com/alserov/device-shop/proto/gen"
 	"github.com/alserov/device-shop/proto/gen/admin"
 	"github.com/gin-gonic/gin"
 	"google.golang.org/grpc/status"
@@ -32,6 +31,7 @@ func NewAdminHandler(deviceAddr, userAddr string, logger *slog.Logger) AdminHand
 type adminHandler struct {
 	deviceAddr string
 	userAddr   string
+	adminAddr  string
 	logger     *slog.Logger
 }
 
@@ -42,7 +42,7 @@ func (h *adminHandler) CreateDevice(c *gin.Context) {
 		return
 	}
 
-	cl, cc, err := client.DialDevice(h.deviceAddr)
+	cl, cc, err := client.DialAdmin(h.adminAddr)
 	if err != nil {
 		responser.ServerError(c.Writer, h.logger, err)
 		return
@@ -73,7 +73,7 @@ func (h *adminHandler) DeleteDevice(c *gin.Context) {
 		return
 	}
 
-	cl, cc, err := client.DialDevice(h.deviceAddr)
+	cl, cc, err := client.DialAdmin(h.deviceAddr)
 	if err != nil {
 		responser.ServerError(c.Writer, h.logger, err)
 		return
@@ -83,7 +83,7 @@ func (h *adminHandler) DeleteDevice(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), time.Duration(1000)*time.Millisecond)
 	defer cancel()
 
-	_, err = cl.DeleteDevice(ctx, &pb.DeleteDeviceReq{UUID: deviceUUID})
+	_, err = cl.DeleteDevice(ctx, &admin.DeleteDeviceReq{UUID: deviceUUID})
 	if err != nil {
 		if st, ok := status.FromError(err); ok {
 			responser.UserError(c.Writer, st.Message())
@@ -97,13 +97,13 @@ func (h *adminHandler) DeleteDevice(c *gin.Context) {
 }
 
 func (h *adminHandler) UpdateDevice(c *gin.Context) {
-	device, err := utils.Decode[pb.UpdateDeviceReq](c.Request, validation.CheckUpdateDevice)
+	device, err := utils.Decode[admin.UpdateDeviceReq](c.Request, validation.CheckUpdateDevice)
 	if err != nil {
 		responser.UserError(c.Writer, err.Error())
 		return
 	}
 
-	cl, cc, err := client.DialDevice(h.userAddr)
+	cl, cc, err := client.DialAdmin(h.userAddr)
 	if err != nil {
 		responser.ServerError(c.Writer, h.logger, err)
 		return

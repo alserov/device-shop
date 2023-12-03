@@ -7,13 +7,19 @@ import (
 )
 
 type EmailConfig struct {
-	Email Email `yaml:"email"`
-	Kafka Kafka `yaml:"kafka"`
+	Email Email  `yaml:"email"`
+	Kafka Kafka  `yaml:"kafka"`
+	Env   string `yaml:"env"`
 }
 
 type Kafka struct {
-	Topic      string `yaml:"topic"`
+	Topics     Topic  `yaml:"topics"`
 	BrokerAddr string `yaml:"brokerAddr"`
+}
+
+type Topic struct {
+	Auth  string `yaml:"auth"`
+	Order string `yaml:"order"`
 }
 
 type Email struct {

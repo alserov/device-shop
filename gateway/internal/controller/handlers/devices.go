@@ -8,10 +8,11 @@ import (
 	"github.com/alserov/device-shop/gateway/internal/utils/validation"
 	"github.com/alserov/device-shop/gateway/pkg/client"
 	"github.com/alserov/device-shop/gateway/pkg/responser"
+	"github.com/alserov/device-shop/proto/gen/device"
 	"github.com/gin-gonic/gin"
-	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc/status"
 	"log"
+	"log/slog"
 	"strconv"
 	"strings"
 	"time"
@@ -27,10 +28,10 @@ type DevicesHandler interface {
 type devicesHandler struct {
 	deviceAddr string
 	cache      cache.Repository
-	logger     *logrus.Logger
+	logger     *slog.Logger
 }
 
-func NewDevicesHandler(deviceAddr string, cache cache.Repository, logger *logrus.Logger) DevicesHandler {
+func NewDevicesHandler(deviceAddr string, cache cache.Repository, logger *slog.Logger) DevicesHandler {
 	return &devicesHandler{
 		deviceAddr: deviceAddr,
 		cache:      cache,
@@ -39,7 +40,7 @@ func NewDevicesHandler(deviceAddr string, cache cache.Repository, logger *logrus
 }
 
 func (h *devicesHandler) GetAllDevices(c *gin.Context) {
-	getDevicesCred, err := utils.Decode[pb.GetAllDevicesReq](c.Request, validation.CheckGetAll)
+	getDevicesCred, err := utils.Decode[device.GetAllDevicesReq](c.Request, validation.CheckGetAll)
 	if err != nil {
 		responser.UserError(c.Writer, err.Error())
 		return
@@ -134,7 +135,7 @@ func (h *devicesHandler) GetDevicesByTitle(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), time.Duration(1000)*time.Millisecond)
 	defer cancel()
 
-	devices, err := cl.GetDevicesByTitle(ctx, &pb.GetDeviceByTitleReq{Title: title})
+	devices, err := cl.GetDevicesByTitle(ctx, &device.GetDeviceByTitleReq{Title: title})
 	if err != nil {
 		if st, ok := status.FromError(err); ok {
 			responser.UserError(c.Writer, st.Message())
@@ -181,14 +182,12 @@ func (h *devicesHandler) GetDevicesByManufacturer(c *gin.Context) {
 	}
 	defer cc.Close()
 
-	r := &pb.GetByManufacturer{
-		Manufacturer: manu,
-	}
-
 	ctx, cancel := context.WithTimeout(c.Request.Context(), time.Second)
 	defer cancel()
 
-	d, err := cl.GetDevicesByManufacturer(ctx, r)
+	d, err := cl.GetDevicesByManufacturer(ctx, &device.GetByManufacturer{
+		Manufacturer: manu,
+	})
 	if err != nil {
 		if st, ok := status.FromError(err); ok {
 			responser.UserError(c.Writer, st.Message())
@@ -246,7 +245,7 @@ func (h *devicesHandler) GetDevicesByPrice(c *gin.Context) {
 	}
 	defer cc.Close()
 
-	r := &pb.GetByPrice{
+	r := &device.GetByPrice{
 		Min: uint32(minVal),
 		Max: uint32(maxVal),
 	}

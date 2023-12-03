@@ -1,6 +1,8 @@
 package app
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"github.com/alserov/device-shop/gateway/internal/cache"
 	"github.com/alserov/device-shop/gateway/internal/config"
@@ -12,38 +14,44 @@ import (
 )
 
 type App struct {
-	port    int
-	timeout time.Duration
-	router  *gin.Engine
-
-	log *slog.Logger
-
+	port      int
+	server    *http.Server
+	log       *slog.Logger
 	cacheAddr string
+	router    *gin.Engine
+	services  *config.Services
 }
 
 func New(cfg *config.Config, log *slog.Logger) *App {
+	router := gin.New()
 	return &App{
-		timeout: cfg.Timeout,
-		//router:  gin.Default(),
-		router: gin.New(),
-		port:   cfg.Port,
-		log:    log,
+		server: &http.Server{
+			Addr:         fmt.Sprintf(":%d", cfg.Port),
+			WriteTimeout: cfg.Timeout * time.Second,
+			ReadTimeout:  cfg.Timeout * time.Second,
+			Handler:      router,
+		},
+		log:       log,
+		router:    router,
+		cacheAddr: cfg.Cache.Addr,
+		services:  &cfg.Services,
+		port:      cfg.Port,
 	}
 }
 
 func (a *App) MustStart() {
 	cl := cache.MustConnect(a.cacheAddr)
 
-	controller.LoadRoutes(a.router, controller.NewController(cl, a.log))
+	controller.LoadRoutes(a.router, controller.NewController(cl, a.log, a.services))
 
-	srv := &http.Server{
-		Addr:         fmt.Sprintf(":%d", a.port),
-		Handler:      a.router,
-		WriteTimeout: time.Duration(a.timeout) * time.Second,
-		ReadTimeout:  time.Duration(a.timeout) * time.Second,
-	}
-
-	if err := srv.ListenAndServe(); err != nil {
+	a.log.Info("server has started", slog.Int("port", a.port))
+	if err := a.server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 		panic("failed to start server: " + err.Error())
+	}
+}
+
+func (a *App) Stop() {
+	if err := a.server.Shutdown(context.Background()); err != nil {
+		panic("failed to shutdown server: " + err.Error())
 	}
 }

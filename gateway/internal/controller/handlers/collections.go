@@ -6,9 +6,10 @@ import (
 	"github.com/alserov/device-shop/gateway/internal/utils/validation"
 	"github.com/alserov/device-shop/gateway/pkg/client"
 	"github.com/alserov/device-shop/gateway/pkg/responser"
+	"github.com/alserov/device-shop/proto/gen/collection"
 	"github.com/gin-gonic/gin"
-	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc/status"
+	"log/slog"
 	"net/http"
 	"time"
 )
@@ -25,10 +26,10 @@ type CollectionsHandler interface {
 
 type collectionsHandler struct {
 	userAddr string
-	logger   *logrus.Logger
+	logger   *slog.Logger
 }
 
-func NewCollectionsHandler(userAddr string, logger *logrus.Logger) CollectionsHandler {
+func NewCollectionsHandler(userAddr string, logger *slog.Logger) CollectionsHandler {
 	return &collectionsHandler{
 		userAddr: userAddr,
 		logger:   logger,
@@ -36,13 +37,13 @@ func NewCollectionsHandler(userAddr string, logger *logrus.Logger) CollectionsHa
 }
 
 func (h *collectionsHandler) AddToFavourite(c *gin.Context) {
-	addCred, err := utils.Decode[pb.ChangeCollectionReq](c.Request, validation.CheckCollection)
+	addCred, err := utils.Decode[collection.ChangeCollectionReq](c.Request, validation.CheckCollection)
 	if err != nil {
 		responser.UserError(c.Writer, err.Error())
 		return
 	}
 
-	cl, cc, err := client.DialUser(h.userAddr)
+	cl, cc, err := client.DialCollection(h.userAddr)
 	if err != nil {
 		responser.ServerError(c.Writer, h.logger, err)
 		return
@@ -66,13 +67,13 @@ func (h *collectionsHandler) AddToFavourite(c *gin.Context) {
 }
 
 func (h *collectionsHandler) RemoveFromFavourite(c *gin.Context) {
-	removeCred, err := utils.Decode[pb.ChangeCollectionReq](c.Request, validation.CheckCollection)
+	removeCred, err := utils.Decode[collection.ChangeCollectionReq](c.Request, validation.CheckCollection)
 	if err != nil {
 		responser.UserError(c.Writer, err.Error())
 		return
 	}
 
-	cl, cc, err := client.DialUser(h.userAddr)
+	cl, cc, err := client.DialCollection(h.userAddr)
 	if err != nil {
 		responser.ServerError(c.Writer, h.logger, err)
 		return
@@ -103,7 +104,7 @@ func (h *collectionsHandler) GetFavourite(c *gin.Context) {
 		return
 	}
 
-	cl, cc, err := client.DialUser(h.userAddr)
+	cl, cc, err := client.DialCollection(h.userAddr)
 	if err != nil {
 		responser.ServerError(c.Writer, h.logger, err)
 		return
@@ -113,7 +114,7 @@ func (h *collectionsHandler) GetFavourite(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), time.Second)
 	defer cancel()
 
-	coll, err := cl.GetFavourite(ctx, &pb.GetCollectionReq{UserUUID: userUUID})
+	coll, err := cl.GetFavourite(ctx, &collection.GetCollectionReq{UserUUID: userUUID})
 	if err != nil {
 		if st, ok := status.FromError(err); ok {
 			responser.UserError(c.Writer, st.Message())
@@ -130,13 +131,13 @@ func (h *collectionsHandler) GetFavourite(c *gin.Context) {
 }
 
 func (h *collectionsHandler) AddToCart(c *gin.Context) {
-	addCred, err := utils.Decode[pb.ChangeCollectionReq](c.Request, validation.CheckCollection)
+	addCred, err := utils.Decode[collection.ChangeCollectionReq](c.Request, validation.CheckCollection)
 	if err != nil {
 		responser.UserError(c.Writer, err.Error())
 		return
 	}
 
-	cl, cc, err := client.DialUser(h.userAddr)
+	cl, cc, err := client.DialCollection(h.userAddr)
 	if err != nil {
 		responser.ServerError(c.Writer, h.logger, err)
 		return
@@ -160,13 +161,13 @@ func (h *collectionsHandler) AddToCart(c *gin.Context) {
 }
 
 func (h *collectionsHandler) RemoveFromCart(c *gin.Context) {
-	removeCred, err := utils.Decode[pb.ChangeCollectionReq](c.Request, validation.CheckCollection)
+	removeCred, err := utils.Decode[collection.ChangeCollectionReq](c.Request, validation.CheckCollection)
 	if err != nil {
 		responser.UserError(c.Writer, err.Error())
 		return
 	}
 
-	cl, cc, err := client.DialUser(h.userAddr)
+	cl, cc, err := client.DialCollection(h.userAddr)
 	if err != nil {
 		responser.ServerError(c.Writer, h.logger, err)
 		return
@@ -197,7 +198,7 @@ func (h *collectionsHandler) GetCart(c *gin.Context) {
 		return
 	}
 
-	cl, cc, err := client.DialUser(h.userAddr)
+	cl, cc, err := client.DialCollection(h.userAddr)
 	if err != nil {
 		responser.ServerError(c.Writer, h.logger, err)
 		return
@@ -207,7 +208,7 @@ func (h *collectionsHandler) GetCart(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), time.Second)
 	defer cancel()
 
-	coll, err := cl.GetCart(ctx, &pb.GetCollectionReq{
+	coll, err := cl.GetCart(ctx, &collection.GetCollectionReq{
 		UserUUID: userUUID,
 	})
 	if err != nil {

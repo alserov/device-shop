@@ -2,16 +2,15 @@ package controller
 
 import (
 	"github.com/alserov/device-shop/gateway/internal/cache"
+	"github.com/alserov/device-shop/gateway/internal/config"
 	"github.com/alserov/device-shop/gateway/internal/controller/handlers"
 	"github.com/go-redis/redis"
-	"github.com/sirupsen/logrus"
 	"log/slog"
-	"os"
 )
 
 type Controller struct {
 	cache              cache.Repository
-	logger             *logrus.Logger
+	logger             *slog.Logger
 	authHandler        handlers.AuthHandler
 	adminHandler       handlers.AdminHandler
 	collectionsHandler handlers.CollectionsHandler
@@ -20,22 +19,15 @@ type Controller struct {
 	userHandler        handlers.UsersHandler
 }
 
-func NewController(c *redis.Client, lg *slog.Logger) *Controller {
-	var (
-		userAddr   = os.Getenv("USER_ADDR")
-		deviceAddr = os.Getenv("DEVICE_ADDR")
-		orderAddr  = os.Getenv("ORDER_ADDR")
-		authAddr   = os.Getenv("AUTH_ADDR")
-	)
-
+func NewController(c *redis.Client, lg *slog.Logger, services *config.Services) *Controller {
 	return &Controller{
 		cache:              cache.NewRepo(c),
 		logger:             lg,
-		adminHandler:       handlers.NewAdminHandler(deviceAddr, userAddr, lg),
-		authHandler:        handlers.NewAuthHandler(authAddr, lg),
-		collectionsHandler: handlers.NewCollectionsHandler(userAddr, lg),
-		devicesHandler:     handlers.NewDevicesHandler(deviceAddr, cache.NewRepo(c), lg),
-		orderHandler:       handlers.NewOrderHandler(orderAddr, lg),
-		userHandler:        handlers.NewUserHandler(userAddr, lg),
+		adminHandler:       handlers.NewAdminHandler(services.Device.Addr, services.User.Addr, lg),
+		authHandler:        handlers.NewAuthHandler(services.Auth.Addr, lg),
+		collectionsHandler: handlers.NewCollectionsHandler(services.User.Addr, lg),
+		devicesHandler:     handlers.NewDevicesHandler(services.Device.Addr, cache.NewRepo(c), lg),
+		orderHandler:       handlers.NewOrderHandler(services.Order.Addr, lg),
+		userHandler:        handlers.NewUserHandler(services.User.Addr, lg),
 	}
 }

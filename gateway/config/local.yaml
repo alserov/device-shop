@@ -1,0 +1,14 @@
+env: local
+port: 8001
+timeout: 10s
+cache:
+  addr: 127.0.0.1:4001
+services:
+  user:
+    addr: 127.0.0.1:8002
+  device:
+    addr: 127.0.0.1:8003
+  order:
+    addr: 127.0.0.1:8004
+  auth:
+    addr: 127.0.0.1:3005

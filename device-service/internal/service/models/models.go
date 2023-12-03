@@ -1,4 +1,19 @@
-package service
+package models
+
+type CreateDeviceReq struct {
+	Title        string
+	Description  string
+	Price        float32
+	Manufacturer string
+	Amount       uint32
+}
+
+type UpdateDeviceReq struct {
+	Title       string
+	Description string
+	Price       float32
+	UUID        string
+}
 
 type Device struct {
 	UUID         string
@@ -12,18 +27,6 @@ type Device struct {
 type GetAllDevicesReq struct {
 	Amount uint32
 	Index  uint32
-}
-
-type GetDeviceByTitleReq struct {
-	Title string
-}
-
-type GetDeviceByUUIDReq struct {
-	UUID string
-}
-
-type GetByManufacturer struct {
-	Manufacturer string
 }
 
 type GetByPrice struct {

@@ -1,5 +1,0 @@
-[INFO]: 2023-11-29 19:08:53 - logger initialized
-[ERROR]: 2023-11-29 19:08:54 - rpc error: code = Unknown desc = error
-[INFO]: 2023-11-29 19:09:18 - logger initialized
-[ERROR]: 2023-11-29 19:09:19 - rpc error: code = Unknown desc = error
-[INFO]: 2023-11-29 19:09:47 - logger initialized

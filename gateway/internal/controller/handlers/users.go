@@ -6,24 +6,23 @@ import (
 	"github.com/alserov/device-shop/gateway/internal/utils/validation"
 	"github.com/alserov/device-shop/gateway/pkg/client"
 	"github.com/alserov/device-shop/gateway/pkg/responser"
-	pb "github.com/alserov/device-shop/proto/gen"
+	"github.com/alserov/device-shop/proto/gen/user"
 	"github.com/gin-gonic/gin"
-	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc/status"
+	"log/slog"
 	"time"
 )
 
 type UsersHandler interface {
 	TopUpBalance(ctx *gin.Context)
-	GetInfo(ctx *gin.Context)
 }
 
 type usersHandler struct {
 	userAddr string
-	logger   *logrus.Logger
+	logger   *slog.Logger
 }
 
-func NewUserHandler(userAddr string, logger *logrus.Logger) UsersHandler {
+func NewUserHandler(userAddr string, logger *slog.Logger) UsersHandler {
 	return &usersHandler{
 		userAddr: userAddr,
 		logger:   logger,
@@ -31,7 +30,7 @@ func NewUserHandler(userAddr string, logger *logrus.Logger) UsersHandler {
 }
 
 func (h *usersHandler) TopUpBalance(c *gin.Context) {
-	cashAmount, err := utils.Decode[pb.BalanceReq](c.Request, validation.CheckTopUpBalance)
+	cashAmount, err := utils.Decode[user.BalanceReq](c.Request, validation.CheckTopUpBalance)
 	if err != nil {
 		responser.UserError(c.Writer, err.Error())
 		return
@@ -60,37 +59,4 @@ func (h *usersHandler) TopUpBalance(c *gin.Context) {
 	responser.Data(c.Writer, responser.H{
 		"cash": res.Cash,
 	})
-}
-
-func (h *usersHandler) GetInfo(c *gin.Context) {
-	userUUID := c.Param("userUUID")
-
-	if userUUID == "" {
-		responser.UserError(c.Writer, "userUUID cannot be empty")
-		return
-	}
-
-	cl, cc, err := client.DialUser(h.userAddr)
-	if err != nil {
-		responser.ServerError(c.Writer, h.logger, err)
-		return
-	}
-	defer cc.Close()
-
-	ctx, cancel := context.WithTimeout(c.Request.Context(), time.Second)
-	defer cancel()
-
-	res, err := cl.GetUserInfo(ctx, &pb.GetUserInfoReq{
-		UserUUID: userUUID,
-	})
-	if err != nil {
-		if st, ok := status.FromError(err); ok {
-			responser.UserError(c.Writer, st.Message())
-			return
-		}
-		responser.ServerError(c.Writer, h.logger, err)
-		return
-	}
-
-	responser.Value(c.Writer, res)
 }

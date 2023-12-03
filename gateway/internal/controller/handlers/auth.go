@@ -6,25 +6,27 @@ import (
 	"github.com/alserov/device-shop/gateway/internal/utils/validation"
 	"github.com/alserov/device-shop/gateway/pkg/client"
 	"github.com/alserov/device-shop/gateway/pkg/responser"
+	"github.com/alserov/device-shop/proto/gen/auth"
 	"github.com/asaskevich/govalidator"
 	"github.com/gin-gonic/gin"
-	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"log/slog"
 	"time"
 )
 
 type AuthHandler interface {
 	Signup(c *gin.Context)
 	Login(c *gin.Context)
+	GetInfo(c *gin.Context)
 }
 
 type authHandler struct {
-	logger   *logrus.Logger
+	logger   *slog.Logger
 	authAddr string
 }
 
-func NewAuthHandler(authAddr string, logger *logrus.Logger) AuthHandler {
+func NewAuthHandler(authAddr string, logger *slog.Logger) AuthHandler {
 	return &authHandler{
 		logger:   logger,
 		authAddr: authAddr,
@@ -32,7 +34,7 @@ func NewAuthHandler(authAddr string, logger *logrus.Logger) AuthHandler {
 }
 
 func (h *authHandler) Signup(c *gin.Context) {
-	userInfo, err := utils.Decode[pb.SignupReq](c.Request, validation.CheckSignup)
+	userInfo, err := utils.Decode[auth.SignupReq](c.Request, validation.CheckSignup)
 	if err != nil {
 		responser.UserError(c.Writer, err.Error())
 		return
@@ -71,7 +73,7 @@ func (h *authHandler) Signup(c *gin.Context) {
 }
 
 func (h *authHandler) Login(c *gin.Context) {
-	userInfo, err := utils.Decode[pb.LoginReq](c.Request, validation.CheckLogin)
+	userInfo, err := utils.Decode[auth.LoginReq](c.Request, validation.CheckLogin)
 	if err != nil {
 		responser.UserError(c.Writer, err.Error())
 		return
@@ -106,4 +108,37 @@ func (h *authHandler) Login(c *gin.Context) {
 		"refreshToken": res.RefreshToken,
 		"userUUID":     res.UUID,
 	})
+}
+
+func (h *authHandler) GetInfo(c *gin.Context) {
+	userUUID := c.Param("userUUID")
+
+	if userUUID == "" {
+		responser.UserError(c.Writer, "userUUID cannot be empty")
+		return
+	}
+
+	cl, cc, err := client.DialAuth(h.authAddr)
+	if err != nil {
+		responser.ServerError(c.Writer, h.logger, err)
+		return
+	}
+	defer cc.Close()
+
+	ctx, cancel := context.WithTimeout(c.Request.Context(), time.Second)
+	defer cancel()
+
+	res, err := cl.GetUserInfo(ctx, &auth.GetUserInfoReq{
+		UserUUID: userUUID,
+	})
+	if err != nil {
+		if st, ok := status.FromError(err); ok {
+			responser.UserError(c.Writer, st.Message())
+			return
+		}
+		responser.ServerError(c.Writer, h.logger, err)
+		return
+	}
+
+	responser.Value(c.Writer, res)
 }

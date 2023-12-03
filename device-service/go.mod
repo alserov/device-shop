@@ -3,7 +3,7 @@ module github.com/alserov/device-shop/device-service
 go 1.21.0
 
 require (
-	github.com/alserov/device-shop/proto v0.0.0-20231202103705-8ecdad2acb36
+	github.com/alserov/device-shop/proto v0.0.0-20231203142151-ecec37a14ba4
 	github.com/golang-migrate/migrate/v4 v4.16.2
 	github.com/ilyakaznacheev/cleanenv v1.5.0
 	github.com/lib/pq v1.10.9
@@ -12,6 +12,7 @@ require (
 
 require (
 	github.com/BurntSushi/toml v1.2.1 // indirect
+	github.com/alserov/device-shop/gateway v0.0.0-20231203142151-ecec37a14ba4 // indirect
 	github.com/golang/protobuf v1.5.3 // indirect
 	github.com/google/go-cmp v0.6.0 // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect

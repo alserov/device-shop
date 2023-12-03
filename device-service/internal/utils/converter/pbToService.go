@@ -1,26 +1,44 @@
 package converter
 
 import (
-	"github.com/alserov/admin-service/internal/service"
-	"github.com/alserov/device-shop/proto/gen/admin"
+	"github.com/alserov/device-shop/device-service/internal/service/models"
+	"github.com/alserov/device-shop/proto/gen/device"
 	"strings"
 )
 
-func CreateDeviceToServiceStruct(r *admin.CreateDeviceReq) service.CreateDeviceReq {
-	return service.CreateDeviceReq{
-		Title:        strings.ToLower(r.Title),
-		Description:  strings.ToLower(r.Description),
-		Price:        r.Price,
-		Manufacturer: strings.ToLower(r.Manufacturer),
-		Amount:       r.Amount,
+func CreateDeviceToService(req *device.CreateDeviceReq) models.CreateDeviceReq {
+	return models.CreateDeviceReq{
+		Title:        strings.ToLower(req.Title),
+		Description:  strings.ToLower(req.Description),
+		Price:        req.Price,
+		Manufacturer: strings.ToLower(req.Manufacturer),
+		Amount:       req.Amount,
 	}
 }
 
-func UpdateDeviceToServiceStruct(r *admin.UpdateDeviceReq) service.UpdateDeviceReq {
-	return service.UpdateDeviceReq{
-		UUID:        r.UUID,
-		Title:       strings.ToLower(r.Title),
-		Description: strings.ToLower(r.Description),
-		Price:       r.Price,
+func UpdateDeviceToService(req *device.UpdateDeviceReq) models.UpdateDeviceReq {
+	return models.UpdateDeviceReq{
+		UUID:        req.UUID,
+		Title:       strings.ToLower(req.Title),
+		Description: strings.ToLower(req.Description),
+		Price:       req.Price,
+	}
+}
+
+func DeviceToPb(d models.Device) *device.Device {
+	return &device.Device{
+		UUID:         d.UUID,
+		Title:        d.Title,
+		Description:  d.Description,
+		Price:        d.Price,
+		Manufacturer: d.Manufacturer,
+		Amount:       d.Amount,
+	}
+}
+
+func GetByPriceToService(req *device.GetByPrice) models.GetByPrice {
+	return models.GetByPrice{
+		Max: req.Max,
+		Min: req.Min,
 	}
 }

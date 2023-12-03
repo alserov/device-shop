@@ -8,14 +8,18 @@ import (
 )
 
 type Config struct {
-	Env     string        `yaml:"env"`
-	Port    int           `yaml:"port"`
-	Timeout time.Duration `yaml:"timeout"`
-	Cache   Cache         `yaml:"cache"`
+	Env      string        `yaml:"env"`
+	Port     int           `yaml:"port"`
+	Timeout  time.Duration `yaml:"timeout"`
+	Cache    Cache         `yaml:"cache"`
+	Services Services      `yaml:"services"`
 }
 
 type Services struct {
-	Auth Service `yaml:"auth"`
+	Auth   Service `yaml:"auth"`
+	User   Service `yaml:"user"`
+	Device Service `yaml:"device"`
+	Order  Service `yaml:"order"`
 }
 
 type Service struct {
