@@ -2,25 +2,17 @@ package db
 
 import (
 	"context"
+	"github.com/alserov/device-shop/collection-service/internal/db/models"
 )
 
 type CollectionsRepo interface {
-	AddToFavourite(ctx context.Context, userUUID string, device Device) error
+	AddToFavourite(ctx context.Context, userUUID string, device models.Device) error
 	RemoveFromFavourite(ctx context.Context, userUUID string, deviceUUID string) error
-	GetFavourite(ctx context.Context, userUUID string) ([]*Device, error)
+	GetFavourite(ctx context.Context, userUUID string) ([]*models.Device, error)
 
-	AddToCart(ctx context.Context, userUUID string, device Device) error
+	AddToCart(ctx context.Context, userUUID string, device models.Device) error
 	RemoveFromCart(ctx context.Context, userUUID string, deviceUUID string) error
-	GetCart(ctx context.Context, userUUID string) ([]*Device, error)
+	GetCart(ctx context.Context, userUUID string) ([]*models.Device, error)
 
 	RemoveDeviceFromCollections(ctx context.Context, deviceUUID string) error
-}
-
-type Device struct {
-	UUID         string
-	Title        string
-	Description  string
-	Price        float32
-	Manufacturer string
-	Amount       uint32
 }

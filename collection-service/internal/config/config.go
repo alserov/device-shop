@@ -8,9 +8,10 @@ import (
 )
 
 type Config struct {
-	Env  string     `yaml:"env"`
-	DB   DBConfig   `yaml:"db"`
-	GRPC GRPCConfig `yaml:"grpc"`
+	Env      string     `yaml:"env"`
+	DB       DBConfig   `yaml:"db"`
+	GRPC     GRPCConfig `yaml:"grpc"`
+	Services Services   `yaml:"services"`
 }
 
 type GRPCConfig struct {
@@ -18,8 +19,12 @@ type GRPCConfig struct {
 	Timeout time.Duration `yaml:"timeout"`
 }
 
+type Services struct {
+	DeviceAddr string `yaml:"device"`
+}
+
 type DBConfig struct {
-	Uri string `yaml:"dbUri"`
+	Uri string `yaml:"uri"`
 }
 
 func MustLoad() *Config {

@@ -8,3 +8,4 @@ kafka:
   topics:
     auth: NEW_USER_EMAILS
     order: NEW_ORDERS_EMAIL
+  brokerAddr: 127.0.0.1:9092

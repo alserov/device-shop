@@ -24,7 +24,6 @@ func main() {
 		panic("failed to create a consumer: " + err.Error())
 	}
 
-	log.Info("email service started", slog.String("env", cfg.Env))
 	go func() {
 		msgs, err := consumer.Subscribe(cfg.Kafka.Topics.Auth, cons)
 		if err != nil {
@@ -57,8 +56,9 @@ func main() {
 		}
 	}()
 
+	log.Info("app is running", slog.String("port", cfg.Env))
 	chStop := make(chan os.Signal, 1)
 	signal.Notify(chStop, syscall.SIGINT, syscall.SIGTERM)
 	sign := <-chStop
-	log.Info("server has stopped", slog.String("signal", sign.String()))
+	log.Info("app was stopped due to: " + sign.String())
 }

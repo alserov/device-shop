@@ -2,20 +2,23 @@ package postgres
 
 import (
 	"database/sql"
+	"github.com/alserov/device-shop/user-service/internal/db/postgres/migrations"
 	_ "github.com/lib/pq"
-	"log"
 )
 
-func Connect(dsn string) (*sql.DB, error) {
+func MustConnect(dsn string) *sql.DB {
 	conn, err := sql.Open("postgres", dsn)
 	if err != nil {
-		return nil, err
+		panic("failed to open db: " + err.Error())
 	}
 
 	if err = conn.Ping(); err != nil {
-		return nil, err
+		panic("failed to ping db: " + err.Error())
 	}
-	log.Println("postgres connected")
 
-	return conn, nil
+	if err = migrations.Migrate(conn); err != nil {
+		panic("failed to migrate schemas: " + err.Error())
+	}
+
+	return conn
 }

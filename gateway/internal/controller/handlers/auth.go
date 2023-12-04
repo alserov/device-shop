@@ -2,11 +2,13 @@ package handlers
 
 import (
 	"context"
+
 	"github.com/alserov/device-shop/gateway/internal/utils"
 	"github.com/alserov/device-shop/gateway/internal/utils/validation"
 	"github.com/alserov/device-shop/gateway/pkg/client"
 	"github.com/alserov/device-shop/gateway/pkg/responser"
-	"github.com/alserov/device-shop/proto/gen/auth"
+	"github.com/alserov/device-shop/proto/gen/user"
+
 	"github.com/asaskevich/govalidator"
 	"github.com/gin-gonic/gin"
 	"google.golang.org/grpc/codes"
@@ -34,7 +36,7 @@ func NewAuthHandler(authAddr string, logger *slog.Logger) AuthHandler {
 }
 
 func (h *authHandler) Signup(c *gin.Context) {
-	userInfo, err := utils.Decode[auth.SignupReq](c.Request, validation.CheckSignup)
+	userInfo, err := utils.Decode[user.SignupReq](c.Request, validation.CheckSignup)
 	if err != nil {
 		responser.UserError(c.Writer, err.Error())
 		return
@@ -45,7 +47,7 @@ func (h *authHandler) Signup(c *gin.Context) {
 		return
 	}
 
-	cl, cc, err := client.DialAuth(h.authAddr)
+	cl, cc, err := client.DialUser(h.authAddr)
 	if err != nil {
 		responser.ServerError(c.Writer, h.logger, err)
 		return
@@ -73,13 +75,13 @@ func (h *authHandler) Signup(c *gin.Context) {
 }
 
 func (h *authHandler) Login(c *gin.Context) {
-	userInfo, err := utils.Decode[auth.LoginReq](c.Request, validation.CheckLogin)
+	userInfo, err := utils.Decode[user.LoginReq](c.Request, validation.CheckLogin)
 	if err != nil {
 		responser.UserError(c.Writer, err.Error())
 		return
 	}
 
-	cl, cc, err := client.DialAuth(h.authAddr)
+	cl, cc, err := client.DialUser(h.authAddr)
 	if err != nil {
 		responser.ServerError(c.Writer, h.logger, err)
 		return
@@ -118,7 +120,7 @@ func (h *authHandler) GetInfo(c *gin.Context) {
 		return
 	}
 
-	cl, cc, err := client.DialAuth(h.authAddr)
+	cl, cc, err := client.DialUser(h.authAddr)
 	if err != nil {
 		responser.ServerError(c.Writer, h.logger, err)
 		return
@@ -128,7 +130,7 @@ func (h *authHandler) GetInfo(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), time.Second)
 	defer cancel()
 
-	res, err := cl.GetUserInfo(ctx, &auth.GetUserInfoReq{
+	res, err := cl.GetUserInfo(ctx, &user.GetUserInfoReq{
 		UserUUID: userUUID,
 	})
 	if err != nil {

@@ -40,11 +40,14 @@ func New(cfg *config.Config, log *slog.Logger) *App {
 }
 
 func (a *App) MustStart() {
+	a.log.Info("starting app", slog.Int("port", a.port))
+
 	cl := cache.MustConnect(a.cacheAddr)
+	a.log.Info("cache connected")
 
 	controller.LoadRoutes(a.router, controller.NewController(cl, a.log, a.services))
 
-	a.log.Info("server has started", slog.Int("port", a.port))
+	a.log.Info("app is running")
 	if err := a.server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 		panic("failed to start server: " + err.Error())
 	}

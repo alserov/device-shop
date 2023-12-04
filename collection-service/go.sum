@@ -1,7 +1,11 @@
 github.com/BurntSushi/toml v1.2.1 h1:9F2/+DoOYIOksmaJFPw1tGFy1eDnIJXg+UHjuD8lTak=
 github.com/BurntSushi/toml v1.2.1/go.mod h1:CxXYINrC8qIiEnFrOxCa7Jy5BFHlXnUU2pbicEuybxQ=
+github.com/alserov/device-shop/gateway v0.0.0-20231204151820-a705c9a94556 h1:Py7h6uYi6G/uZWJOGCd9ZohxYeDOKjy9bBb4wpGYQpc=
+github.com/alserov/device-shop/gateway v0.0.0-20231204151820-a705c9a94556/go.mod h1:xc8cOOOW3P+IQ5Llzjea+tWVTu1iAdDabC8Os27JcvI=
 github.com/alserov/device-shop/proto v0.0.0-20231202211858-5cd899fd0058 h1:aSZYjvrldkRHS6V4BQAgW0OGxegWhvdpTb1/QxlDJBw=
 github.com/alserov/device-shop/proto v0.0.0-20231202211858-5cd899fd0058/go.mod h1:jTRYFmTaJqxlcsigo+73JGY8OQJ0e5uTv1D3bTDAPV4=
+github.com/alserov/device-shop/proto v0.0.0-20231203181948-a6565f2185eb h1:Pg5UyjV36/ESjo01UGKITgVyPetfmWXR+iDBJpraN/E=
+github.com/alserov/device-shop/proto v0.0.0-20231203181948-a6565f2185eb/go.mod h1:jTRYFmTaJqxlcsigo+73JGY8OQJ0e5uTv1D3bTDAPV4=
 github.com/alserov/device-shop/user-service v0.0.0-20231202211858-5cd899fd0058 h1:1NYimYexrrXxzSZC93JzjHxLI1RjkrNIVMSts3fFeh4=
 github.com/alserov/device-shop/user-service v0.0.0-20231202211858-5cd899fd0058/go.mod h1:bMpvbQ4YzxWdrHV2F3S0SolgpFdnfdBsEliFfd5sAQc=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=

@@ -3,9 +3,7 @@ package server
 import (
 	"context"
 	"database/sql"
-	"github.com/alserov/device-shop/device-service/internal/logger"
 	"github.com/alserov/device-shop/device-service/internal/service"
-	"github.com/alserov/device-shop/device-service/internal/service/models"
 	"github.com/alserov/device-shop/device-service/internal/utils/converter"
 	"github.com/alserov/device-shop/device-service/internal/utils/validation"
 	"github.com/alserov/device-shop/gateway/pkg/client"
@@ -19,173 +17,141 @@ import (
 
 func Register(s *grpc.Server, db *sql.DB, log *slog.Logger, collectionAddr string) {
 	device.RegisterDevicesServer(s, &server{
-		log:    log,
-		device: service.NewService(db),
-		services: ServicesAddr{
+		log:     log,
+		service: service.NewService(db, log),
+		services: services{
 			collectionAddr: collectionAddr,
 		},
+		valid: validation.NewValidator(),
+		conv:  converter.NewServerConverter(),
 	})
 }
 
-type Server interface {
-	GetAllDevices(context.Context, *device.GetAllDevicesReq) (*device.DevicesRes, error)
-	GetDevicesByTitle(context.Context, *device.GetDeviceByTitleReq) (*device.DevicesRes, error)
-	GetDevicesByManufacturer(context.Context, *device.GetByManufacturer) (*device.DevicesRes, error)
-	GetDevicesByPrice(context.Context, *device.GetByPrice) (*device.DevicesRes, error)
-	GetDeviceByUUID(context.Context, *device.GetDeviceByUUIDReq) (*device.Device, error)
-}
-
 type server struct {
-	device service.Service
-	log    *slog.Logger
-
-	services ServicesAddr
+	log *slog.Logger
 
 	device.UnimplementedDevicesServer
+	service service.Service
+
+	services services
+
+	valid *validation.Validator
+	conv  *converter.ServerConverter
 }
 
-type ServicesAddr struct {
+type services struct {
 	collectionAddr string
 }
 
 func (s *server) GetAllDevices(ctx context.Context, req *device.GetAllDevicesReq) (*device.DevicesRes, error) {
-	devices, err := s.device.GetAllDevices(ctx, models.GetAllDevicesReq{
-		Amount: req.GetAmount(),
-		Index:  req.Index,
-	})
+	devices, err := s.service.GetAllDevices(ctx, s.conv.Device.GetAllDevicesReqToService(req))
 	if err != nil {
-		s.log.Error("failed to get all devices", logger.Error(err))
-		return nil, status.Error(codes.Internal, "internal error")
+		return nil, err
 	}
 
-	var res device.DevicesRes
-	for _, d := range devices {
-		device := converter.DeviceToPb(*d)
-		res.Devices = append(res.Devices, device)
-	}
-
-	return &res, nil
+	return s.conv.Device.GetAllDevicesResToPb(devices), nil
 }
 
 func (s *server) GetDevicesByTitle(ctx context.Context, req *device.GetDeviceByTitleReq) (*device.DevicesRes, error) {
-	if err := validation.ValidateGetDeviceByTitleReq(req); err != nil {
+	if err := s.valid.Device.ValidateGetDeviceByTitleReq(req); err != nil {
 		return nil, err
 	}
 
-	foundDevices, err := s.device.GetDevicesByTitle(ctx, req.Title)
+	devices, err := s.service.GetDevicesByTitle(ctx, req.Title)
 	if err != nil {
 		return nil, err
 	}
 
-	var devices []*device.Device
-	for _, d := range foundDevices {
-		device := converter.DeviceToPb(*d)
-		devices = append(devices, device)
-	}
-
-	return &device.DevicesRes{
-		Devices: devices,
-	}, nil
+	return s.conv.Device.GetAllDevicesResToPb(devices), nil
 }
 
 func (s *server) GetDevicesByManufacturer(ctx context.Context, req *device.GetByManufacturer) (*device.DevicesRes, error) {
-	if err := validation.ValidateGetDevicesByManufacturerReq(req); err != nil {
+	if err := s.valid.Device.ValidateGetDevicesByManufacturerReq(req); err != nil {
 		return nil, err
 	}
 
-	foundDevices, err := s.device.GetDevicesByManufacturer(ctx, req.Manufacturer)
+	devices, err := s.service.GetDevicesByManufacturer(ctx, req.Manufacturer)
 	if err != nil {
 		return nil, err
 	}
 
-	var devices []*device.Device
-	for _, d := range foundDevices {
-		device := converter.DeviceToPb(*d)
-		devices = append(devices, device)
-	}
-
-	return &device.DevicesRes{
-		Devices: devices,
-	}, err
+	return s.conv.Device.GetAllDevicesResToPb(devices), err
 }
 
 func (s *server) GetDevicesByPrice(ctx context.Context, req *device.GetByPrice) (*device.DevicesRes, error) {
-	if err := validation.ValidateGetDevicesByPrice(req); err != nil {
+	if err := s.valid.Device.ValidateGetDevicesByPrice(req); err != nil {
 		return nil, err
 	}
 
-	foundDevices, err := s.device.GetDevicesByPrice(ctx, converter.GetDevicesByPriceToService(req))
+	devices, err := s.service.GetDevicesByPrice(ctx, s.conv.Device.GetDevicesByPriceToService(req))
 	if err != nil {
 		return nil, err
 	}
 
-	var devices []*device.Device
-	for _, d := range foundDevices {
-		device := converter.DeviceToPb(*d)
-		devices = append(devices, device)
-	}
-
-	return &device.DevicesRes{
-		Devices: devices,
-	}, nil
+	return s.conv.Device.GetAllDevicesResToPb(devices), nil
 }
 
 func (s *server) GetDeviceByUUID(ctx context.Context, req *device.GetDeviceByUUIDReq) (*device.Device, error) {
-	if err := validation.ValidateGetDeviceByUUID(req); err != nil {
+	if err := s.valid.Device.ValidateGetDeviceByUUID(req); err != nil {
 		return nil, err
 	}
 
-	foundDevice, err := s.device.GetDeviceByUUID(ctx, req.UUID)
+	device, err := s.service.GetDeviceByUUID(ctx, req.UUID)
 	if err != nil {
 		return nil, err
 	}
 
-	return converter.DeviceToPb(foundDevice), nil
+	return s.conv.Device.DeviceToPb(device), nil
 }
 
 func (s *server) CreateDevice(ctx context.Context, req *device.CreateDeviceReq) (*emptypb.Empty, error) {
-	if err := validation.ValidateCreateDeviceReq(req); err != nil {
+	if err := s.valid.Admin.ValidateCreateDeviceReq(req); err != nil {
 		return nil, err
 	}
 
-	err := s.device.CreateDevice(ctx, converter.CreateDeviceToService(req))
+	err := s.service.CreateDevice(ctx, s.conv.Admin.CreateDeviceToService(req))
 	if err != nil {
-		s.log.Error("failed to create device: ", logger.Error(err))
-		return nil, status.Error(codes.Internal, "internal error")
+		return nil, err
 	}
 
 	return &emptypb.Empty{}, nil
 }
 
 func (s *server) DeleteDevice(ctx context.Context, req *device.DeleteDeviceReq) (*emptypb.Empty, error) {
-	if err := validation.ValidateDeleteDeviceReq(req); err != nil {
+	op := "server.DeleteDevice"
+
+	if err := s.valid.Admin.ValidateDeleteDeviceReq(req); err != nil {
 		return nil, err
 	}
 
-	err := s.device.DeleteDevice(ctx, req.UUID)
+	err := s.service.DeleteDevice(ctx, req.UUID)
 	if err != nil {
-		s.log.Error("failed to delete device: ", logger.Error(err))
-		return nil, status.Error(codes.Internal, "internal error")
+		return nil, err
 	}
 
 	cl, cc, err := client.DialCollection(s.services.collectionAddr)
 	if err != nil {
-		s.log.Error("failed to dial collection service: " + err.Error())
+		s.log.Error("failed to dial collection service", slog.String("error", err.Error()), slog.String("op", op))
 		return nil, status.Error(codes.Internal, "internal error")
 	}
 	defer cc.Close()
+
+	_, err = cl.RemoveDeviceFromCollections(ctx, s.conv.Admin.RemoveDeviceFromCollectionsReqToPb(req))
+	if err != nil {
+		s.log.Error("failed to remove device from collections", slog.String("error", err.Error()), slog.String("op", op))
+		return nil, status.Error(codes.Internal, "internal error")
+	}
 
 	return &emptypb.Empty{}, nil
 }
 
 func (s *server) UpdateDevice(ctx context.Context, req *device.UpdateDeviceReq) (*emptypb.Empty, error) {
-	if err := validation.ValidateUpdateDeviceReq(req); err != nil {
+	if err := s.valid.Admin.ValidateUpdateDeviceReq(req); err != nil {
 		return nil, err
 	}
 
-	err := s.device.UpdateDevice(ctx, converter.UpdateDeviceToService(req))
+	err := s.service.UpdateDevice(ctx, s.conv.Admin.UpdateDeviceToService(req))
 	if err != nil {
-		s.log.Error("failed to update device: ", logger.Error(err))
 		return nil, err
 	}
 

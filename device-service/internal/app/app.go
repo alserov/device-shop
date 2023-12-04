@@ -17,6 +17,7 @@ type App struct {
 	timeout    time.Duration
 	dbDsn      string
 	gRPCServer *grpc.Server
+	services   Services
 }
 
 func New(cfg *config.Config, log *slog.Logger) *App {
@@ -32,22 +33,31 @@ func New(cfg *config.Config, log *slog.Logger) *App {
 			cfg.DB.Name,
 			cfg.DB.SSLMode,
 		),
+		services: Services{
+			CollectionAddr: cfg.Services.CollectionAddr,
+		},
+		gRPCServer: grpc.NewServer(),
 	}
 }
 
+type Services struct {
+	CollectionAddr string
+}
+
 func (a *App) MustStart() {
-	a.log.Info("starting server on port", slog.Int("port", a.port))
+	a.log.Info("starting app", slog.Int("port", a.port))
 
 	db := postgres.MustConnect(a.dbDsn)
+	a.log.Info("db connected")
 
-	s := grpc.NewServer()
-	server.Register(s, db, a.log)
+	server.Register(a.gRPCServer, db, a.log, a.services.CollectionAddr)
 
 	l, err := net.Listen("tcp", fmt.Sprintf(":%d", a.port))
 	if err != nil {
 		panic("failed to start a server: " + err.Error())
 	}
 
+	a.log.Info("app is running")
 	if err = a.gRPCServer.Serve(l); err != nil {
 		panic("app has stopped due to the error: " + err.Error())
 	}

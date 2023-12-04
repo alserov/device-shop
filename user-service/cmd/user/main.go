@@ -1,22 +1,26 @@
 package main
 
 import (
-	"context"
 	"github.com/alserov/device-shop/user-service/internal/app"
+	"github.com/alserov/device-shop/user-service/internal/config"
+	"github.com/alserov/device-shop/user-service/internal/logger"
 	"os"
 	"os/signal"
+	"syscall"
 )
 
 func main() {
-	a, err := app.New()
-	if err != nil {
-		panic(err)
-	}
+	cfg := config.MustLoad()
 
-	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
-	defer cancel()
+	log := logger.MustSetupLogger(cfg.Env)
 
-	if err = a.Start(ctx); err != nil {
-		panic(err)
-	}
+	application := app.New(cfg, log)
+	go application.MustStart()
+
+	chStop := make(chan os.Signal, 1)
+	signal.Notify(chStop, syscall.SIGTERM, syscall.SIGINT)
+
+	sign := <-chStop
+	application.Stop()
+	log.Info("app was stopped due to: " + sign.String())
 }

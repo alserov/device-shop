@@ -6,6 +6,7 @@ type CreateDeviceReq struct {
 	Price        float32
 	Manufacturer string
 	Amount       uint32
+	UUID         string
 }
 
 type UpdateDeviceReq struct {

@@ -8,9 +8,14 @@ import (
 )
 
 type Config struct {
-	Env  string     `yaml:"env" env-default:"local"`
-	GRPC GRPCConfig `yaml:"server"`
-	DB   DBConfig   `yaml:"db"`
+	Env      string     `yaml:"env" env-default:"local"`
+	GRPC     GRPCConfig `yaml:"grpc"`
+	DB       DBConfig   `yaml:"db"`
+	Services Services   `yaml:"services"`
+}
+
+type Services struct {
+	CollectionAddr string `yaml:"collection"`
 }
 
 type DBConfig struct {

@@ -5,10 +5,10 @@ cache:
   addr: 127.0.0.1:4001
 services:
   user:
-    addr: 127.0.0.1:8002
+    addr: 127.0.0.1:3002
   device:
-    addr: 127.0.0.1:8003
+    addr: 127.0.0.1:3003
   order:
-    addr: 127.0.0.1:8004
-  auth:
     addr: 127.0.0.1:3005
+  coll:
+    addr: 127.0.0.1:3004

@@ -10,4 +10,4 @@ db:
   sslmode: disable
   host: 127.0.0.1
 services:
-  collections: 127.0.0.1:8002
+  collection: 127.0.0.1:3004

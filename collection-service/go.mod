@@ -10,7 +10,8 @@ require (
 
 require (
 	github.com/BurntSushi/toml v1.2.1 // indirect
-	github.com/alserov/device-shop/proto v0.0.0-20231202211858-5cd899fd0058 // indirect
+	github.com/alserov/device-shop/gateway v0.0.0-20231204151820-a705c9a94556 // indirect
+	github.com/alserov/device-shop/proto v0.0.0-20231203181948-a6565f2185eb // indirect
 	github.com/golang/protobuf v1.5.3 // indirect
 	github.com/golang/snappy v0.0.4 // indirect
 	github.com/ilyakaznacheev/cleanenv v1.5.0 // indirect

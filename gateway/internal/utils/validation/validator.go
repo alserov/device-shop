@@ -2,8 +2,6 @@ package validation
 
 import (
 	"errors"
-	"github.com/alserov/device-shop/proto/gen/admin"
-	"github.com/alserov/device-shop/proto/gen/auth"
 	"github.com/alserov/device-shop/proto/gen/collection"
 	"github.com/alserov/device-shop/proto/gen/device"
 	"github.com/alserov/device-shop/proto/gen/order"
@@ -12,7 +10,7 @@ import (
 )
 
 // ADMIN VALIDATORS
-func CheckCreateDevice(r *admin.CreateDeviceReq) error {
+func CheckCreateDevice(r *device.CreateDeviceReq) error {
 	if len(r.Title) < 5 {
 		return errors.New("title too short")
 	}
@@ -35,7 +33,7 @@ func CheckCreateDevice(r *admin.CreateDeviceReq) error {
 
 	return nil
 }
-func CheckUpdateDevice(r *admin.UpdateDeviceReq) error {
+func CheckUpdateDevice(r *device.UpdateDeviceReq) error {
 	if len(r.Title) < 5 {
 		return errors.New("title too short")
 	}
@@ -53,7 +51,7 @@ func CheckUpdateDevice(r *admin.UpdateDeviceReq) error {
 }
 
 // AUTH VALIDATORS
-func CheckSignup(r *auth.SignupReq) error {
+func CheckSignup(r *user.SignupReq) error {
 	if len(r.Password) < 5 {
 		return errors.New("password is too short")
 	}
@@ -68,7 +66,7 @@ func CheckSignup(r *auth.SignupReq) error {
 
 	return nil
 }
-func CheckLogin(r *auth.LoginReq) error {
+func CheckLogin(r *user.LoginReq) error {
 	if len(r.Password) < 5 {
 		return errors.New("password is too short")
 	}

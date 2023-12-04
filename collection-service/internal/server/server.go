@@ -2,53 +2,74 @@ package server
 
 import (
 	"context"
+	"github.com/alserov/device-shop/gateway/pkg/client"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+
 	"github.com/alserov/device-shop/collection-service/internal/service"
 	"github.com/alserov/device-shop/collection-service/internal/utils/converter"
 	"github.com/alserov/device-shop/collection-service/internal/utils/validation"
-	"github.com/alserov/device-shop/gateway/pkg/client"
 	"github.com/alserov/device-shop/proto/gen/collection"
-	"github.com/alserov/device-shop/proto/gen/device"
+
 	"go.mongodb.org/mongo-driver/mongo"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"log/slog"
 )
 
-func Register(s *grpc.Server, db *mongo.Client, log *slog.Logger) {
+func Register(s *grpc.Server, db *mongo.Client, log *slog.Logger, deviceServiceAddr string) {
 	collection.RegisterCollectionsServer(s, &server{
-		collections: service.NewService(db),
-		log:         log,
+		log:     log,
+		service: service.NewService(db, log),
+		valid:   validation.NewValidator(),
+		conv:    converter.NewServerConverter(),
+		services: services{
+			deviceAddr: deviceServiceAddr,
+		},
 	})
 }
 
 type server struct {
 	collection.UnsafeCollectionsServer
-	collections service.Service
+	service service.Service
 
 	log *slog.Logger
 
-	deviceServiceAddr string
+	services services
+
+	valid *validation.Validator
+	conv  *converter.ServerConverter
 }
 
+type services struct {
+	deviceAddr string
+}
+
+const (
+	internalErr = "internal error"
+)
+
 func (s *server) AddToFavourite(ctx context.Context, req *collection.ChangeCollectionReq) (*emptypb.Empty, error) {
-	if err := validation.ValidateChangeCollectionReq(req); err != nil {
+	op := "server.AddToFavourite"
+
+	if err := s.valid.Collection.ValidateChangeCollectionReq(req); err != nil {
 		return nil, err
 	}
 
-	cl, cc, err := client.DialDevice(s.deviceServiceAddr)
+	cl, cc, err := client.DialDevice(s.services.deviceAddr)
 	if err != nil {
-		return nil, err
+		s.log.Error("failed to dial device service", slog.String("error", err.Error()), slog.String("op", op))
+		return nil, status.Error(codes.Internal, internalErr)
 	}
 	defer cc.Close()
 
-	fetchedDevice, err := cl.GetDeviceByUUID(ctx, &device.GetDeviceByUUIDReq{
-		UUID: req.DeviceUUID,
-	})
+	fetchedDevice, err := cl.GetDeviceByUUID(ctx, s.conv.Device.GetDeviceByUUIDReq(req.DeviceUUID))
 	if err != nil {
-		return nil, err
+		s.log.Error("failed get device by uuid", slog.String("error", err.Error()), slog.String("op", op))
+		return nil, status.Error(codes.Internal, internalErr)
 	}
 
-	if err = s.collections.AddToFavourite(ctx, req.UserUUID, converter.PbDeviceToServiceStruct(fetchedDevice)); err != nil {
+	if err = s.service.AddToFavourite(ctx, req.UserUUID, s.conv.Device.PbDeviceToService(fetchedDevice)); err != nil {
 		return nil, err
 	}
 
@@ -56,11 +77,11 @@ func (s *server) AddToFavourite(ctx context.Context, req *collection.ChangeColle
 }
 
 func (s *server) RemoveFromFavourite(ctx context.Context, req *collection.ChangeCollectionReq) (*emptypb.Empty, error) {
-	if err := validation.ValidateChangeCollectionReq(req); err != nil {
+	if err := s.valid.Collection.ValidateChangeCollectionReq(req); err != nil {
 		return nil, err
 	}
 
-	if err := s.collections.RemoveFromFavourite(ctx, converter.PbChangeCollectionReqTpServiceStruct(req)); err != nil {
+	if err := s.service.RemoveFromFavourite(ctx, s.conv.Collection.ChangeCollectionReqToService(req)); err != nil {
 		return nil, err
 	}
 
@@ -68,39 +89,34 @@ func (s *server) RemoveFromFavourite(ctx context.Context, req *collection.Change
 }
 
 func (s *server) GetFavourite(ctx context.Context, req *collection.GetCollectionReq) (*collection.GetCollectionRes, error) {
-	coll, err := s.collections.GetFavourite(ctx, req.UserUUID)
+	coll, err := s.service.GetFavourite(ctx, req.UserUUID)
 	if err != nil {
 		return nil, err
 	}
 
-	var devices []*device.Device
-	for _, v := range coll {
-		device := converter.ServiceDeviceToPb(*v)
-		devices = append(devices, device)
-	}
-
-	return &collection.GetCollectionRes{
-		Devices: devices,
-	}, nil
+	return s.conv.Collection.GetCollectionResToPb(coll), nil
 }
 
 func (s *server) AddToCart(ctx context.Context, req *collection.ChangeCollectionReq) (*emptypb.Empty, error) {
-	if err := validation.ValidateChangeCollectionReq(req); err != nil {
+	op := "server.AddToCart"
+
+	if err := s.valid.Collection.ValidateChangeCollectionReq(req); err != nil {
 		return nil, err
 	}
 
-	cl, cc, err := client.DialDevice(s.deviceServiceAddr)
+	cl, cc, err := client.DialDevice(s.services.deviceAddr)
 	if err != nil {
-		return nil, err
+		s.log.Error("failed to dial device service", slog.String("error", err.Error()), slog.String("op", op))
+		return nil, status.Error(codes.Internal, internalErr)
 	}
 	defer cc.Close()
 
-	fetchedDevice, err := cl.GetDeviceByUUID(ctx, req.DeviceUUID)
+	fetchedDevice, err := cl.GetDeviceByUUID(ctx, s.conv.Device.GetDeviceByUUIDReq(req.DeviceUUID))
 	if err != nil {
 		return &emptypb.Empty{}, err
 	}
 
-	if err = s.collections.AddToCart(ctx, req.UserUUID, converter.PbDeviceToServiceStruct(fetchedDevice)); err != nil {
+	if err = s.service.AddToCart(ctx, req.UserUUID, s.conv.Device.PbDeviceToService(fetchedDevice)); err != nil {
 		return nil, err
 	}
 
@@ -108,7 +124,7 @@ func (s *server) AddToCart(ctx context.Context, req *collection.ChangeCollection
 }
 
 func (s *server) RemoveFromCart(ctx context.Context, req *collection.ChangeCollectionReq) (*emptypb.Empty, error) {
-	if err := s.collections.RemoveFromCart(ctx, converter.PbChangeCollectionReqTpServiceStruct(req)); err != nil {
+	if err := s.service.RemoveFromCart(ctx, s.conv.Collection.ChangeCollectionReqToService(req)); err != nil {
 		return nil, err
 	}
 
@@ -116,25 +132,16 @@ func (s *server) RemoveFromCart(ctx context.Context, req *collection.ChangeColle
 }
 
 func (s *server) GetCart(ctx context.Context, req *collection.GetCollectionReq) (*collection.GetCollectionRes, error) {
-	coll, err := s.collections.GetCart(ctx, req.UserUUID)
+	coll, err := s.service.GetCart(ctx, req.UserUUID)
 	if err != nil {
 		return nil, err
 	}
 
-	var devices []*device.Device
-
-	for _, v := range coll {
-		device := converter.ServiceDeviceToPb(*v)
-		devices = append(devices, device)
-	}
-
-	return &collection.GetCollectionRes{
-		Devices: devices,
-	}, nil
+	return s.conv.Collection.GetCollectionResToPb(coll), nil
 }
 
 func (s *server) RemoveDeviceFromCollections(ctx context.Context, req *collection.RemoveDeletedDeviceReq) (*emptypb.Empty, error) {
-	if err := s.collections.RemoveDeviceFromCollections(ctx, req.DeviceUUID); err != nil {
+	if err := s.service.RemoveDeviceFromCollections(ctx, req.DeviceUUID); err != nil {
 		return &emptypb.Empty{}, err
 	}
 	return &emptypb.Empty{}, nil

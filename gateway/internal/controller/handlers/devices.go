@@ -246,8 +246,8 @@ func (h *devicesHandler) GetDevicesByPrice(c *gin.Context) {
 	defer cc.Close()
 
 	r := &device.GetByPrice{
-		Min: uint32(minVal),
-		Max: uint32(maxVal),
+		Min: float32(minVal),
+		Max: float32(maxVal),
 	}
 
 	ctx, cancel := context.WithTimeout(c.Request.Context(), time.Second)

@@ -2,19 +2,26 @@ package mongo
 
 import (
 	"context"
+	"errors"
 	"github.com/alserov/device-shop/collection-service/internal/db"
+	"github.com/alserov/device-shop/collection-service/internal/db/models"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+	"log/slog"
 	"sync"
 )
 
 type repo struct {
-	db *mongo.Client
+	log *slog.Logger
+	db  *mongo.Client
 }
 
-func NewCollectionsRepo(db *mongo.Client) db.CollectionsRepo {
+func NewCollectionsRepo(db *mongo.Client, log *slog.Logger) db.CollectionsRepo {
 	return &repo{
-		db: db,
+		log: log,
+		db:  db,
 	}
 }
 
@@ -22,53 +29,72 @@ const (
 	DB_NAME                 = "collections"
 	DB_FAVOURITE_COLLECTION = "favourite"
 	DB_CART_COLLECTION      = "cart"
+
+	internalError = "internal error"
+	notFound      = "nothing found"
 )
 
-func (r *repo) AddToFavourite(ctx context.Context, userUUID string, device db.Device) error {
+func (r *repo) AddToFavourite(ctx context.Context, userUUID string, device models.Device) error {
+	op := "repo.AddToFavourite"
+
 	coll := r.db.Database(DB_NAME).Collection(DB_FAVOURITE_COLLECTION)
 
 	_, err := coll.InsertOne(ctx, bson.M{
 		"device":   device,
 		"userUUID": userUUID,
 	})
-	if err != nil {
-		return err
+	if errors.Is(mongo.ErrNoDocuments, err) {
+		return status.Error(codes.NotFound, notFound)
 	}
+	if err != nil {
+		r.log.Error("failed to insert device", slog.String("error", err.Error()), slog.String("op", op))
+		return status.Error(codes.Internal, internalError)
+	}
+
 	return nil
 }
 
-func (r *repo) RemoveFromFavourite(ctx context.Context, req *db.ChangeCollectionReq) error {
+func (r *repo) RemoveFromFavourite(ctx context.Context, userUUID string, deviceUUID string) error {
+	op := "repo.RemoveFromFavourite"
+
 	coll := r.db.Database(DB_NAME).Collection(DB_FAVOURITE_COLLECTION)
 
 	_, err := coll.DeleteOne(ctx, bson.D{
-		{"userUUID", req.UserUUID},
-		{"device.uuid", req.DeviceUUID},
+		{"userUUID", userUUID},
+		{"device.uuid", deviceUUID},
 	})
+	if errors.Is(mongo.ErrNoDocuments, err) {
+		return status.Error(codes.NotFound, notFound)
+	}
 	if err != nil {
-		return err
+		r.log.Error("failed to delete from collection", slog.String("error", err.Error()), slog.String("op", op))
+		return status.Error(codes.Internal, internalError)
 	}
 
 	return nil
 }
 
-type CollectionRes struct {
-	Device db.Device `bson:"device"`
-}
+func (r *repo) GetFavourite(ctx context.Context, userUUID string) ([]*models.Device, error) {
+	op := "repo.GetFavourite"
 
-func (r *repo) GetFavourite(ctx context.Context, userUUID string) ([]*db.Device, error) {
 	coll := r.db.Database(DB_NAME).Collection(DB_FAVOURITE_COLLECTION)
 
 	cur, err := coll.Find(ctx, bson.D{{"userUUID", userUUID}})
+	if errors.Is(mongo.ErrNoDocuments, err) {
+		return nil, status.Error(codes.NotFound, notFound)
+	}
 	if err != nil {
-		return nil, err
+		r.log.Error("failed to find devices", slog.String("error", err.Error()), slog.String("op", op))
+		return nil, status.Error(codes.Internal, internalError)
 	}
 
-	var d []*CollectionRes
+	var d []*models.DeviceFromCollection
 	if err = cur.All(ctx, &d); err != nil {
+		r.log.Error("failed to scan devices", slog.String("error", err.Error()), slog.String("op", op))
 		return nil, err
 	}
 
-	var devices []*db.Device
+	var devices []*models.Device
 	for _, v := range d {
 		devices = append(devices, &v.Device)
 	}
@@ -76,48 +102,66 @@ func (r *repo) GetFavourite(ctx context.Context, userUUID string) ([]*db.Device,
 	return devices, nil
 }
 
-func (r *repo) AddToCart(ctx context.Context, userUUID string, device db.Device) error {
+func (r *repo) AddToCart(ctx context.Context, userUUID string, device models.Device) error {
+	op := "repo.AddToCart"
+
 	coll := r.db.Database(DB_NAME).Collection(DB_CART_COLLECTION)
 
 	_, err := coll.InsertOne(ctx, bson.M{
 		"device":   device,
 		"userUUID": userUUID,
 	})
+	if errors.Is(mongo.ErrNoDocuments, err) {
+		return status.Error(codes.NotFound, notFound)
+	}
 	if err != nil {
-		return err
+		r.log.Error("failed insert device", slog.String("error", err.Error()), slog.String("op", op))
+		return status.Error(codes.Internal, internalError)
 	}
 	return nil
 }
 
-func (r *repo) RemoveFromCart(ctx context.Context, req *db.ChangeCollectionReq) error {
+func (r *repo) RemoveFromCart(ctx context.Context, userUUID string, deviceUUID string) error {
+	op := "repo.RemoveFromCart"
+
 	coll := r.db.Database(DB_NAME).Collection(DB_CART_COLLECTION)
 
 	_, err := coll.DeleteOne(ctx, bson.D{
-		{"userUUID", req.UserUUID},
-		{"device.uuid", req.DeviceUUID},
+		{"userUUID", userUUID},
+		{"device.uuid", deviceUUID},
 	})
+	if errors.Is(mongo.ErrNoDocuments, err) {
+		return status.Error(codes.NotFound, notFound)
+	}
 	if err != nil {
-		return err
+		r.log.Error("failed to delete from collection", slog.String("error", err.Error()), slog.String("op", op))
+		return status.Error(codes.Internal, internalError)
 	}
 
 	return nil
 }
 
-func (r *repo) GetCart(ctx context.Context, userUUID string) ([]*db.Device, error) {
+func (r *repo) GetCart(ctx context.Context, userUUID string) ([]*models.Device, error) {
+	op := "repo.GetCart"
+
 	coll := r.db.Database(DB_NAME).Collection(DB_CART_COLLECTION)
 
 	cur, err := coll.Find(ctx, bson.D{{"userUUID", userUUID}})
+	if errors.Is(mongo.ErrNoDocuments, err) {
+		return nil, status.Error(codes.NotFound, notFound)
+	}
 	if err != nil {
-		return nil, err
+		r.log.Error("failed to find devices", slog.String("error", err.Error()), slog.String("op", op))
+		return nil, status.Error(codes.Internal, internalError)
 	}
 
-	var d []*CollectionRes
+	var d []*models.DeviceFromCollection
 	if err = cur.All(ctx, &d); err != nil {
-		return nil, err
+		r.log.Error("failed to scan devices", slog.String("error", err.Error()), slog.String("op", op))
+		return nil, status.Error(codes.Internal, internalError)
 	}
 
-	var devices []*db.Device
-
+	var devices []*models.Device
 	for _, v := range d {
 		devices = append(devices, &v.Device)
 	}
@@ -126,6 +170,8 @@ func (r *repo) GetCart(ctx context.Context, userUUID string) ([]*db.Device, erro
 }
 
 func (r *repo) RemoveDeviceFromCollections(ctx context.Context, deviceUUID string) error {
+	op := "repo.RemoveDeviceFromCollections"
+
 	chErr := make(chan error, 1)
 	var wg sync.WaitGroup
 
@@ -135,8 +181,11 @@ func (r *repo) RemoveDeviceFromCollections(ctx context.Context, deviceUUID strin
 		_, err := r.db.Database(DB_NAME).Collection(DB_FAVOURITE_COLLECTION).DeleteMany(ctx, bson.D{
 			{"device.uuid", deviceUUID},
 		})
+		if errors.Is(mongo.ErrNoDocuments, err) {
+			chErr <- status.Error(codes.NotFound, notFound)
+		}
 		if err != nil {
-			chErr <- err
+			chErr <- status.Error(codes.Internal, internalError)
 		}
 	}()
 
@@ -145,15 +194,22 @@ func (r *repo) RemoveDeviceFromCollections(ctx context.Context, deviceUUID strin
 		_, err := r.db.Database(DB_NAME).Collection(DB_CART_COLLECTION).DeleteMany(ctx, bson.D{
 			{"device.uuid", deviceUUID},
 		})
+		if errors.Is(mongo.ErrNoDocuments, err) {
+			chErr <- status.Error(codes.NotFound, notFound)
+		}
 		if err != nil {
-			chErr <- err
+			chErr <- status.Error(codes.Internal, internalError)
 		}
 	}()
-	wg.Wait()
-	close(chErr)
+
+	go func() {
+		wg.Wait()
+		close(chErr)
+	}()
 
 	if err := <-chErr; err != nil {
-		return err
+		r.log.Error("failed to remove device from collection", slog.String("error", err.Error()), slog.String("op", op))
+		return status.Error(codes.Internal, internalError)
 	}
 
 	return nil

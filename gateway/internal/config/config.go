@@ -16,10 +16,10 @@ type Config struct {
 }
 
 type Services struct {
-	Auth   Service `yaml:"auth"`
 	User   Service `yaml:"user"`
 	Device Service `yaml:"device"`
 	Order  Service `yaml:"order"`
+	Coll   Service `yaml:"coll"`
 }
 
 type Service struct {

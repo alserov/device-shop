@@ -1,10 +1,10 @@
 env: local
 grpc:
-  port: 3005
+  port: 3002
   timeout: 5s
 db:
   host: 127.0.0.1
-  port: 4005
+  port: 4002
   user: postgres
   password: 1787
   name: template1

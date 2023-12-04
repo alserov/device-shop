@@ -2,8 +2,6 @@ package utils
 
 import (
 	"github.com/golang-jwt/jwt/v4"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 	"os"
 	"time"
 )
@@ -19,7 +17,7 @@ func GenerateTokens(role string) (string, string, error) {
 
 	t, err := jwt.NewWithClaims(jwt.SigningMethodHS256, cl).SignedString([]byte(key))
 	if err != nil {
-		return "", "", status.Error(codes.Internal, err.Error())
+		return "", "", err
 	}
 
 	rClaims := jwt.MapClaims{}
@@ -27,7 +25,7 @@ func GenerateTokens(role string) (string, string, error) {
 
 	rT, err := jwt.NewWithClaims(jwt.SigningMethodHS256, rClaims).SignedString([]byte(key))
 	if err != nil {
-		return "", "", status.Error(codes.Internal, err.Error())
+		return "", "", err
 	}
 
 	return t, rT, nil

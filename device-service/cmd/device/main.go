@@ -4,7 +4,6 @@ import (
 	"github.com/alserov/device-shop/device-service/internal/app"
 	"github.com/alserov/device-shop/device-service/internal/config"
 	"github.com/alserov/device-shop/device-service/internal/logger"
-	"log/slog"
 	"os"
 	"os/signal"
 	"syscall"
@@ -23,6 +22,5 @@ func main() {
 
 	sign := <-chStop
 	application.Stop()
-	log.Info("app was stopped", slog.String("signal", sign.String()))
-
+	log.Info("app was stopped due to: " + sign.String())
 }

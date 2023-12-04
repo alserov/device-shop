@@ -16,7 +16,34 @@ const (
 	emptyUUID       = "uuid can not be empty"
 )
 
-func ValidateCreateDeviceReq(req *device.CreateDeviceReq) error {
+type Validator struct {
+	Admin  AdminValidator
+	Device DeviceValidator
+}
+
+func NewValidator() *Validator {
+	return &Validator{
+		Admin:  &adminValidator{},
+		Device: &deviceValidator{},
+	}
+}
+
+type adminValidator struct{}
+type AdminValidator interface {
+	ValidateCreateDeviceReq(req *device.CreateDeviceReq) error
+	ValidateDeleteDeviceReq(req *device.DeleteDeviceReq) error
+	ValidateUpdateDeviceReq(req *device.UpdateDeviceReq) error
+}
+
+type deviceValidator struct{}
+type DeviceValidator interface {
+	ValidateGetDeviceByTitleReq(req *device.GetDeviceByTitleReq) error
+	ValidateGetDevicesByManufacturerReq(req *device.GetByManufacturer) error
+	ValidateGetDevicesByPrice(req *device.GetByPrice) error
+	ValidateGetDeviceByUUID(req *device.GetDeviceByUUIDReq) error
+}
+
+func (*adminValidator) ValidateCreateDeviceReq(req *device.CreateDeviceReq) error {
 	if req.GetPrice() <= 0 {
 		return status.Error(codes.InvalidArgument, invalidPrice)
 	}
@@ -40,7 +67,7 @@ func ValidateCreateDeviceReq(req *device.CreateDeviceReq) error {
 	return nil
 }
 
-func ValidateDeleteDeviceReq(req *device.DeleteDeviceReq) error {
+func (*adminValidator) ValidateDeleteDeviceReq(req *device.DeleteDeviceReq) error {
 	if req.GetUUID() == "" {
 		return status.Error(codes.InvalidArgument, emptyUUID)
 	}
@@ -48,7 +75,7 @@ func ValidateDeleteDeviceReq(req *device.DeleteDeviceReq) error {
 	return nil
 }
 
-func ValidateUpdateDeviceReq(req *device.UpdateDeviceReq) error {
+func (*adminValidator) ValidateUpdateDeviceReq(req *device.UpdateDeviceReq) error {
 	if req.GetPrice() <= 0 {
 		return status.Error(codes.InvalidArgument, invalidPrice)
 	}
@@ -68,21 +95,21 @@ func ValidateUpdateDeviceReq(req *device.UpdateDeviceReq) error {
 	return nil
 }
 
-func ValidateGetDeviceByTitleReq(req *device.GetDeviceByTitleReq) error {
+func (*deviceValidator) ValidateGetDeviceByTitleReq(req *device.GetDeviceByTitleReq) error {
 	if req.GetTitle() == "" {
 		return status.Error(codes.Internal, emptyTitle)
 	}
 	return nil
 }
 
-func ValidateGetDevicesByManufacturerReq(req *device.GetByManufacturer) error {
+func (*deviceValidator) ValidateGetDevicesByManufacturerReq(req *device.GetByManufacturer) error {
 	if req.GetManufacturer() == "" {
 		return status.Error(codes.InvalidArgument, emptyManu)
 	}
 	return nil
 }
 
-func ValidateGetDevicesByPrice(req *device.GetByPrice) error {
+func (*deviceValidator) ValidateGetDevicesByPrice(req *device.GetByPrice) error {
 	if req.GetMin() < 0 {
 		return status.Error(codes.InvalidArgument, invalidPrice)
 	}
@@ -93,7 +120,7 @@ func ValidateGetDevicesByPrice(req *device.GetByPrice) error {
 	return nil
 }
 
-func ValidateGetDeviceByUUID(req *device.GetDeviceByUUIDReq) error {
+func (*deviceValidator) ValidateGetDeviceByUUID(req *device.GetDeviceByUUIDReq) error {
 	if req.GetUUID() == "" {
 		return status.Error(codes.InvalidArgument, emptyUUID)
 	}

@@ -6,7 +6,6 @@ import (
 	"github.com/alserov/device-shop/device-service/internal/db/postgres/migrations"
 	"github.com/golang-migrate/migrate/v4"
 	_ "github.com/lib/pq"
-	"log"
 )
 
 func MustConnect(dsn string) *sql.DB {
@@ -23,6 +22,5 @@ func MustConnect(dsn string) *sql.DB {
 		panic("failed to migrate: " + err.Error())
 	}
 
-	log.Println("postgres connected")
 	return conn
 }

@@ -43,14 +43,14 @@ func (p *post) send(title string, template []byte, to string) error {
 
 func (p *post) SendAuth(toEmail string) error {
 	template := fmt.Sprintf(`
-		<div style="background-color:#3b2e3e;height:500px;align-items:center;color:white;margin:30px,0">
+		<div style="background-color:white;height:500px;color:white">
 			<h1 style="text-align:center">Hello, %s. You have successfully authorized.</h1>
 			<p style="text-align:center">Click on this link to retrun to the page</p>
 			<a href="http://127.0.0.1:/" style:"margin:5px">
-				<button style="width:200px;height:60px;border-radius:10px;background-color:#601473;color:white;font-weight:bold;border:none">Back</button>
+				<button style="width:200px;height:60px;border-radius:10px;background-color:green;color:white;font-weight:bold;border:none">Back</button>
 			</a>
 		</div>
-	`)
+	`, toEmail)
 	if err := p.send("Authorization", []byte(template), toEmail); err != nil {
 		return err
 	}
