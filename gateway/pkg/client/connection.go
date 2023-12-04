@@ -1,8 +1,6 @@
 package client
 
 import (
-	"github.com/alserov/device-shop/proto/gen/admin"
-	"github.com/alserov/device-shop/proto/gen/auth"
 	"github.com/alserov/device-shop/proto/gen/collection"
 	"github.com/alserov/device-shop/proto/gen/device"
 	"github.com/alserov/device-shop/proto/gen/order"
@@ -27,17 +25,6 @@ func DialUser(addr string) (user.UsersClient, *grpc.ClientConn, error) {
 	client := user.NewUsersClient(cc)
 
 	return client, cc, nil
-}
-
-func DialAdmin(addr string) (admin.AdminClient, *grpc.ClientConn, error) {
-	cc, err := dial(addr)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	client := admin.NewAdminClient(cc)
-
-	return client, cc, err
 }
 
 func DialCollection(addr string) (collection.CollectionsClient, *grpc.ClientConn, error) {
@@ -71,15 +58,4 @@ func DialOrder(addr string) (order.OrdersClient, *grpc.ClientConn, error) {
 	client := order.NewOrdersClient(cc)
 
 	return client, cc, nil
-}
-
-func DialAuth(addr string) (auth.AuthClient, *grpc.ClientConn, error) {
-	cc, err := dial(addr)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	client := auth.NewAuthClient(cc)
-
-	return client, cc, err
 }
