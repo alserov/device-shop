@@ -4,8 +4,12 @@ github.com/Microsoft/go-winio v0.6.1 h1:9/kr64B9VUZrLm5YYwbGtUJnMgqWVOdUAXu6Migc
 github.com/Microsoft/go-winio v0.6.1/go.mod h1:LRdKpFKfdobln8UmuiYcKPot9D2v6svN5+sAH+4kjUM=
 github.com/alserov/device-shop/gateway v0.0.0-20231117195810-bcee519fc64c h1:RBAfQ0nzCXrNqfLAClctYRnepThaLwVnLMGG6FW7ph4=
 github.com/alserov/device-shop/gateway v0.0.0-20231117195810-bcee519fc64c/go.mod h1:IKPpvsWh0NLJBMUTqWuv7e60BFoGrZyj8N6TstmabXU=
+github.com/alserov/device-shop/gateway v0.0.0-20231204190602-9d348540f28e h1:dReN8my5CZXwz7xMUoXJPcFURh53PMUwIRnhegtLTkw=
+github.com/alserov/device-shop/gateway v0.0.0-20231204190602-9d348540f28e/go.mod h1:L4M2iy09SjSFrDCSuvdJ7JkXRqzv9yOu3+M0b2smh8M=
 github.com/alserov/device-shop/proto v0.0.0-20231121180731-b5526fa2bdf0 h1:/K3Te1STNo4bj0wsUNdwXHohDPoCVmN19posSILag6c=
 github.com/alserov/device-shop/proto v0.0.0-20231121180731-b5526fa2bdf0/go.mod h1:jTRYFmTaJqxlcsigo+73JGY8OQJ0e5uTv1D3bTDAPV4=
+github.com/alserov/device-shop/proto v0.0.0-20231204190602-9d348540f28e h1:AQe+cNucZhvhSmHnmZyGw9Ngypb/qYgs9AaizzgSeHw=
+github.com/alserov/device-shop/proto v0.0.0-20231204190602-9d348540f28e/go.mod h1:jTRYFmTaJqxlcsigo+73JGY8OQJ0e5uTv1D3bTDAPV4=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
@@ -62,6 +66,7 @@ github.com/stretchr/testify v1.7.1/go.mod h1:6Fq8oRcR53rry900zMqJjRRixrwX3KX962/
 github.com/stretchr/testify v1.8.0/go.mod h1:yNjHg4UonilssWZ8iaSj1OCr/vHnekPRkoO+kdMU+MU=
 github.com/stretchr/testify v1.8.1 h1:w7B6lhMri9wdJUVmEZPGGhZzrYTPvgJArz7wNPgYKsk=
 github.com/stretchr/testify v1.8.1/go.mod h1:w2LPCIKwWwSfY2zedu0+kehJoqGctiVI29o6fzry7u4=
+github.com/stretchr/testify v1.8.3/go.mod h1:sz/lmYIOXD/1dqDmKjjqLyZ2RngseejIcXlSw2iwfAo=
 go.uber.org/atomic v1.7.0 h1:ADUqmZGgLDDfbSL9ZmPxKTybcoEYHgpYfELNoN+7hsw=
 go.uber.org/atomic v1.7.0/go.mod h1:fEN4uk6kAWBTFdckzkM89CLk9XfWZrxpCo0nPH17wJc=
 golang.org/x/mod v0.10.0 h1:lFO9qtOdlre5W1jxS3r/4szv2/6iXxScdzjoBMXNhYk=

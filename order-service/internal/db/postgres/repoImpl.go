@@ -4,39 +4,48 @@ import (
 	"context"
 	"database/sql"
 	"github.com/alserov/device-shop/order-service/internal/db"
+	"github.com/alserov/device-shop/order-service/internal/db/models"
 	"github.com/alserov/device-shop/order-service/internal/entity"
-	"github.com/alserov/device-shop/order-service/internal/utils"
-	pb "github.com/alserov/device-shop/proto/gen"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+	"log/slog"
 	"sync"
 )
 
 func NewOrderRepo(db *sql.DB) db.OrderRepo {
-	return &orderRepo{
+	return &repo{
 		db: db,
 	}
 }
 
-type orderRepo struct {
-	db *sql.DB
+type repo struct {
+	log *slog.Logger
+	db  *sql.DB
 }
 
-func (r *orderRepo) CreateOrder(_ context.Context, txCh chan<- *sql.Tx, req *pb.CreateOrderReq, info *entity.OrderAdditional) error {
+const (
+	internalError = "internal error"
+)
+
+func (r *repo) CreateOrder(_ context.Context, req models.CreateOrderReq) error {
+	op := "repo.CreateOrder"
 	var (
 		chErr = make(chan error)
 		wg    = &sync.WaitGroup{}
 	)
-	wg.Add(len(req.Devices) + 1)
+	wg.Add(len(req.OrderDevices) + 1)
 
 	tx, err := r.db.Begin()
 	if err != nil {
+		tx.Rollback()
+		r.log.Error("failed to start transaction", slog.String("error", err.Error()), slog.String("op", op))
 		return err
 	}
-	txCh <- tx
 
 	go func() {
 		defer wg.Done()
 		query := `INSERT INTO orders (order_uuid,user_uuid,total_price,status,created_at) VALUES($1,$2,$3,$4,$5)`
-		_, err := tx.Exec(query, info.OrderUUID, req.UserUUID, info.TotalPrice, info.Status, info.CreatedAt)
+		_, err := tx.Exec(query, req.OrderUUID, req.UserUUID, req.OrderPrice, req.Status, req.CreatedAt)
 		if err != nil {
 			chErr <- err
 		}
@@ -44,11 +53,11 @@ func (r *orderRepo) CreateOrder(_ context.Context, txCh chan<- *sql.Tx, req *pb.
 
 	go func() {
 		query := `INSERT INTO ordered_devices (order_uuid, device_uuid, amount) VALUES($1,$2,$3)`
-		for _, device := range req.Devices {
+		for _, device := range req.OrderDevices {
 			device := device
 			go func() {
 				defer wg.Done()
-				_, err := tx.Exec(query, info.OrderUUID, device.DeviceUUID, device.Amount)
+				_, err := tx.Exec(query, req.OrderUUID, device.DeviceUUID, device.Amount)
 				if err != nil {
 					chErr <- err
 				}
@@ -61,9 +70,13 @@ func (r *orderRepo) CreateOrder(_ context.Context, txCh chan<- *sql.Tx, req *pb.
 		close(chErr)
 	}()
 
-	for err := range chErr {
-		return err
+	for err = range chErr {
+		tx.Rollback()
+		r.log.Error("failed to create order", slog.String("error", err.Error()), slog.String("op", op))
+		return status.Error(codes.Internal, internalError)
 	}
+
+	tx.Commit()
 
 	return nil
 }
@@ -140,7 +153,7 @@ func (r *orderRepo) CheckOrder(_ context.Context, orderUUID string) (*entity.Che
 func (r *orderRepo) UpdateOrder(_ context.Context, status string, orderUUID string) error {
 	query := `UPDATE orders SET status = $1 WHERE order_uuid = $2`
 
-	_, err := r.db.Exec(query, utils.StatusToCode(status), orderUUID)
+	_, err := r.db.Exec(query, status.StatusToCode(status), orderUUID)
 	if err != nil {
 		return err
 	}

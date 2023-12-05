@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"github.com/alserov/device-shop/order-service/internal/utils/status"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
@@ -15,28 +16,28 @@ func TestStatusCodeToString(t *testing.T) {
 	tests := []test{
 		{
 			testName: "creating",
-			code:     CREATING_CODE,
-			status:   CREATING,
+			code:     status.CREATING_CODE,
+			status:   status.CREATING,
 		},
 		{
 			testName: "pending",
-			code:     PENDING_CODE,
-			status:   PENDING,
+			code:     status.PENDING_CODE,
+			status:   status.PENDING,
 		},
 		{
 			testName: "canceled",
-			code:     CANCELED_CODE,
-			status:   CANCELED,
+			code:     status.CANCELED_CODE,
+			status:   status.CANCELED,
 		},
 		{
 			testName: "delivering",
-			code:     DELIVERING_CODE,
-			status:   DELIVERING,
+			code:     status.DELIVERING_CODE,
+			status:   status.DELIVERING,
 		},
 	}
 
 	for _, tc := range tests {
-		assert.Equal(t, StatusCodeToString(tc.code), tc.status)
+		assert.Equal(t, status.StatusCodeToString(tc.code), tc.status)
 	}
 }
 
@@ -44,27 +45,27 @@ func TestStatusToCode(t *testing.T) {
 	tests := []test{
 		{
 			testName: "creating",
-			code:     CREATING_CODE,
-			status:   CREATING,
+			code:     status.CREATING_CODE,
+			status:   status.CREATING,
 		},
 		{
 			testName: "pending",
-			code:     PENDING_CODE,
-			status:   PENDING,
+			code:     status.PENDING_CODE,
+			status:   status.PENDING,
 		},
 		{
 			testName: "canceled",
-			code:     CANCELED_CODE,
-			status:   CANCELED,
+			code:     status.CANCELED_CODE,
+			status:   status.CANCELED,
 		},
 		{
 			testName: "delivering",
-			code:     DELIVERING_CODE,
-			status:   DELIVERING,
+			code:     status.DELIVERING_CODE,
+			status:   status.DELIVERING,
 		},
 	}
 
 	for _, tc := range tests {
-		assert.Equal(t, StatusToCode(tc.status), tc.code)
+		assert.Equal(t, status.StatusToCode(tc.status), tc.code)
 	}
 }

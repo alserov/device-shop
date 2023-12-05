@@ -20,7 +20,7 @@ message OrderDevice {
 
 message CreateOrderReq {
   string UserUUID = 1;
-  repeated OrderDevice Devices = 2;
+  repeated OrderDevice OrderDevices = 2;
 }
 
 message CreateOrderRes {
