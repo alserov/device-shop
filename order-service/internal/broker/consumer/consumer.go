@@ -5,14 +5,14 @@ import (
 	"log"
 )
 
-func Subscribe(topic string, c sarama.Consumer) (<-chan string, error) {
+func Subscribe(topic string, c sarama.Consumer) (<-chan []byte, error) {
 	pList, err := c.Partitions(topic)
 	if err != nil {
 		return nil, err
 	}
 	offset := sarama.OffsetNewest
 
-	chMessages := make(chan string)
+	chMessages := make(chan []byte, 5)
 	go func() {
 		defer close(chMessages)
 		for _, p := range pList {
@@ -22,10 +22,11 @@ func Subscribe(topic string, c sarama.Consumer) (<-chan string, error) {
 				return
 			}
 			for msg := range pConsumer.Messages() {
-				chMessages <- string(msg.Value)
+				chMessages <- msg.Value
 			}
 		}
 	}()
 
 	return chMessages, nil
 }
+

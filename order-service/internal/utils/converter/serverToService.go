@@ -17,7 +17,7 @@ func NewServerConverter() *ServerConverter {
 
 func (*ServerConverter) CreateOrderReqToService(req *order.CreateOrderReq, orderPrice float32) models.CreateOrderReq {
 	return models.CreateOrderReq{
-		OrderDevices: pbOrderDevicesToService(req.Devices),
+		OrderDevices: pbOrderDevicesToService(req.OrderDevices),
 		UserUUID:     req.UserUUID,
 		OrderPrice:   orderPrice,
 	}
@@ -62,5 +62,18 @@ func (*ServerConverter) CheckOrderResToPb(res models.CheckOrderRes, devices []*d
 		Status:    res.Status,
 		CreatedAt: toTimepb(res.CreatedAt),
 		Devices:   devices,
+	}
+}
+
+func (*ServerConverter) UpdateOrderReqToService(req *order.UpdateOrderReq) models.UpdateOrderReq {
+	return models.UpdateOrderReq{
+		OrderUUID: req.OrderUUID,
+		Status:    req.Status,
+	}
+}
+
+func (*ServerConverter) UpdateOrderResToPb(status string) *order.UpdateOrderRes {
+	return &order.UpdateOrderRes{
+		Status: status,
 	}
 }

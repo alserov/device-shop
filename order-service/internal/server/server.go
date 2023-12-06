@@ -15,12 +15,27 @@ import (
 	"log/slog"
 )
 
-func Register(s *grpc.Server, db *sql.DB, log *slog.Logger) {
-	order.RegisterOrdersServer(s, &server{
-		log:     log,
-		service: service.NewService(db),
-		valid:   validation.NewValidator(),
-		conv:    converter.NewServerConverter(),
+type Server struct {
+	Log *slog.Logger
+
+	GRPCServer *grpc.Server
+	DB         *sql.DB
+
+	Kafka *Kafka
+}
+
+type Kafka struct {
+	BrokerAddr string
+	OrderTopic string
+}
+
+func Register(s *Server) {
+	order.RegisterOrdersServer(s.GRPCServer, &server{
+		log:      s.Log,
+		service:  service.NewService(s.DB, s.Kafka.BrokerAddr, s.Kafka.OrderTopic, s.Log),
+		valid:    validation.NewValidator(),
+		conv:     converter.NewServerConverter(),
+		services: services{},
 	})
 }
 
@@ -57,7 +72,7 @@ func (s *server) CreateOrder(ctx context.Context, req *order.CreateOrderReq) (*o
 	}
 	defer cc.Close()
 
-	orderPrice, err := utils.FetchDevicesWithPrice(ctx, cl, req.Devices)
+	orderPrice, err := utils.FetchDevicesWithPrice(ctx, cl, req.OrderDevices)
 	if err != nil {
 		s.log.Error("failed to get device by uuid", slog.String("error", err.Error()), slog.String("op", op))
 		return nil, status.Error(codes.Internal, internalError)
@@ -90,7 +105,7 @@ func (s *server) CheckOrder(ctx context.Context, req *order.CheckOrderReq) (*ord
 	}
 	defer cc.Close()
 
-	devicesFromOrder, err := utils.FetchDevicesFromOrder(ctx, cl, order.DeviceUUIDs)
+	devicesFromOrder, err := utils.FetchDevicesFromOrder(ctx, cl, order.OrderDevices)
 	if err != nil {
 		s.log.Error("failed to fetch devices from order", slog.String("error", err.Error()), slog.String("op", op))
 		return nil, status.Error(codes.Internal, internalError)
@@ -103,4 +118,11 @@ func (s *server) UpdateOrder(ctx context.Context, req *order.UpdateOrderReq) (*o
 	if err := s.valid.ValidateUpdateOrderReq(req); err != nil {
 		return nil, err
 	}
+
+	err := s.service.UpdateOrder(ctx, s.conv.UpdateOrderReqToService(req))
+	if err != nil {
+		return nil, err
+	}
+
+	return s.conv.UpdateOrderResToPb(req.Status), nil
 }

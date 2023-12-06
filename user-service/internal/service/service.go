@@ -5,7 +5,7 @@ import (
 	"database/sql"
 	"github.com/IBM/sarama"
 
-	"github.com/alserov/device-shop/user-service/internal/broker"
+	"github.com/alserov/device-shop/user-service/internal/broker/producer"
 	"github.com/alserov/device-shop/user-service/internal/db"
 	repo "github.com/alserov/device-shop/user-service/internal/db/models"
 	"github.com/alserov/device-shop/user-service/internal/db/postgres"
@@ -24,19 +24,19 @@ type service struct {
 	log *slog.Logger
 	db  db.UserRepo
 
-	emailBroker string
-	emailTopic  string
+	brokerAddr string
+	emailTopic string
 
 	conv *converter.ServiceConverter
 }
 
-func NewService(pg *sql.DB, log *slog.Logger, emailBroker string, emailTopic string) Service {
+func NewService(pg *sql.DB, log *slog.Logger, brokerAddr string, emailTopic string) Service {
 	return &service{
-		log:         log,
-		db:          postgres.NewRepo(pg, log),
-		conv:        converter.NewServiceConverter(),
-		emailBroker: emailBroker,
-		emailTopic:  emailTopic,
+		log:        log,
+		db:         postgres.NewRepo(pg, log),
+		conv:       converter.NewServiceConverter(),
+		brokerAddr: brokerAddr,
+		emailTopic: emailTopic,
 	}
 }
 
@@ -113,7 +113,7 @@ func (s *service) Signup(ctx context.Context, req models.SignupReq) (models.Sign
 		return models.SignupRes{}, err
 	}
 
-	producer, err := broker.NewProducer([]string{s.emailBroker}, kafkaClientID)
+	producer, err := producer.NewProducer([]string{s.brokerAddr}, kafkaClientID)
 	if err != nil {
 		s.log.Error("failed to initialize new kafka producer", slog.String("error", err.Error()), slog.String("op", op))
 	}

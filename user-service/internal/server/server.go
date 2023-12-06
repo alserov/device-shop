@@ -14,10 +14,18 @@ import (
 	"log/slog"
 )
 
-func Register(s *grpc.Server, db *sql.DB, log *slog.Logger, emailBroker string, emailTopic string) {
-	user.RegisterUsersServer(s, &server{
-		log:     log,
-		service: service.NewService(db, log, emailBroker, emailTopic),
+type Server struct {
+	GRPCServer *grpc.Server
+	DB         *sql.DB
+	Log        *slog.Logger
+	BrokerAddr string
+	EmailTopic string
+}
+
+func Register(s *Server) {
+	user.RegisterUsersServer(s.GRPCServer, &server{
+		log:     s.Log,
+		service: service.NewService(s.DB, s.Log, s.BrokerAddr, s.EmailTopic),
 		valid:   validation.NewValidator(),
 		conv:    converter.NewServerConverter(),
 	})

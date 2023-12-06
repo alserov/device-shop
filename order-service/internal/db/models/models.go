@@ -11,9 +11,21 @@ type CreateOrderReq struct {
 	OrderDevices []*OrderDevice
 }
 
+type UpdateOrderReq struct {
+	Status    string
+	OrderUUID string
+}
+
 type OrderDevice struct {
 	DeviceUUID string
 	Amount     uint32
+}
+
+type Order struct {
+	Price     float32
+	CreatedAt *time.Time
+	Status    int32
+	UserUUID  string
 }
 
 type Device struct {
@@ -26,8 +38,9 @@ type Device struct {
 }
 
 type CheckOrderRes struct {
-	Status      int32
-	CreatedAt   *time.Time
-	OrderPrice  float32
-	DeviceUUIDs []string
+	Status       int32
+	CreatedAt    *time.Time
+	OrderPrice   float32
+	OrderDevices []*OrderDevice
+	UserUUID     string
 }

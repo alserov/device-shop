@@ -52,7 +52,13 @@ func (a *App) MustStart() {
 	db := postgres.MustConnect(a.dbDsn)
 	a.log.Info("db connected")
 
-	server.Register(a.gRPCServer, db, a.log, a.kafka.brokerAddr, a.kafka.topic)
+	server.Register(&server.Server{
+		GRPCServer: a.gRPCServer,
+		DB:         db,
+		Log:        a.log,
+		BrokerAddr: a.kafka.brokerAddr,
+		EmailTopic: a.kafka.topic,
+	})
 
 	l, err := net.Listen("tcp", fmt.Sprintf(":%d", a.port))
 	if err != nil {

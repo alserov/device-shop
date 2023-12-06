@@ -37,3 +37,9 @@ type BalanceReq struct {
 	Cash     float32
 	UserUUID string
 }
+
+type WorkerBalanceReq struct {
+	Cash   float32
+	TxUUID string
+	Status int
+}

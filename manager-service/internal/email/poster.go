@@ -22,7 +22,7 @@ type Poster interface {
 	SendOrder(to string) error
 }
 
-func NewPoster(password, email, name string) Poster {
+func NewEmailManager(password, email, name string) Poster {
 	return &post{
 		email:    email,
 		password: password,

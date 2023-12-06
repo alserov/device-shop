@@ -25,7 +25,7 @@ func (*Validator) ValidateCreateOrderReq(req *order.CreateOrderReq) error {
 		return status.Error(codes.InvalidArgument, emptyUserUUID)
 	}
 
-	if len(req.GetDevices()) < 1 {
+	if len(req.GetOrderDevices()) < 1 {
 		return status.Error(codes.InvalidArgument, emptyDevices)
 	}
 

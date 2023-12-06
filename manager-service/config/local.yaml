@@ -1,0 +1,17 @@
+env: local
+email:
+  password: bwch rbes cemw ayyc
+  name: Device - Online Device Shop
+  email: asroka4ev@gmail.com
+
+topics:
+  email:
+    authTopic: NEW_USER_EMAILS
+    orderTopic: NEW_ORDER_EMAIL
+  tx:
+    topic: TX
+    services:
+      userService: USER_SERVICE
+      deviceService: DEVICE_SERVICE
+      collectionService: COLLECTION_SERVICE
+brokerAddr: 127.0.0.1:9092

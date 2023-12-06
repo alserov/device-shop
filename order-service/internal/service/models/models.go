@@ -33,8 +33,25 @@ type Device struct {
 }
 
 type CheckOrderRes struct {
-	Status      string
-	OrderPrice  float32
-	CreatedAt   *time.Time
-	DeviceUUIDs []string
+	Status       string
+	OrderPrice   float32
+	CreatedAt    *time.Time
+	OrderDevices []*OrderDevice
+}
+
+type UpdateOrderReq struct {
+	Status    string
+	OrderUUID string
+}
+
+type UpdateOrderRes struct {
+	Status string
+}
+
+type TxResponse struct {
+	// 0 - failed
+	// 1 - success
+	Status  uint32 `json:"status"`
+	Message string `json:"message"`
+	Uuid    string `json:"uuid"`
 }

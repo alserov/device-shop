@@ -2,27 +2,28 @@ package utils
 
 import (
 	"context"
+	"github.com/alserov/device-shop/order-service/internal/service/models"
 	"github.com/alserov/device-shop/proto/gen/device"
 	"github.com/alserov/device-shop/proto/gen/order"
 	"sync"
 )
 
-func FetchDevicesFromOrder(ctx context.Context, cl device.DevicesClient, deviceUUIDsFromOrder []string) ([]*device.Device, error) {
+func FetchDevicesFromOrder(ctx context.Context, cl device.DevicesClient, devicesFromOrder []*models.OrderDevice) ([]*device.Device, error) {
 	var (
 		wg      = &sync.WaitGroup{}
 		chErr   = make(chan error)
 		mu      = &sync.Mutex{}
-		devices = make([]*device.Device, 0, len(deviceUUIDsFromOrder))
+		devices = make([]*device.Device, 0, len(devicesFromOrder))
 	)
 
 	wg.Add(len(devices))
 
-	for _, uuid := range deviceUUIDsFromOrder {
-		uuid := uuid
+	for _, d := range devicesFromOrder {
+		d := d
 		go func() {
 			defer wg.Done()
 			device, err := cl.GetDeviceByUUID(ctx, &device.GetDeviceByUUIDReq{
-				UUID: uuid,
+				UUID: d.DeviceUUID,
 			})
 			if err != nil {
 				chErr <- err

@@ -3,9 +3,11 @@ package postgres
 import (
 	"context"
 	"database/sql"
+	oStatus "github.com/alserov/device-shop/order-service/internal/utils/status"
+
 	"github.com/alserov/device-shop/order-service/internal/db"
 	"github.com/alserov/device-shop/order-service/internal/db/models"
-	"github.com/alserov/device-shop/order-service/internal/entity"
+
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"log/slog"
@@ -81,13 +83,12 @@ func (r *repo) CreateOrder(_ context.Context, req models.CreateOrderReq) error {
 	return nil
 }
 
-func (r *orderRepo) CheckOrder(_ context.Context, orderUUID string) (*entity.CheckOrderRes, error) {
+func (r *repo) CheckOrder(ctx context.Context, orderUUID string) (models.CheckOrderRes, error) {
 	var (
-		chDevices = make(chan *pb.Device)
-		chErr     = make(chan error)
-		wg        = &sync.WaitGroup{}
-		devices   []*pb.Device
-		order     = &entity.CheckOrderRes{}
+		chErr   = make(chan error)
+		wg      = &sync.WaitGroup{}
+		devices = make([]*models.OrderDevice, 1)
+		order   = models.Order{}
 	)
 	wg.Add(2)
 
@@ -108,10 +109,10 @@ func (r *orderRepo) CheckOrder(_ context.Context, orderUUID string) (*entity.Che
 			if err = rows.Scan(&uuid, &amount); err != nil {
 				chErr <- err
 			}
-			chDevices <- &pb.Device{
-				UUID:   uuid,
-				Amount: amount,
-			}
+			devices = append(devices, &models.OrderDevice{
+				DeviceUUID: uuid,
+				Amount:     amount,
+			})
 		}
 	}()
 
@@ -119,43 +120,67 @@ func (r *orderRepo) CheckOrder(_ context.Context, orderUUID string) (*entity.Che
 		defer wg.Done()
 		query := `SELECT total_price,status,created_at, user_uuid FROM orders WHERE order_uuid = $1`
 
-		if err := r.db.QueryRow(query, orderUUID).Scan(&order.TotalPrice, &order.Status, &order.CreatedAt, &order.UserUUID); err != nil {
+		if err := r.db.QueryRow(query, orderUUID).Scan(&order.Price, &order.Status, &order.CreatedAt, &order.UserUUID); err != nil {
 			chErr <- err
 		}
 	}()
 
 	go func() {
-		for d := range chDevices {
-			devices = append(devices, d)
+		wg.Wait()
+		close(chErr)
+	}()
+
+	for err := range chErr {
+		return models.CheckOrderRes{}, err
+	}
+
+	return models.CheckOrderRes{
+		OrderDevices: devices,
+		Status:       order.Status,
+		CreatedAt:    order.CreatedAt,
+		OrderPrice:   order.Price,
+		UserUUID:     order.UserUUID,
+	}, nil
+}
+
+func (r *repo) UpdateOrder(_ context.Context, orderStatus string, orderUUID string) error {
+	op := "repo.UpdateOrder"
+	var (
+		wg    = &sync.WaitGroup{}
+		chErr = make(chan error)
+	)
+
+	wg.Add(2)
+
+	go func() {
+		defer wg.Done()
+		query := `UPDATE orders SET status = $1 WHERE order_uuid = $2`
+
+		_, err := r.db.Exec(query, oStatus.StatusToCode(orderStatus), orderUUID)
+		if err != nil {
+			r.log.Error("failed to delete order from orders", slog.String("error", err.Error()), slog.String("op", op))
+			chErr <- err
+		}
+	}()
+
+	go func() {
+		defer wg.Done()
+		query := `DELETE FROM order_devices * WHERE order_uuid =$1`
+
+		_, err := r.db.Exec(query, orderUUID)
+		if err != nil {
+			r.log.Error("failed to delete order devices from order_devices", slog.String("error", err.Error()), slog.String("op", op))
+			chErr <- err
 		}
 	}()
 
 	go func() {
 		wg.Wait()
-		close(chDevices)
 		close(chErr)
 	}()
 
-	for err := range chErr {
-		return nil, err
-	}
-
-	return &entity.CheckOrderRes{
-		Devices:    devices,
-		Status:     order.Status,
-		CreatedAt:  order.CreatedAt,
-		TotalPrice: order.TotalPrice,
-		UserUUID:   order.UserUUID,
-		UUID:       orderUUID,
-	}, nil
-}
-
-func (r *orderRepo) UpdateOrder(_ context.Context, status string, orderUUID string) error {
-	query := `UPDATE orders SET status = $1 WHERE order_uuid = $2`
-
-	_, err := r.db.Exec(query, status.StatusToCode(status), orderUUID)
-	if err != nil {
-		return err
+	for _ = range chErr {
+		return status.Error(codes.Internal, internalError)
 	}
 
 	return nil

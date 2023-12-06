@@ -2,6 +2,7 @@ package db
 
 import (
 	"context"
+	"database/sql"
 	"github.com/alserov/device-shop/user-service/internal/db/models"
 )
 
@@ -9,6 +10,7 @@ type UserRepo interface {
 	GetInfo(context.Context, string) (models.GetUserInfoRes, error)
 	TopUpBalance(context.Context, models.BalanceReq) (float32, error)
 	DebitBalance(context.Context, models.BalanceReq) (float32, error)
+	DebitBalanceTx(context.Context, models.BalanceReq) (*sql.Tx, error)
 	GetUserInfo(ctx context.Context, uuid string) (models.GetUserInfoRes, error)
 
 	// auth

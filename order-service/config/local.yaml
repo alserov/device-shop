@@ -1,0 +1,14 @@
+env: local
+db:
+  host: 127.0.0.1
+  port: 4005
+  user: postgres
+  password: 1787
+  name: template1
+  sslmode: disable
+grpc:
+  port: 3005
+  timeout: 5s
+kafka:
+  topic:
+  broker:
