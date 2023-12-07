@@ -5,4 +5,4 @@ grpc:
   port: 3004
   timeout: 5s
 services:
-  device: 127.0.0.1:3003
+  deviceAddr: 127.0.0.1:3003

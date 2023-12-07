@@ -48,7 +48,7 @@ func (a *App) MustStart() {
 	controller.LoadRoutes(a.router, controller.NewController(cl, a.log, a.services))
 
 	a.log.Info("app is running")
-	if err := a.server.ListenAndServeTLS("", ""); err != nil && !errors.Is(err, http.ErrServerClosed) {
+	if err := a.server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 		panic("failed to start server: " + err.Error())
 	}
 }

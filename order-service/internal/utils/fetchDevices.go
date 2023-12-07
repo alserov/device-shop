@@ -5,7 +5,12 @@ import (
 	"github.com/alserov/device-shop/order-service/internal/service/models"
 	"github.com/alserov/device-shop/proto/gen/device"
 	"github.com/alserov/device-shop/proto/gen/order"
+	"log/slog"
 	"sync"
+)
+
+const (
+	internalError = "internal error"
 )
 
 func FetchDevicesFromOrder(ctx context.Context, cl device.DevicesClient, devicesFromOrder []*models.OrderDevice) ([]*device.Device, error) {
@@ -46,7 +51,7 @@ func FetchDevicesFromOrder(ctx context.Context, cl device.DevicesClient, devices
 	return devices, nil
 }
 
-func FetchDevicesWithPrice(ctx context.Context, cl device.DevicesClient, orderDevices []*order.OrderDevice) (float32, error) {
+func FetchDevicesWithPrice(ctx context.Context, cl device.DevicesClient, log *slog.Logger, orderDevices []*order.OrderDevice) (float32, error) {
 	var (
 		price float32
 		wg    = &sync.WaitGroup{}
@@ -65,6 +70,7 @@ func FetchDevicesWithPrice(ctx context.Context, cl device.DevicesClient, orderDe
 			})
 			if err != nil {
 				chErr <- err
+				return
 			}
 			mu.Lock()
 			defer mu.Unlock()

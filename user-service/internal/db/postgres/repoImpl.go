@@ -6,6 +6,7 @@ import (
 	"errors"
 	"github.com/alserov/device-shop/user-service/internal/db"
 	"github.com/alserov/device-shop/user-service/internal/db/models"
+	"github.com/lib/pq"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"log/slog"
@@ -24,9 +25,11 @@ type repo struct {
 }
 
 const (
-	notFound      = "nothing found"
-	userNotFound  = "user not found"
+	notFound      = "user not found"
 	internalError = "internal error"
+	balanceError  = "not enough money"
+
+	balanceConstraintErrorCode = "23514"
 )
 
 func (r *repo) GetInfo(_ context.Context, userUUID string) (models.GetUserInfoRes, error) {
@@ -83,6 +86,31 @@ func (r *repo) DebitBalance(_ context.Context, req models.BalanceReq) (float32, 
 	return cash, nil
 }
 
+func (r *repo) DebitBalanceTx(_ context.Context, req models.BalanceReq) (*sql.Tx, error) {
+	op := "repo.DebitBalanceTx"
+	query := `UPDATE users SET cash = cash - $1 WHERE uuid = $2`
+
+	tx, err := r.db.Begin()
+	if err != nil {
+		r.log.Error("failed to begin tx", slog.String("error", err.Error()), slog.String("op", op))
+		tx.Rollback()
+		return tx, status.Error(codes.Internal, internalError)
+	}
+
+	_, err = tx.Exec(query, req.Cash, req.UserUUID)
+	if err, ok := err.(*pq.Error); ok {
+		switch err.Code {
+		case balanceConstraintErrorCode:
+			return tx, status.Error(codes.Canceled, balanceError)
+		default:
+			r.log.Error("failed to execute tx", slog.String("error", err.Error()), slog.String("op", op))
+			return tx, status.Error(codes.Internal, internalError)
+		}
+	}
+
+	return tx, nil
+}
+
 func (r *repo) Signup(_ context.Context, req models.SignupReq, info models.SignupInfo) error {
 	op := "repo.Signup"
 
@@ -112,7 +140,7 @@ func (r *repo) Login(_ context.Context, req models.LoginReq, rToken string) (str
 	}
 	if err != nil {
 		r.log.Error("failed to query row", slog.String("error", err.Error()), slog.String("op", op))
-		return "", status.Error(codes.Internal, userNotFound)
+		return "", status.Error(codes.Internal, notFound)
 	}
 
 	return uuid, nil

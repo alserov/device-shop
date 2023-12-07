@@ -1,10 +1,9 @@
-module github.com/alserov/device-shop/manager-service
+module github.com/alserov/device-shop/email-service
 
 go 1.21.0
 
 require (
 	github.com/IBM/sarama v1.42.1
-	github.com/google/uuid v1.4.0
 	github.com/ilyakaznacheev/cleanenv v1.5.0
 	github.com/jordan-wright/email v4.0.1-0.20210109023952-943e75fe5223+incompatible
 )

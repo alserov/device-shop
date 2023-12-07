@@ -18,6 +18,7 @@ import (
 type Server struct {
 	Log *slog.Logger
 
+	DeviceAddr string
 	GRPCServer *grpc.Server
 	DB         *sql.DB
 
@@ -25,17 +26,22 @@ type Server struct {
 }
 
 type Kafka struct {
-	BrokerAddr string
-	OrderTopic string
+	BrokerAddr      string
+	UserInTopic     string
+	UserOutTopic    string
+	DeviceTopic     string
+	CollectionTopic string
 }
 
 func Register(s *Server) {
 	order.RegisterOrdersServer(s.GRPCServer, &server{
-		log:      s.Log,
-		service:  service.NewService(s.DB, s.Kafka.BrokerAddr, s.Kafka.OrderTopic, s.Log),
-		valid:    validation.NewValidator(),
-		conv:     converter.NewServerConverter(),
-		services: services{},
+		log:     s.Log,
+		service: service.NewService(s.DB, s.Kafka.BrokerAddr, s.Kafka.DeviceTopic, s.Kafka.UserInTopic, s.Kafka.UserOutTopic, s.Kafka.CollectionTopic, s.Log),
+		valid:   validation.NewValidator(),
+		conv:    converter.NewServerConverter(),
+		services: services{
+			deviceAddr: s.DeviceAddr,
+		},
 	})
 }
 
@@ -72,10 +78,9 @@ func (s *server) CreateOrder(ctx context.Context, req *order.CreateOrderReq) (*o
 	}
 	defer cc.Close()
 
-	orderPrice, err := utils.FetchDevicesWithPrice(ctx, cl, req.OrderDevices)
+	orderPrice, err := utils.FetchDevicesWithPrice(ctx, cl, s.log, req.OrderDevices)
 	if err != nil {
-		s.log.Error("failed to get device by uuid", slog.String("error", err.Error()), slog.String("op", op))
-		return nil, status.Error(codes.Internal, internalError)
+		return nil, err
 	}
 
 	orderUUID, err := s.service.CreateOrder(ctx, s.conv.CreateOrderReqToService(req, orderPrice))

@@ -18,11 +18,19 @@ type App struct {
 	log        *slog.Logger
 	gRPCServer *grpc.Server
 	kafka      kafka
+	services   services
 }
 
 type kafka struct {
-	brokerAddr string
-	topic      string
+	brokerAddr      string
+	userInTopic     string
+	userOutTopic    string
+	deviceTopic     string
+	collectionTopic string
+}
+
+type services struct {
+	deviceAddr string
 }
 
 func New(cfg *config.Config, log *slog.Logger) *App {
@@ -39,8 +47,14 @@ func New(cfg *config.Config, log *slog.Logger) *App {
 			cfg.Db.Sslmode,
 		),
 		kafka: kafka{
-			topic:      cfg.Kafka.Topic,
-			brokerAddr: cfg.Kafka.BrokerAddr,
+			brokerAddr:      cfg.Kafka.BrokerAddr,
+			deviceTopic:     cfg.Kafka.DeviceTopic,
+			userInTopic:     cfg.Kafka.UserInTopic,
+			userOutTopic:    cfg.Kafka.UserOutTopic,
+			collectionTopic: cfg.Kafka.CollectionTopic,
+		},
+		services: services{
+			deviceAddr: cfg.Services.DeviceAddr,
 		},
 	}
 }
@@ -53,11 +67,15 @@ func (a *App) MustStart() {
 
 	server.Register(&server.Server{
 		Log:        a.log,
+		DeviceAddr: a.services.deviceAddr,
 		GRPCServer: a.gRPCServer,
 		DB:         db,
 		Kafka: &server.Kafka{
-			BrokerAddr: a.kafka.brokerAddr,
-			OrderTopic: a.kafka.topic,
+			BrokerAddr:      a.kafka.brokerAddr,
+			DeviceTopic:     a.kafka.deviceTopic,
+			UserInTopic:     a.kafka.userInTopic,
+			UserOutTopic:    a.kafka.userOutTopic,
+			CollectionTopic: a.kafka.collectionTopic,
 		},
 	})
 

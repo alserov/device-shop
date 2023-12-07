@@ -3,9 +3,9 @@ package app
 import (
 	"context"
 	"github.com/IBM/sarama"
-	"github.com/alserov/device-shop/manager-service/internal/config"
-	"github.com/alserov/device-shop/manager-service/internal/email"
-	"github.com/alserov/device-shop/manager-service/internal/transaction_manager/consumer"
+	"github.com/alserov/device-shop/email-service/internal/broker/consumer"
+	"github.com/alserov/device-shop/email-service/internal/config"
+	"github.com/alserov/device-shop/email-service/internal/email"
 	"log/slog"
 	"os/signal"
 	"syscall"

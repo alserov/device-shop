@@ -2,6 +2,7 @@ package app
 
 import (
 	"fmt"
+	"github.com/alserov/device-shop/user-service/internal/broker"
 	"github.com/alserov/device-shop/user-service/internal/config"
 	"github.com/alserov/device-shop/user-service/internal/db/postgres"
 	"github.com/alserov/device-shop/user-service/internal/server"
@@ -21,8 +22,10 @@ type App struct {
 }
 
 type kafka struct {
-	brokerAddr string
-	topic      string
+	brokerAddr     string
+	emailTopic     string
+	workerInTopic  string
+	workerOutTopic string
 }
 
 func New(cfg *config.Config, log *slog.Logger) *App {
@@ -32,8 +35,10 @@ func New(cfg *config.Config, log *slog.Logger) *App {
 		log:        log,
 		gRPCServer: grpc.NewServer(),
 		kafka: kafka{
-			topic:      cfg.Kafka.Topic,
-			brokerAddr: cfg.Kafka.BrokerAddr,
+			emailTopic:     cfg.Kafka.EmailTopic,
+			workerInTopic:  cfg.Kafka.WorkerInTopic,
+			workerOutTopic: cfg.Kafka.WorkerOutTopic,
+			brokerAddr:     cfg.Kafka.BrokerAddr,
 		},
 		dbDsn: fmt.Sprintf("host=%s port=%d user=%s password=%v dbname=%s sslmode=%s",
 			cfg.DB.Host,
@@ -52,12 +57,15 @@ func (a *App) MustStart() {
 	db := postgres.MustConnect(a.dbDsn)
 	a.log.Info("db connected")
 
+	worker := broker.NewTxWorker(a.kafka.brokerAddr, a.kafka.workerInTopic, a.kafka.workerOutTopic, db, a.log)
+	go worker.MustStart()
+
 	server.Register(&server.Server{
 		GRPCServer: a.gRPCServer,
 		DB:         db,
 		Log:        a.log,
 		BrokerAddr: a.kafka.brokerAddr,
-		EmailTopic: a.kafka.topic,
+		EmailTopic: a.kafka.emailTopic,
 	})
 
 	l, err := net.Listen("tcp", fmt.Sprintf(":%d", a.port))

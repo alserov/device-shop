@@ -18,7 +18,7 @@ type App struct {
 	log        *slog.Logger
 	timeout    time.Duration
 	dbUri      string
-	services   Services
+	services   services
 }
 
 func New(cfg *config.Config, log *slog.Logger) *App {
@@ -28,13 +28,13 @@ func New(cfg *config.Config, log *slog.Logger) *App {
 		gRPCServer: grpc.NewServer(),
 		dbUri:      cfg.DB.Uri,
 		log:        log,
-		services: Services{
+		services: services{
 			DeviceAddr: cfg.Services.DeviceAddr,
 		},
 	}
 }
 
-type Services struct {
+type services struct {
 	DeviceAddr string
 }
 

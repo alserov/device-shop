@@ -11,8 +11,10 @@ db:
   sslmode: disable
 
 kafka:
-  topic: NEW_USER_EMAILS
   brokerAddr: 127.0.0.1:9092
+  emailTopic: NEW_USER_EMAILS
+  workerInTopic: USER_SERVICE_IN_TX
+  workerOutTopic: USER_SERVICE_OUT_TX
 
 services:
   device:

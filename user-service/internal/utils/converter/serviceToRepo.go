@@ -34,14 +34,16 @@ type ServiceInfo interface {
 }
 
 type serviceBalance struct{}
+
 type ServiceBalance interface {
-	BalanceReqToRepo(req models.BalanceReq) repo.BalanceReq
 	WorkerBalanceReqToRepo(req models.WorkerBalanceReq) repo.BalanceReq
 }
 
-func (s serviceBalance) BalanceReqToRepo(req models.BalanceReq) repo.BalanceReq {
-	//TODO implement me
-	panic("implement me")
+func (s *serviceBalance) WorkerBalanceReqToRepo(req models.WorkerBalanceReq) repo.BalanceReq {
+	return repo.BalanceReq{
+		UserUUID: req.UserUUID,
+		Cash:     req.OrderPrice,
+	}
 }
 
 func (*serviceAuth) SignupReqToRepo(req models.SignupReq) repo.SignupReq {

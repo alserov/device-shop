@@ -20,8 +20,10 @@ type GRPCConfig struct {
 }
 
 type KafkaConfig struct {
-	Topic      string `yaml:"topic"`
-	BrokerAddr string `yaml:"brokerAddr"`
+	BrokerAddr     string `yaml:"brokerAddr"`
+	EmailTopic     string `yaml:"emailTopic"`
+	WorkerInTopic  string `yaml:"workerInTopic"`
+	WorkerOutTopic string `yaml:"workerOutTopic"`
 }
 type DBConfig struct {
 	Port     int    `yaml:"port"`

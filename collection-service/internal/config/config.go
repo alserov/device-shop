@@ -20,7 +20,7 @@ type GRPCConfig struct {
 }
 
 type Services struct {
-	DeviceAddr string `yaml:"device"`
+	DeviceAddr string `yaml:"deviceAddr"`
 }
 
 type DBConfig struct {

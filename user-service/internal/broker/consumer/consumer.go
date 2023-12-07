@@ -10,13 +10,12 @@ func Subscribe(topic string, c sarama.Consumer) (<-chan []byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	offset := sarama.OffsetNewest
 
-	chMessages := make(chan []byte, 5)
+	chMessages := make(chan []byte)
 	go func() {
 		defer close(chMessages)
 		for _, p := range pList {
-			pConsumer, err := c.ConsumePartition(topic, p, offset)
+			pConsumer, err := c.ConsumePartition(topic, p, sarama.OffsetNewest)
 			if err != nil {
 				log.Println(err)
 				return
@@ -29,4 +28,3 @@ func Subscribe(topic string, c sarama.Consumer) (<-chan []byte, error) {
 
 	return chMessages, nil
 }
-
