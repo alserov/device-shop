@@ -3,7 +3,9 @@ package service
 import (
 	"context"
 	"database/sql"
+	"github.com/alserov/device-shop/order-service/internal/broker"
 	"github.com/alserov/device-shop/order-service/internal/broker/manager"
+	models2 "github.com/alserov/device-shop/order-service/internal/broker/manager/models"
 	"log/slog"
 
 	"github.com/alserov/device-shop/order-service/internal/db"
@@ -32,20 +34,20 @@ type service struct {
 	txManager manager.TxManager
 }
 
-func NewService(ordersDB *sql.DB, brokerAddr string, deviceTopic string, userInTopic string, userOutTopic string, collectionTopic string, log *slog.Logger) Service {
+func NewService(ordersDB *sql.DB, broker *broker.Broker, log *slog.Logger) Service {
 	return &service{
 		log:        log,
 		db:         postgres.NewOrderRepo(ordersDB),
 		conv:       converter.NewServiceConverter(),
-		brokerAddr: brokerAddr,
-		txManager:  manager.NewTxManager(brokerAddr, deviceTopic, userInTopic, userOutTopic, collectionTopic, log),
+		brokerAddr: broker.BrokerAddr,
+		txManager:  manager.NewTxManager(broker, log),
 	}
 }
 
 func (s *service) CreateOrder(ctx context.Context, req models.CreateOrderReq) (models.CreateOrderRes, error) {
 	orderUUID := uuid.New().String()
 
-	if err := s.txManager.DoTx(models.DoTxBody{
+	if err := s.txManager.DoTx(models2.TxBody{
 		OrderDevices: req.OrderDevices,
 		OrderPrice:   req.OrderPrice,
 		UserUUID:     req.UserUUID,
@@ -65,6 +67,7 @@ func (s *service) CheckOrder(ctx context.Context, req models.CheckOrderReq) (mod
 	if err != nil {
 		return models.CheckOrderRes{}, err
 	}
+
 	return s.conv.CheckOrderToService(order), nil
 }
 

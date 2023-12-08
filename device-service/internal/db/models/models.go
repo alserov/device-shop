@@ -20,3 +20,8 @@ type GetByPrice struct {
 	Min float32
 	Max float32
 }
+
+type OrderDevice struct {
+	DeviceUUID string
+	Amount     uint32
+}

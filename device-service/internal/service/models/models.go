@@ -34,3 +34,8 @@ type GetByPrice struct {
 	Min float32
 	Max float32
 }
+
+type OrderDevice struct {
+	DeviceUUID string `json:"deviceUUID"`
+	Amount     uint32 `json:"amount"`
+}

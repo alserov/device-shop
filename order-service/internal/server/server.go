@@ -4,6 +4,8 @@ import (
 	"context"
 	"database/sql"
 	"github.com/alserov/device-shop/gateway/pkg/client"
+	"github.com/alserov/device-shop/order-service/internal/broker"
+
 	"github.com/alserov/device-shop/order-service/internal/service"
 	"github.com/alserov/device-shop/order-service/internal/utils"
 	"github.com/alserov/device-shop/order-service/internal/utils/converter"
@@ -22,21 +24,13 @@ type Server struct {
 	GRPCServer *grpc.Server
 	DB         *sql.DB
 
-	Kafka *Kafka
-}
-
-type Kafka struct {
-	BrokerAddr      string
-	UserInTopic     string
-	UserOutTopic    string
-	DeviceTopic     string
-	CollectionTopic string
+	Broker *broker.Broker
 }
 
 func Register(s *Server) {
 	order.RegisterOrdersServer(s.GRPCServer, &server{
 		log:     s.Log,
-		service: service.NewService(s.DB, s.Kafka.BrokerAddr, s.Kafka.DeviceTopic, s.Kafka.UserInTopic, s.Kafka.UserOutTopic, s.Kafka.CollectionTopic, s.Log),
+		service: service.NewService(s.DB, s.Broker, s.Log),
 		valid:   validation.NewValidator(),
 		conv:    converter.NewServerConverter(),
 		services: services{

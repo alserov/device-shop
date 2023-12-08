@@ -2,6 +2,8 @@ package app
 
 import (
 	"fmt"
+	"github.com/alserov/device-shop/device-service/internal/broker"
+	"github.com/alserov/device-shop/device-service/internal/broker/worker"
 	"github.com/alserov/device-shop/device-service/internal/config"
 	"github.com/alserov/device-shop/device-service/internal/db/postgres"
 	"github.com/alserov/device-shop/device-service/internal/server"
@@ -13,18 +15,19 @@ import (
 
 type App struct {
 	port       int
-	log        *slog.Logger
 	timeout    time.Duration
 	dbDsn      string
+	log        *slog.Logger
 	gRPCServer *grpc.Server
+	broker     *broker.Broker
 	services   Services
 }
 
 func New(cfg *config.Config, log *slog.Logger) *App {
 	return &App{
 		port:    cfg.GRPC.Port,
-		log:     log,
 		timeout: cfg.GRPC.Timeout,
+		log:     log,
 		dbDsn: fmt.Sprintf("host=%s port=%d user=%s password=%v dbname=%s sslmode=%s",
 			cfg.DB.Host,
 			cfg.DB.Port,
@@ -37,6 +40,15 @@ func New(cfg *config.Config, log *slog.Logger) *App {
 			CollectionAddr: cfg.Services.CollectionAddr,
 		},
 		gRPCServer: grpc.NewServer(),
+		broker: &broker.Broker{
+			BrokerAddr: cfg.Kafka.BrokerAddr,
+			Topics: broker.Topics{
+				Manager: broker.Topic{
+					In:  cfg.Kafka.WorkerTopicIn,
+					Out: cfg.Kafka.WorkerTopicOut,
+				},
+			},
+		},
 	}
 }
 
@@ -49,6 +61,9 @@ func (a *App) MustStart() {
 
 	db := postgres.MustConnect(a.dbDsn)
 	a.log.Info("db connected")
+
+	w := worker.NewTxWorker(a.broker, db, a.log)
+	go w.MustStart()
 
 	server.Register(a.gRPCServer, db, a.log, a.services.CollectionAddr)
 

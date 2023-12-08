@@ -8,7 +8,7 @@ import (
 )
 
 type Config struct {
-	Env   string      `yaml:"env"`
+	Env   string      `yaml:"env"  env-default:"local"`
 	GRPC  GRPCConfig  `yaml:"grpc"`
 	DB    DBConfig    `yaml:"db"`
 	Kafka KafkaConfig `yaml:"kafka"`
@@ -22,8 +22,8 @@ type GRPCConfig struct {
 type KafkaConfig struct {
 	BrokerAddr     string `yaml:"brokerAddr"`
 	EmailTopic     string `yaml:"emailTopic"`
-	WorkerInTopic  string `yaml:"workerInTopic"`
-	WorkerOutTopic string `yaml:"workerOutTopic"`
+	WorkerTopicIn  string `yaml:"workerTopicIn"`
+	WorkerTopicOut string `yaml:"workerTopicOut"`
 }
 type DBConfig struct {
 	Port     int    `yaml:"port"`

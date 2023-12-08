@@ -18,6 +18,7 @@ type Server struct {
 	GRPCServer *grpc.Server
 	DB         *sql.DB
 	Log        *slog.Logger
+
 	BrokerAddr string
 	EmailTopic string
 }

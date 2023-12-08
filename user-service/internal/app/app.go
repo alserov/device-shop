@@ -3,6 +3,7 @@ package app
 import (
 	"fmt"
 	"github.com/alserov/device-shop/user-service/internal/broker"
+	"github.com/alserov/device-shop/user-service/internal/broker/worker"
 	"github.com/alserov/device-shop/user-service/internal/config"
 	"github.com/alserov/device-shop/user-service/internal/db/postgres"
 	"github.com/alserov/device-shop/user-service/internal/server"
@@ -14,18 +15,11 @@ import (
 
 type App struct {
 	port       int
-	log        *slog.Logger
 	timeout    time.Duration
+	log        *slog.Logger
 	dbDsn      string
 	gRPCServer *grpc.Server
-	kafka      kafka
-}
-
-type kafka struct {
-	brokerAddr     string
-	emailTopic     string
-	workerInTopic  string
-	workerOutTopic string
+	broker     *broker.Broker
 }
 
 func New(cfg *config.Config, log *slog.Logger) *App {
@@ -34,11 +28,15 @@ func New(cfg *config.Config, log *slog.Logger) *App {
 		timeout:    cfg.GRPC.Timeout,
 		log:        log,
 		gRPCServer: grpc.NewServer(),
-		kafka: kafka{
-			emailTopic:     cfg.Kafka.EmailTopic,
-			workerInTopic:  cfg.Kafka.WorkerInTopic,
-			workerOutTopic: cfg.Kafka.WorkerOutTopic,
-			brokerAddr:     cfg.Kafka.BrokerAddr,
+		broker: &broker.Broker{
+			BrokerAddr: cfg.Kafka.BrokerAddr,
+			Topics: broker.Topics{
+				Email: cfg.Kafka.EmailTopic,
+				Manager: broker.Topic{
+					In:  cfg.Kafka.WorkerTopicIn,
+					Out: cfg.Kafka.WorkerTopicOut,
+				},
+			},
 		},
 		dbDsn: fmt.Sprintf("host=%s port=%d user=%s password=%v dbname=%s sslmode=%s",
 			cfg.DB.Host,
@@ -57,15 +55,15 @@ func (a *App) MustStart() {
 	db := postgres.MustConnect(a.dbDsn)
 	a.log.Info("db connected")
 
-	worker := broker.NewTxWorker(a.kafka.brokerAddr, a.kafka.workerInTopic, a.kafka.workerOutTopic, db, a.log)
-	go worker.MustStart()
+	w := worker.NewTxWorker(a.broker, db, a.log)
+	go w.MustStart()
 
 	server.Register(&server.Server{
 		GRPCServer: a.gRPCServer,
 		DB:         db,
 		Log:        a.log,
-		BrokerAddr: a.kafka.brokerAddr,
-		EmailTopic: a.kafka.emailTopic,
+		BrokerAddr: a.broker.BrokerAddr,
+		EmailTopic: a.broker.Topics.Email,
 	})
 
 	l, err := net.Listen("tcp", fmt.Sprintf(":%d", a.port))

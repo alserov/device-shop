@@ -87,7 +87,7 @@ func (r *repo) CheckOrder(ctx context.Context, orderUUID string) (models.CheckOr
 	var (
 		chErr   = make(chan error)
 		wg      = &sync.WaitGroup{}
-		devices = make([]*models.OrderDevice, 1)
+		devices []*models.OrderDevice
 		order   = models.Order{}
 	)
 	wg.Add(2)

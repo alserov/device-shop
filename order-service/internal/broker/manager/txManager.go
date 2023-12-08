@@ -2,10 +2,12 @@ package manager
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/IBM/sarama"
+	"github.com/alserov/device-shop/order-service/internal/broker"
+	"github.com/alserov/device-shop/order-service/internal/broker/manager/models"
+
 	"github.com/alserov/device-shop/order-service/internal/broker/producer"
-	"github.com/alserov/device-shop/order-service/internal/service/models"
-	"github.com/alserov/device-shop/order-service/internal/utils/converter"
 	"github.com/google/uuid"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -14,62 +16,45 @@ import (
 )
 
 type txManager struct {
-	log  *slog.Logger
-	conv *converter.BrokerConverter
+	log *slog.Logger
 
-	topics     serviceTopics
-	brokerAddr string
+	broker *broker.Broker
 
 	p sarama.SyncProducer
 }
 
-type serviceTopics struct {
-	userInTopic     string
-	userOutTopic    string
-	deviceTopic     string
-	collectionTopic string
-}
-
 type TxManager interface {
-	DoTx(in models.DoTxBody) error
+	DoTx(in models.TxBody) error
 }
 
 const (
 	kafkaClientID = "TX_MANAGER"
 )
 
-func NewTxManager(brokerAddr string, deviceTopic string, userInTopic string, userOutTopic string, collectionTopic string, log *slog.Logger) TxManager {
-	prod, err := producer.NewProducer([]string{brokerAddr}, kafkaClientID)
+func NewTxManager(b *broker.Broker, log *slog.Logger) TxManager {
+	prod, err := producer.NewProducer([]string{b.BrokerAddr}, kafkaClientID)
 	if err != nil {
 		panic("failed to create producer: " + err.Error())
 	}
 
 	return &txManager{
-		log:        log,
-		p:          prod,
-		brokerAddr: brokerAddr,
-		conv:       converter.NewBrokerConverter(),
-		topics: serviceTopics{
-			deviceTopic:     deviceTopic,
-			userInTopic:     userInTopic,
-			userOutTopic:    userOutTopic,
-			collectionTopic: collectionTopic,
-		},
+		log:    log,
+		p:      prod,
+		broker: b,
 	}
 }
 
 const (
-	userFailureStatus = 0
-	successStatus     = 1
-	txAmount          = 1
+	userFailureStatus = 1
+	successStatus     = 2
+
+	txAmount = 2
 
 	internalError = "internal error"
 )
 
-func (t *txManager) DoTx(in models.DoTxBody) error {
-	tx := &models.Tx{
-		Uuid: uuid.New().String(),
-	}
+func (t *txManager) DoTx(in models.TxBody) error {
+	txUUID := uuid.New().String()
 
 	var (
 		wg    = &sync.WaitGroup{}
@@ -79,23 +64,30 @@ func (t *txManager) DoTx(in models.DoTxBody) error {
 
 	go func() {
 		defer wg.Done()
-		if err := t.startTx(t.topics.userInTopic, t.topics.userOutTopic, models.TxBalanceReq{
-			TxUUID:     tx.Uuid,
+		defer fmt.Println("tx 1")
+		err := t.startTx(t.broker.Topics.User.In, t.broker.Topics.User.Out, models.BalanceReq{
+			TxUUID:     txUUID,
 			OrderPrice: in.OrderPrice,
 			UserUUID:   in.UserUUID,
-		}, tx.Uuid); err != nil {
+		}, txUUID)
+		if err != nil {
 			t.log.Error("failed to execute balance tx", slog.String("error", err.Error()))
 			chErr <- err
 		}
 	}()
 
-	//go func() {
-	//	defer wg.Done()
-	//	if err := t.startTx(t.topics.deviceService, models.TxDeviceReq{OrderDevices: in.OrderDevices}, tx.Uuid); err != nil {
-	//		t.log.Error("failed to execute device tx", slog.String("error", err.Error()))
-	//		chErr <- err
-	//	}
-	//}()
+	go func() {
+		defer wg.Done()
+		defer fmt.Println("tx 2")
+		err := t.startTx(t.broker.Topics.Device.In, t.broker.Topics.Device.Out, models.DeviceReq{
+			OrderDevices: in.OrderDevices,
+			TxUUID:       txUUID,
+		}, txUUID)
+		if err != nil {
+			t.log.Error("failed to execute device tx", slog.String("error", err.Error()))
+			chErr <- err
+		}
+	}()
 
 	//go func() {
 	//	defer wg.Done()
@@ -112,22 +104,17 @@ func (t *txManager) DoTx(in models.DoTxBody) error {
 
 	for err := range chErr {
 		t.log.Error("tx error", slog.String("error", err.Error()))
-		t.notifyTxs(models.TxBalanceReq{
-			TxUUID: tx.Uuid,
-			Status: userFailureStatus,
-		})
+		t.notifyWorkers(userFailureStatus, txUUID)
 		return err
 	}
 
-	t.notifyTxs(models.TxBalanceReq{
-		TxUUID: tx.Uuid,
-		Status: successStatus,
-	})
+	fmt.Println("not")
+	t.notifyWorkers(successStatus, txUUID)
 	return nil
 }
 
 func (t *txManager) startTx(topicIn string, topicOut string, body interface{}, txUUID string) error {
-	cons, err := sarama.NewConsumer([]string{t.brokerAddr}, nil)
+	cons, err := sarama.NewConsumer([]string{t.broker.BrokerAddr}, nil)
 	if err != nil {
 		return status.Error(codes.Internal, internalError)
 	}
@@ -152,11 +139,12 @@ func (t *txManager) startTx(topicIn string, topicOut string, body interface{}, t
 	}
 
 	for msg := range msgs {
-		var m models.TxResponse
+		var m models.Response
 		if err = json.Unmarshal(msg, &m); err != nil {
 			return err
 		}
-		if txUUID == m.Uuid {
+
+		if txUUID == m.UUID {
 			switch m.Status {
 			case successStatus:
 				return nil
@@ -200,26 +188,26 @@ func (t *txManager) subscribe(topic string, c sarama.Consumer) (<-chan []byte, e
 	return chMessages, nil
 }
 
-func (t *txManager) notifyTxs(body interface{}) {
-	bytes, _ := json.Marshal(body)
-
+func (t *txManager) notifyWorkers(txStatus uint32, txUUID string) {
+	bytes, _ := json.Marshal(models.BalanceReq{
+		TxUUID: txUUID,
+		Status: txStatus,
+	})
 	_, _, err := t.p.SendMessage(&sarama.ProducerMessage{
-		Topic: t.topics.userInTopic,
+		Topic: t.broker.Topics.User.In,
 		Value: sarama.StringEncoder(bytes),
 	})
-	t.handleSendMessageError(err, t.topics.userInTopic)
+	t.handleSendMessageError(err, t.broker.Topics.User.In)
 
-	//	_, _, err = t.p.SendMessage(&sarama.ProducerMessage{
-	//		Topic: t.topics.collectionService,
-	//		Value: sarama.StringEncoder(bytes),
-	//	})
-	//	t.handleSendMessageError(err, t.topics.collectionService)
-	//
-	//	_, _, err = t.p.SendMessage(&sarama.ProducerMessage{
-	//		Topic: t.topics.deviceService,
-	//		Value: sarama.StringEncoder(bytes),
-	//	})
-	//	t.handleSendMessageError(err, t.topics.deviceService)
+	bytes, _ = json.Marshal(models.DeviceReq{
+		TxUUID: txUUID,
+		Status: txStatus,
+	})
+	_, _, err = t.p.SendMessage(&sarama.ProducerMessage{
+		Topic: t.broker.Topics.Device.In,
+		Value: sarama.StringEncoder(bytes),
+	})
+	t.handleSendMessageError(err, t.broker.Topics.Device.In)
 }
 
 func (t *txManager) handleSendMessageError(err error, topic string) {

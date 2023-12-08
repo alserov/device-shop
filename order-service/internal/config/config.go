@@ -7,8 +7,8 @@ import (
 )
 
 type Config struct {
-	Env      string      `yaml:"env"`
-	Db       DBConfig    `yaml:"db"`
+	Env      string      `yaml:"env" env-default:"local"`
+	DB       DBConfig    `yaml:"db"`
 	GRPC     GRPCConfig  `yaml:"grpc"`
 	Kafka    KafkaConfig `yaml:"kafka"`
 	Services Services    `json:"services"`
@@ -33,11 +33,16 @@ type GRPCConfig struct {
 }
 
 type KafkaConfig struct {
-	BrokerAddr      string `yaml:"brokerAddr"`
-	UserInTopic     string `yaml:"userInTopic"`
-	UserOutTopic    string `yaml:"userOutTopic"`
-	DeviceTopic     string `yaml:"deviceTopic"`
-	CollectionTopic string `yaml:"collectionTopic"`
+	BrokerAddr string `yaml:"brokerAddr"`
+
+	UserTopicIn  string `yaml:"userTopicIn"`
+	UserTopicOut string `yaml:"userTopicOut"`
+
+	DeviceTopicIn  string `yaml:"deviceTopicIn"`
+	DeviceTopicOut string `yaml:"deviceTopicOut"`
+
+	CollectionTopicIn  string `yaml:"collectionTopicIn"`
+	CollectionTopicOut string `yaml:"collectionTopicOut"`
 }
 
 func MustLoad() *Config {

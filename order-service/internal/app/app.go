@@ -2,6 +2,7 @@ package app
 
 import (
 	"fmt"
+	"github.com/alserov/device-shop/order-service/internal/broker"
 	"github.com/alserov/device-shop/order-service/internal/config"
 	"github.com/alserov/device-shop/order-service/internal/db/postgres"
 	"github.com/alserov/device-shop/order-service/internal/server"
@@ -17,16 +18,8 @@ type App struct {
 	dbDsn      string
 	log        *slog.Logger
 	gRPCServer *grpc.Server
-	kafka      kafka
+	kafka      *broker.Broker
 	services   services
-}
-
-type kafka struct {
-	brokerAddr      string
-	userInTopic     string
-	userOutTopic    string
-	deviceTopic     string
-	collectionTopic string
 }
 
 type services struct {
@@ -39,19 +32,29 @@ func New(cfg *config.Config, log *slog.Logger) *App {
 		port:       cfg.GRPC.Port,
 		gRPCServer: grpc.NewServer(),
 		dbDsn: fmt.Sprintf("host=%s port=%d user=%s password=%v dbname=%s sslmode=%s",
-			cfg.Db.Host,
-			cfg.Db.Port,
-			cfg.Db.User,
-			cfg.Db.Password,
-			cfg.Db.Name,
-			cfg.Db.Sslmode,
+			cfg.DB.Host,
+			cfg.DB.Port,
+			cfg.DB.User,
+			cfg.DB.Password,
+			cfg.DB.Name,
+			cfg.DB.Sslmode,
 		),
-		kafka: kafka{
-			brokerAddr:      cfg.Kafka.BrokerAddr,
-			deviceTopic:     cfg.Kafka.DeviceTopic,
-			userInTopic:     cfg.Kafka.UserInTopic,
-			userOutTopic:    cfg.Kafka.UserOutTopic,
-			collectionTopic: cfg.Kafka.CollectionTopic,
+		kafka: &broker.Broker{
+			BrokerAddr: cfg.Kafka.BrokerAddr,
+			Topics: broker.Topics{
+				User: broker.Topic{
+					In:  cfg.Kafka.UserTopicIn,
+					Out: cfg.Kafka.UserTopicOut,
+				},
+				Device: broker.Topic{
+					In:  cfg.Kafka.DeviceTopicIn,
+					Out: cfg.Kafka.DeviceTopicOut,
+				},
+				Collection: broker.Topic{
+					In:  cfg.Kafka.CollectionTopicIn,
+					Out: cfg.Kafka.CollectionTopicOut,
+				},
+			},
 		},
 		services: services{
 			deviceAddr: cfg.Services.DeviceAddr,
@@ -70,13 +73,7 @@ func (a *App) MustStart() {
 		DeviceAddr: a.services.deviceAddr,
 		GRPCServer: a.gRPCServer,
 		DB:         db,
-		Kafka: &server.Kafka{
-			BrokerAddr:      a.kafka.brokerAddr,
-			DeviceTopic:     a.kafka.deviceTopic,
-			UserInTopic:     a.kafka.userInTopic,
-			UserOutTopic:    a.kafka.userOutTopic,
-			CollectionTopic: a.kafka.collectionTopic,
-		},
+		Broker:     a.kafka,
 	})
 
 	l, err := net.Listen("tcp", fmt.Sprintf(":%d", a.port))

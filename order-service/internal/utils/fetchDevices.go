@@ -21,7 +21,7 @@ func FetchDevicesFromOrder(ctx context.Context, cl device.DevicesClient, devices
 		devices = make([]*device.Device, 0, len(devicesFromOrder))
 	)
 
-	wg.Add(len(devices))
+	wg.Add(len(devicesFromOrder))
 
 	for _, d := range devicesFromOrder {
 		d := d
@@ -33,6 +33,7 @@ func FetchDevicesFromOrder(ctx context.Context, cl device.DevicesClient, devices
 			if err != nil {
 				chErr <- err
 			}
+			device.Amount = d.Amount
 			mu.Lock()
 			defer mu.Unlock()
 			devices = append(devices, device)

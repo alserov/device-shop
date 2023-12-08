@@ -6,9 +6,11 @@ import (
 	"errors"
 	"github.com/alserov/device-shop/device-service/internal/db"
 	"github.com/alserov/device-shop/device-service/internal/db/models"
+	"github.com/lib/pq"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"log/slog"
+	"sync"
 )
 
 func NewRepo(db *sql.DB, log *slog.Logger) db.DeviceRepo {
@@ -25,7 +27,10 @@ type repo struct {
 
 const (
 	internalError = "internal error"
-	notFound      = "nothing found"
+	notFound      = "device found"
+
+	invalidDeviceAmountError  = "invalid device amount"
+	amountConstraintErrorCode = "23514"
 )
 
 func (r *repo) GetAllDevices(_ context.Context, index uint32, amount uint32) ([]*models.Device, error) {
@@ -218,4 +223,47 @@ func (r *repo) IncreaseDeviceAmountByUUID(_ context.Context, deviceUUID string, 
 	}
 
 	return nil
+}
+
+func (r *repo) DecreaseDevicesAmountTx(ctx context.Context, devices []*models.OrderDevice) (*sql.Tx, error) {
+	query := `UPDATE devices SET amount = amount - $1 WHERE uuid = $2`
+
+	tx, err := r.db.Begin()
+	if err != nil {
+		return tx, status.Error(codes.Internal, internalError)
+	}
+
+	var (
+		wg    = &sync.WaitGroup{}
+		chErr = make(chan error)
+	)
+	wg.Add(len(devices))
+
+	for _, d := range devices {
+		go func(d *models.OrderDevice) {
+			defer wg.Done()
+			if _, err := tx.Exec(query, d.Amount, d.DeviceUUID); err != nil {
+				chErr <- err
+			}
+		}(d)
+	}
+
+	go func() {
+		wg.Wait()
+		close(chErr)
+	}()
+
+	for err = range chErr {
+		if errors.Is(sql.ErrNoRows, err) {
+			return tx, status.Error(codes.NotFound, notFound)
+		}
+		switch err.(*pq.Error).Code {
+		case amountConstraintErrorCode:
+			return tx, status.Error(codes.Canceled, invalidDeviceAmountError)
+		default:
+			return tx, status.Error(codes.Internal, internalError)
+		}
+	}
+
+	return tx, nil
 }

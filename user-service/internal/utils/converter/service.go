@@ -6,16 +6,14 @@ import (
 )
 
 type ServiceConverter struct {
-	Auth    ServiceAuth
-	Info    ServiceInfo
-	Balance ServiceBalance
+	Auth ServiceAuth
+	Info ServiceInfo
 }
 
 func NewServiceConverter() *ServiceConverter {
 	return &ServiceConverter{
-		Auth:    &serviceAuth{},
-		Info:    &serviceInfo{},
-		Balance: &serviceBalance{},
+		Auth: &serviceAuth{},
+		Info: &serviceInfo{},
 	}
 }
 
@@ -31,19 +29,6 @@ type ServiceAuth interface {
 type serviceInfo struct{}
 type ServiceInfo interface {
 	UserInfoResToService(res repo.GetUserInfoRes) models.GetUserInfoRes
-}
-
-type serviceBalance struct{}
-
-type ServiceBalance interface {
-	WorkerBalanceReqToRepo(req models.WorkerBalanceReq) repo.BalanceReq
-}
-
-func (s *serviceBalance) WorkerBalanceReqToRepo(req models.WorkerBalanceReq) repo.BalanceReq {
-	return repo.BalanceReq{
-		UserUUID: req.UserUUID,
-		Cash:     req.OrderPrice,
-	}
 }
 
 func (*serviceAuth) SignupReqToRepo(req models.SignupReq) repo.SignupReq {

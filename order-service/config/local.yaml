@@ -11,9 +11,11 @@ grpc:
   timeout: 5s
 kafka:
   brokerAddr: 127.0.0.1:9092
-  userOutTopic: USER_SERVICE_OUT_TX
-  userInTopic: USER_SERVICE_IN_TX
-  deviceTopic: DEVICE_SERVICE_TX
-  collectionTopic: COLLECTION_SERVICE_TX
+  userTopicIn: USER_SERVICE_IN_TX
+  userTopicOut: USER_SERVICE_OUT_TX
+  deviceTopicIn: DEVICE_SERVICE_IN_TX
+  deviceTopicOut: DEVICE_SERVICE_OUT_TX
+  collectionTopicIn: COLLECTION_SERVICE_IN_TX
+  collectionTopicOut: COLLECTION_SERVICE_OUT_TX
 services:
   deviceAddr: 127.0.0.1:3003

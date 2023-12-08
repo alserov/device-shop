@@ -2,6 +2,7 @@ package db
 
 import (
 	"context"
+	"database/sql"
 	"github.com/alserov/device-shop/device-service/internal/db/models"
 )
 
@@ -17,4 +18,6 @@ type DeviceRepo interface {
 	DeleteDevice(context.Context, string) error
 	UpdateDevice(context.Context, models.UpdateDevice) error
 	IncreaseDeviceAmountByUUID(ctx context.Context, deviceUUID string, amount uint32) error
+
+	DecreaseDevicesAmountTx(ctx context.Context, devices []*models.OrderDevice) (*sql.Tx, error)
 }

@@ -98,6 +98,9 @@ func (r *repo) DebitBalanceTx(_ context.Context, req models.BalanceReq) (*sql.Tx
 	}
 
 	_, err = tx.Exec(query, req.Cash, req.UserUUID)
+	if errors.Is(sql.ErrNoRows, err) {
+		return tx, status.Error(codes.NotFound, notFound)
+	}
 	if err, ok := err.(*pq.Error); ok {
 		switch err.Code {
 		case balanceConstraintErrorCode:
