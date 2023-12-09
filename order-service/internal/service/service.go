@@ -36,7 +36,7 @@ type service struct {
 func NewService(ordersDB *sql.DB, broker *broker.Broker, log *slog.Logger) Service {
 	return &service{
 		log:       log,
-		db:        postgres.NewOrderRepo(ordersDB, log),
+		db:        postgres.NewRepo(ordersDB, log),
 		conv:      converter.NewServiceConverter(),
 		broker:    broker,
 		txManager: manager.NewTxManager(broker, log),

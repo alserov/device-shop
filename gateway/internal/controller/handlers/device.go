@@ -3,6 +3,9 @@ package handlers
 import (
 	"context"
 	"fmt"
+	"github.com/alserov/device-shop/gateway/internal/controller/handlers/models"
+	"github.com/go-redis/redis"
+
 	"github.com/alserov/device-shop/gateway/internal/cache"
 	"github.com/alserov/device-shop/gateway/internal/utils"
 	"github.com/alserov/device-shop/gateway/internal/utils/validation"
@@ -10,6 +13,7 @@ import (
 	"github.com/alserov/device-shop/gateway/pkg/responser"
 	"github.com/alserov/device-shop/proto/gen/device"
 	"github.com/gin-gonic/gin"
+
 	"google.golang.org/grpc/status"
 	"log"
 	"log/slog"
@@ -26,16 +30,20 @@ type DevicesHandler interface {
 }
 
 type devicesHandler struct {
-	deviceAddr string
-	cache      cache.Repository
-	logger     *slog.Logger
+	services models.Services
+	cache    cache.Repository
+	log      *slog.Logger
 }
 
-func NewDevicesHandler(deviceAddr string, cache cache.Repository, logger *slog.Logger) DevicesHandler {
+func NewDevicesHandler(deviceAddr string, rd *redis.Client, log *slog.Logger) DevicesHandler {
 	return &devicesHandler{
-		deviceAddr: deviceAddr,
-		cache:      cache,
-		logger:     logger,
+		services: models.Services{
+			Device: models.Service{
+				Addr: deviceAddr,
+			},
+		},
+		cache: cache.NewRepo(rd),
+		log:   log,
 	}
 }
 
@@ -65,9 +73,9 @@ func (h *devicesHandler) GetAllDevices(c *gin.Context) {
 		return
 	}
 
-	cl, cc, err := client.DialDevice(h.deviceAddr)
+	cl, cc, err := client.DialDevice(h.services.Device.Addr)
 	if err != nil {
-		responser.ServerError(c.Writer, h.logger, err)
+		responser.ServerError(c.Writer, h.log, err)
 		return
 	}
 	defer cc.Close()
@@ -81,7 +89,7 @@ func (h *devicesHandler) GetAllDevices(c *gin.Context) {
 			responser.UserError(c.Writer, st.Message())
 			return
 		}
-		responser.ServerError(c.Writer, h.logger, err)
+		responser.ServerError(c.Writer, h.log, err)
 		return
 	}
 
@@ -125,9 +133,9 @@ func (h *devicesHandler) GetDevicesByTitle(c *gin.Context) {
 		return
 	}
 
-	cl, cc, err := client.DialDevice(h.deviceAddr)
+	cl, cc, err := client.DialDevice(h.services.Device.Addr)
 	if err != nil {
-		responser.ServerError(c.Writer, h.logger, err)
+		responser.ServerError(c.Writer, h.log, err)
 		return
 	}
 	defer cc.Close()
@@ -141,7 +149,7 @@ func (h *devicesHandler) GetDevicesByTitle(c *gin.Context) {
 			responser.UserError(c.Writer, st.Message())
 			return
 		}
-		responser.ServerError(c.Writer, h.logger, err)
+		responser.ServerError(c.Writer, h.log, err)
 		return
 	}
 
@@ -175,9 +183,9 @@ func (h *devicesHandler) GetDevicesByManufacturer(c *gin.Context) {
 		return
 	}
 
-	cl, cc, err := client.DialDevice(h.deviceAddr)
+	cl, cc, err := client.DialDevice(h.services.Device.Addr)
 	if err != nil {
-		responser.ServerError(c.Writer, h.logger, err)
+		responser.ServerError(c.Writer, h.log, err)
 		return
 	}
 	defer cc.Close()
@@ -193,7 +201,7 @@ func (h *devicesHandler) GetDevicesByManufacturer(c *gin.Context) {
 			responser.UserError(c.Writer, st.Message())
 			return
 		}
-		responser.ServerError(c.Writer, h.logger, err)
+		responser.ServerError(c.Writer, h.log, err)
 		return
 	}
 
@@ -238,9 +246,9 @@ func (h *devicesHandler) GetDevicesByPrice(c *gin.Context) {
 		return
 	}
 
-	cl, cc, err := client.DialDevice(h.deviceAddr)
+	cl, cc, err := client.DialDevice(h.services.Device.Addr)
 	if err != nil {
-		responser.ServerError(c.Writer, h.logger, err)
+		responser.ServerError(c.Writer, h.log, err)
 		return
 	}
 	defer cc.Close()
@@ -259,7 +267,7 @@ func (h *devicesHandler) GetDevicesByPrice(c *gin.Context) {
 			responser.UserError(c.Writer, st.Message())
 			return
 		}
-		responser.ServerError(c.Writer, h.logger, err)
+		responser.ServerError(c.Writer, h.log, err)
 		return
 	}
 

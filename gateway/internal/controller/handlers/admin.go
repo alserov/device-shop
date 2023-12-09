@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"github.com/alserov/device-shop/gateway/internal/controller/handlers/models"
 	"github.com/alserov/device-shop/gateway/internal/utils"
 	"github.com/alserov/device-shop/gateway/internal/utils/validation"
 	"github.com/alserov/device-shop/gateway/pkg/client"
@@ -21,18 +22,20 @@ type AdminHandler interface {
 	UpdateDevice(c *gin.Context)
 }
 
-func NewAdminHandler(deviceAddr, userAddr string, logger *slog.Logger) AdminHandler {
+func NewAdminHandler(deviceAddr string, logger *slog.Logger) AdminHandler {
 	return &adminHandler{
-		log:        logger,
-		deviceAddr: deviceAddr,
-		userAddr:   userAddr,
+		log: logger,
+		services: models.Services{
+			Device: models.Service{
+				Addr: deviceAddr,
+			},
+		},
 	}
 }
 
 type adminHandler struct {
-	deviceAddr string
-	userAddr   string
-	log        *slog.Logger
+	services models.Services
+	log      *slog.Logger
 }
 
 func (h *adminHandler) CreateDevice(c *gin.Context) {
@@ -42,7 +45,7 @@ func (h *adminHandler) CreateDevice(c *gin.Context) {
 		return
 	}
 
-	cl, cc, err := client.DialDevice(h.deviceAddr)
+	cl, cc, err := client.DialDevice(h.services.Device.Addr)
 	if err != nil {
 		responser.ServerError(c.Writer, h.log, err)
 		return
@@ -73,7 +76,7 @@ func (h *adminHandler) DeleteDevice(c *gin.Context) {
 		return
 	}
 
-	cl, cc, err := client.DialDevice(h.deviceAddr)
+	cl, cc, err := client.DialDevice(h.services.Device.Addr)
 	if err != nil {
 		responser.ServerError(c.Writer, h.log, err)
 		return
@@ -103,7 +106,7 @@ func (h *adminHandler) UpdateDevice(c *gin.Context) {
 		return
 	}
 
-	cl, cc, err := client.DialDevice(h.userAddr)
+	cl, cc, err := client.DialDevice(h.services.Device.Addr)
 	if err != nil {
 		responser.ServerError(c.Writer, h.log, err)
 		return

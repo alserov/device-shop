@@ -12,8 +12,10 @@ func Decode[T any](r *http.Request, validator ...func(*T) error) (*T, error) {
 	}
 
 	if len(validator) > 0 {
-		if err := validator[0](&str); err != nil {
-			return nil, err
+		for _, v := range validator {
+			if err := v(&str); err != nil {
+				return nil, err
+			}
 		}
 	}
 

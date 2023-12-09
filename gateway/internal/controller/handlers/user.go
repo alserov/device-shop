@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"github.com/alserov/device-shop/gateway/internal/controller/handlers/models"
 	"github.com/alserov/device-shop/gateway/internal/utils"
 	"github.com/alserov/device-shop/gateway/internal/utils/validation"
 	"github.com/alserov/device-shop/gateway/pkg/client"
@@ -18,14 +19,18 @@ type UsersHandler interface {
 }
 
 type usersHandler struct {
-	userAddr string
-	logger   *slog.Logger
+	services models.Services
+	log      *slog.Logger
 }
 
-func NewUserHandler(userAddr string, logger *slog.Logger) UsersHandler {
+func NewUserHandler(userAddr string, log *slog.Logger) UsersHandler {
 	return &usersHandler{
-		userAddr: userAddr,
-		logger:   logger,
+		services: models.Services{
+			User: models.Service{
+				Addr: userAddr,
+			},
+		},
+		log: log,
 	}
 }
 
@@ -36,9 +41,9 @@ func (h *usersHandler) TopUpBalance(c *gin.Context) {
 		return
 	}
 
-	cl, cc, err := client.DialUser(h.userAddr)
+	cl, cc, err := client.DialUser(h.services.User.Addr)
 	if err != nil {
-		responser.ServerError(c.Writer, h.logger, err)
+		responser.ServerError(c.Writer, h.log, err)
 		return
 	}
 	defer cc.Close()
@@ -52,7 +57,7 @@ func (h *usersHandler) TopUpBalance(c *gin.Context) {
 			responser.UserError(c.Writer, st.Message())
 			return
 		}
-		responser.ServerError(c.Writer, h.logger, err)
+		responser.ServerError(c.Writer, h.log, err)
 		return
 	}
 

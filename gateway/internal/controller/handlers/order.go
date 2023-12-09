@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"github.com/alserov/device-shop/gateway/internal/controller/handlers/models"
 	"github.com/alserov/device-shop/gateway/internal/utils"
 	"github.com/alserov/device-shop/gateway/internal/utils/validation"
 	"github.com/alserov/device-shop/gateway/pkg/client"
@@ -20,16 +21,20 @@ type OrdersHandler interface {
 	CheckOrder(c *gin.Context)
 }
 
-func NewOrderHandler(orderAddr string, logger *slog.Logger) OrdersHandler {
+func NewOrderHandler(orderAddr string, log *slog.Logger) OrdersHandler {
 	return &ordersHandler{
-		orderAddr: orderAddr,
-		logger:    logger,
+		services: models.Services{
+			Order: models.Service{
+				Addr: orderAddr,
+			},
+		},
+		log: log,
 	}
 }
 
 type ordersHandler struct {
-	orderAddr string
-	logger    *slog.Logger
+	services models.Services
+	log      *slog.Logger
 }
 
 func (h *ordersHandler) CreateOrder(c *gin.Context) {
@@ -39,9 +44,9 @@ func (h *ordersHandler) CreateOrder(c *gin.Context) {
 		return
 	}
 
-	cl, cc, err := client.DialOrder(h.orderAddr)
+	cl, cc, err := client.DialOrder(h.services.Order.Addr)
 	if err != nil {
-		responser.ServerError(c.Writer, h.logger, err)
+		responser.ServerError(c.Writer, h.log, err)
 		return
 	}
 	defer cc.Close()
@@ -55,7 +60,7 @@ func (h *ordersHandler) CreateOrder(c *gin.Context) {
 			responser.UserError(c.Writer, st.Message())
 			return
 		}
-		responser.ServerError(c.Writer, h.logger, err)
+		responser.ServerError(c.Writer, h.log, err)
 		return
 	}
 
@@ -71,9 +76,9 @@ func (h *ordersHandler) UpdateOrder(c *gin.Context) {
 		return
 	}
 
-	cl, cc, err := client.DialOrder(h.orderAddr)
+	cl, cc, err := client.DialOrder(h.services.Order.Addr)
 	if err != nil {
-		responser.ServerError(c.Writer, h.logger, err)
+		responser.ServerError(c.Writer, h.log, err)
 		return
 	}
 	defer cc.Close()
@@ -87,7 +92,7 @@ func (h *ordersHandler) UpdateOrder(c *gin.Context) {
 			responser.UserError(c.Writer, st.Message())
 			return
 		}
-		responser.ServerError(c.Writer, h.logger, err)
+		responser.ServerError(c.Writer, h.log, err)
 		return
 	}
 
@@ -101,9 +106,9 @@ func (h *ordersHandler) CheckOrder(c *gin.Context) {
 		return
 	}
 
-	cl, cc, err := client.DialOrder(h.orderAddr)
+	cl, cc, err := client.DialOrder(h.services.Order.Addr)
 	if err != nil {
-		responser.ServerError(c.Writer, h.logger, err)
+		responser.ServerError(c.Writer, h.log, err)
 		return
 	}
 	defer cc.Close()
@@ -117,7 +122,7 @@ func (h *ordersHandler) CheckOrder(c *gin.Context) {
 			responser.UserError(c.Writer, st.Message())
 			return
 		}
-		responser.ServerError(c.Writer, h.logger, err)
+		responser.ServerError(c.Writer, h.log, err)
 		return
 	}
 

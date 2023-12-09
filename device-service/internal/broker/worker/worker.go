@@ -68,13 +68,13 @@ const (
 )
 
 func (w *TxWorker) MustStart() {
-	msgs, err := consumer.Subscribe(w.topicIn, w.c)
+	partition, err := consumer.Subscribe(w.topicIn, w.c)
 	if err != nil {
 		panic("failed to subscribe on topic: " + err.Error())
 	}
 
 	w.log.Info("worker is running")
-	for msg := range msgs.Messages() {
+	for msg := range partition.Messages() {
 		var req models.Request
 		if err = json.Unmarshal(msg.Value, &req); err != nil {
 			w.log.Error("failed to unmarshall balance req: " + err.Error())
@@ -103,17 +103,21 @@ func (w *TxWorker) MustStart() {
 			continue
 		}
 
-		bytes, _ := json.Marshal(models.Response{
-			Status: successStatus,
-			Uuid:   req.TxUUID,
-		})
-		_, _, err = w.p.SendMessage(&sarama.ProducerMessage{
-			Topic: w.topicOut,
-			Value: sarama.StringEncoder(bytes),
-		})
-		if err != nil {
-			w.log.Error("failed to send message", slog.String("error", err.Error()))
-		}
+		w.sendMessage(req.TxUUID)
+	}
+}
+
+func (w *TxWorker) sendMessage(txUUID string) {
+	bytes, _ := json.Marshal(models.Response{
+		Status: successStatus,
+		Uuid:   txUUID,
+	})
+	_, _, err := w.p.SendMessage(&sarama.ProducerMessage{
+		Topic: w.topicOut,
+		Value: sarama.StringEncoder(bytes),
+	})
+	if err != nil {
+		w.log.Error("failed to send message", slog.String("error", err.Error()))
 	}
 }
 

@@ -102,17 +102,21 @@ func (w *TxWorker) MustStart() {
 			continue
 		}
 
-		bytes, _ := json.Marshal(models.Response{
-			Status: successStatus,
-			Uuid:   req.TxUUID,
-		})
-		_, _, err = w.p.SendMessage(&sarama.ProducerMessage{
-			Topic: w.topicOut,
-			Value: sarama.StringEncoder(bytes),
-		})
-		if err != nil {
-			w.log.Error("failed to send message", slog.String("error", err.Error()))
-		}
+		w.sendMessage(req.TxUUID)
+	}
+}
+
+func (w *TxWorker) sendMessage(txUUID string) {
+	bytes, _ := json.Marshal(models.Response{
+		Status: successStatus,
+		Uuid:   txUUID,
+	})
+	_, _, err := w.p.SendMessage(&sarama.ProducerMessage{
+		Topic: w.topicOut,
+		Value: sarama.StringEncoder(bytes),
+	})
+	if err != nil {
+		w.log.Error("failed to send message", slog.String("error", err.Error()))
 	}
 }
 

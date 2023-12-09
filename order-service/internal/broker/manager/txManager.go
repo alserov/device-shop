@@ -5,17 +5,18 @@ import (
 	"database/sql"
 	"encoding/json"
 	"github.com/IBM/sarama"
+
 	"github.com/alserov/device-shop/order-service/internal/broker"
 	"github.com/alserov/device-shop/order-service/internal/broker/manager/models"
-	"github.com/alserov/device-shop/order-service/internal/utils/converter"
-	"time"
-
 	"github.com/alserov/device-shop/order-service/internal/broker/producer"
+	"github.com/alserov/device-shop/order-service/internal/utils/converter"
+
 	"github.com/google/uuid"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"log/slog"
 	"sync"
+	"time"
 )
 
 type txManager struct {

@@ -15,7 +15,7 @@ import (
 	"sync"
 )
 
-func NewOrderRepo(db *sql.DB, log *slog.Logger) db.OrderRepo {
+func NewRepo(db *sql.DB, log *slog.Logger) db.OrderRepo {
 	return &repo{
 		log: log,
 		db:  db,

@@ -2,7 +2,7 @@ package handlers
 
 import (
 	"context"
-
+	"github.com/alserov/device-shop/gateway/internal/controller/handlers/models"
 	"github.com/alserov/device-shop/gateway/internal/utils"
 	"github.com/alserov/device-shop/gateway/internal/utils/validation"
 	"github.com/alserov/device-shop/gateway/pkg/client"
@@ -24,14 +24,18 @@ type AuthHandler interface {
 }
 
 type authHandler struct {
-	logger   *slog.Logger
-	authAddr string
+	log      *slog.Logger
+	services models.Services
 }
 
-func NewAuthHandler(authAddr string, logger *slog.Logger) AuthHandler {
+func NewAuthHandler(authAddr string, log *slog.Logger) AuthHandler {
 	return &authHandler{
-		logger:   logger,
-		authAddr: authAddr,
+		log: log,
+		services: models.Services{
+			Auth: models.Service{
+				Addr: authAddr,
+			},
+		},
 	}
 }
 
@@ -47,9 +51,9 @@ func (h *authHandler) Signup(c *gin.Context) {
 		return
 	}
 
-	cl, cc, err := client.DialUser(h.authAddr)
+	cl, cc, err := client.DialUser(h.services.Auth.Addr)
 	if err != nil {
-		responser.ServerError(c.Writer, h.logger, err)
+		responser.ServerError(c.Writer, h.log, err)
 		return
 	}
 	defer cc.Close()
@@ -62,7 +66,7 @@ func (h *authHandler) Signup(c *gin.Context) {
 		if st, ok := status.FromError(err); ok {
 			switch st.Code() {
 			case codes.Internal:
-				responser.ServerError(c.Writer, h.logger, err)
+				responser.ServerError(c.Writer, h.log, err)
 			default:
 				responser.UserError(c.Writer, st.Message())
 			}
@@ -81,9 +85,9 @@ func (h *authHandler) Login(c *gin.Context) {
 		return
 	}
 
-	cl, cc, err := client.DialUser(h.authAddr)
+	cl, cc, err := client.DialUser(h.services.Auth.Addr)
 	if err != nil {
-		responser.ServerError(c.Writer, h.logger, err)
+		responser.ServerError(c.Writer, h.log, err)
 		return
 	}
 	defer cc.Close()
@@ -96,7 +100,7 @@ func (h *authHandler) Login(c *gin.Context) {
 		if st, ok := status.FromError(err); ok {
 			switch st.Code() {
 			case codes.Internal:
-				responser.ServerError(c.Writer, h.logger, err)
+				responser.ServerError(c.Writer, h.log, err)
 			default:
 				responser.UserError(c.Writer, st.Message())
 			}
@@ -120,9 +124,9 @@ func (h *authHandler) GetInfo(c *gin.Context) {
 		return
 	}
 
-	cl, cc, err := client.DialUser(h.authAddr)
+	cl, cc, err := client.DialUser(h.services.Auth.Addr)
 	if err != nil {
-		responser.ServerError(c.Writer, h.logger, err)
+		responser.ServerError(c.Writer, h.log, err)
 		return
 	}
 	defer cc.Close()
@@ -138,7 +142,7 @@ func (h *authHandler) GetInfo(c *gin.Context) {
 			responser.UserError(c.Writer, st.Message())
 			return
 		}
-		responser.ServerError(c.Writer, h.logger, err)
+		responser.ServerError(c.Writer, h.log, err)
 		return
 	}
 

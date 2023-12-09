@@ -23,7 +23,7 @@ func NewController(c *redis.Client, lg *slog.Logger, services *config.Services) 
 	return &Controller{
 		cache:              cache.NewRepo(c),
 		logger:             lg,
-		adminHandler:       handlers.NewAdminHandler(services.Device.Addr, services.User.Addr, lg),
+		adminHandler:       handlers.NewAdminHandler(services.Device.Addr, lg),
 		authHandler:        handlers.NewAuthHandler(services.User.Addr, lg),
 		collectionsHandler: handlers.NewCollectionsHandler(services.Coll.Addr, lg),
 		devicesHandler:     handlers.NewDevicesHandler(services.Device.Addr, cache.NewRepo(c), lg),

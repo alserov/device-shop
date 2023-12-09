@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"github.com/alserov/device-shop/gateway/internal/controller/handlers/models"
 	"github.com/alserov/device-shop/gateway/internal/utils"
 	"github.com/alserov/device-shop/gateway/internal/utils/validation"
 	"github.com/alserov/device-shop/gateway/pkg/client"
@@ -25,14 +26,18 @@ type CollectionsHandler interface {
 }
 
 type collectionsHandler struct {
-	userAddr string
-	logger   *slog.Logger
+	services models.Services
+	log      *slog.Logger
 }
 
-func NewCollectionsHandler(userAddr string, logger *slog.Logger) CollectionsHandler {
+func NewCollectionsHandler(userAddr string, log *slog.Logger) CollectionsHandler {
 	return &collectionsHandler{
-		userAddr: userAddr,
-		logger:   logger,
+		services: models.Services{
+			User: models.Service{
+				Addr: userAddr,
+			},
+		},
+		log: log,
 	}
 }
 
@@ -43,9 +48,9 @@ func (h *collectionsHandler) AddToFavourite(c *gin.Context) {
 		return
 	}
 
-	cl, cc, err := client.DialCollection(h.userAddr)
+	cl, cc, err := client.DialCollection(h.services.User.Addr)
 	if err != nil {
-		responser.ServerError(c.Writer, h.logger, err)
+		responser.ServerError(c.Writer, h.log, err)
 		return
 	}
 	defer cc.Close()
@@ -59,7 +64,7 @@ func (h *collectionsHandler) AddToFavourite(c *gin.Context) {
 			responser.UserError(c.Writer, st.Message())
 			return
 		}
-		responser.ServerError(c.Writer, h.logger, err)
+		responser.ServerError(c.Writer, h.log, err)
 		return
 	}
 
@@ -73,9 +78,9 @@ func (h *collectionsHandler) RemoveFromFavourite(c *gin.Context) {
 		return
 	}
 
-	cl, cc, err := client.DialCollection(h.userAddr)
+	cl, cc, err := client.DialCollection(h.services.User.Addr)
 	if err != nil {
-		responser.ServerError(c.Writer, h.logger, err)
+		responser.ServerError(c.Writer, h.log, err)
 		return
 	}
 	defer cc.Close()
@@ -89,7 +94,7 @@ func (h *collectionsHandler) RemoveFromFavourite(c *gin.Context) {
 			responser.UserError(c.Writer, st.Message())
 			return
 		}
-		responser.ServerError(c.Writer, h.logger, err)
+		responser.ServerError(c.Writer, h.log, err)
 		return
 	}
 
@@ -104,9 +109,9 @@ func (h *collectionsHandler) GetFavourite(c *gin.Context) {
 		return
 	}
 
-	cl, cc, err := client.DialCollection(h.userAddr)
+	cl, cc, err := client.DialCollection(h.services.User.Addr)
 	if err != nil {
-		responser.ServerError(c.Writer, h.logger, err)
+		responser.ServerError(c.Writer, h.log, err)
 		return
 	}
 	defer cc.Close()
@@ -120,7 +125,7 @@ func (h *collectionsHandler) GetFavourite(c *gin.Context) {
 			responser.UserError(c.Writer, st.Message())
 			return
 		}
-		responser.ServerError(c.Writer, h.logger, err)
+		responser.ServerError(c.Writer, h.log, err)
 		return
 	}
 
@@ -137,9 +142,9 @@ func (h *collectionsHandler) AddToCart(c *gin.Context) {
 		return
 	}
 
-	cl, cc, err := client.DialCollection(h.userAddr)
+	cl, cc, err := client.DialCollection(h.services.User.Addr)
 	if err != nil {
-		responser.ServerError(c.Writer, h.logger, err)
+		responser.ServerError(c.Writer, h.log, err)
 		return
 	}
 	defer cc.Close()
@@ -153,7 +158,7 @@ func (h *collectionsHandler) AddToCart(c *gin.Context) {
 			responser.UserError(c.Writer, st.Message())
 			return
 		}
-		responser.ServerError(c.Writer, h.logger, err)
+		responser.ServerError(c.Writer, h.log, err)
 		return
 	}
 
@@ -167,9 +172,9 @@ func (h *collectionsHandler) RemoveFromCart(c *gin.Context) {
 		return
 	}
 
-	cl, cc, err := client.DialCollection(h.userAddr)
+	cl, cc, err := client.DialCollection(h.services.User.Addr)
 	if err != nil {
-		responser.ServerError(c.Writer, h.logger, err)
+		responser.ServerError(c.Writer, h.log, err)
 		return
 	}
 	defer cc.Close()
@@ -183,7 +188,7 @@ func (h *collectionsHandler) RemoveFromCart(c *gin.Context) {
 			responser.UserError(c.Writer, st.Message())
 			return
 		}
-		responser.ServerError(c.Writer, h.logger, err)
+		responser.ServerError(c.Writer, h.log, err)
 		return
 	}
 
@@ -198,9 +203,9 @@ func (h *collectionsHandler) GetCart(c *gin.Context) {
 		return
 	}
 
-	cl, cc, err := client.DialCollection(h.userAddr)
+	cl, cc, err := client.DialCollection(h.services.User.Addr)
 	if err != nil {
-		responser.ServerError(c.Writer, h.logger, err)
+		responser.ServerError(c.Writer, h.log, err)
 		return
 	}
 	defer cc.Close()
@@ -216,7 +221,7 @@ func (h *collectionsHandler) GetCart(c *gin.Context) {
 			responser.UserError(c.Writer, st.Message())
 			return
 		}
-		responser.ServerError(c.Writer, h.logger, err)
+		responser.ServerError(c.Writer, h.log, err)
 		return
 	}
 
