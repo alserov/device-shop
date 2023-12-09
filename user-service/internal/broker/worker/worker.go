@@ -4,18 +4,15 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
-	"fmt"
 	"github.com/IBM/sarama"
 	"github.com/alserov/device-shop/user-service/internal/broker"
+	"github.com/alserov/device-shop/user-service/internal/broker/consumer"
 	"github.com/alserov/device-shop/user-service/internal/broker/producer"
 	"github.com/alserov/device-shop/user-service/internal/broker/worker/models"
-	"github.com/alserov/device-shop/user-service/internal/db/postgres"
-	"google.golang.org/grpc/status"
-	"log"
-
-	"github.com/alserov/device-shop/user-service/internal/broker/consumer"
 	"github.com/alserov/device-shop/user-service/internal/db"
+	"github.com/alserov/device-shop/user-service/internal/db/postgres"
 	"github.com/alserov/device-shop/user-service/internal/utils/converter"
+	"google.golang.org/grpc/status"
 
 	"log/slog"
 )
@@ -69,14 +66,6 @@ const (
 	successStatus       = 2
 )
 
-type txResponse struct {
-	// 0 - failed
-	// 1 - success
-	Status  uint32 `json:"status"`
-	Message string `json:"message"`
-	Uuid    string `json:"uuid"`
-}
-
 func (w *TxWorker) MustStart() {
 	msgs, err := consumer.Subscribe(w.topicIn, w.c)
 	if err != nil {
@@ -84,47 +73,50 @@ func (w *TxWorker) MustStart() {
 	}
 
 	w.log.Info("worker is running")
-	for msg := range msgs {
+	for msg := range msgs.Messages() {
 		var req models.Request
-		if err = json.Unmarshal(msg, &req); err != nil {
+		if err = json.Unmarshal(msg.Value, &req); err != nil {
 			w.log.Error("failed to unmarshall balance req: " + err.Error())
 			continue
 		}
 
-		fmt.Println(req)
-
 		if _, ok := w.txs[req.TxUUID]; ok {
 			switch req.Status {
 			case successStatus:
-				if err := w.txs[req.TxUUID].Commit(); err != nil {
-					log.Println(err)
+				if err = w.txs[req.TxUUID].Commit(); err != nil {
+					w.log.Error("failed to commit tx", slog.String("error", err.Error()))
 				}
 			default:
-				w.txs[req.TxUUID].Rollback()
+				if err = w.txs[req.TxUUID].Rollback(); err != nil {
+					w.log.Error("failed to rollback tx", slog.String("error", err.Error()))
+				}
 			}
 			delete(w.txs, req.TxUUID)
-		} else {
-			tx, err := w.repo.DebitBalanceTx(context.Background(), w.conv.WorkerBalanceReqToRepo(req))
-			if err != nil {
-				w.handleTxError(tx, req.TxUUID, err)
-			}
-			w.txs[req.TxUUID] = tx
+			continue
+		}
 
-			bytes, _ := json.Marshal(models.Response{
-				Status: successStatus,
-				Uuid:   req.TxUUID,
-			})
-			w.p.SendMessage(&sarama.ProducerMessage{
-				Topic: w.topicOut,
-				Value: sarama.StringEncoder(bytes),
-			})
-			fmt.Println("send")
+		tx, err := w.repo.DebitBalanceTx(context.Background(), w.conv.WorkerBalanceReqToRepo(req))
+		w.txs[req.TxUUID] = tx
+		if err != nil {
+			w.handleTxError(req.TxUUID, err)
+			continue
+		}
+
+		bytes, _ := json.Marshal(models.Response{
+			Status: successStatus,
+			Uuid:   req.TxUUID,
+		})
+		_, _, err = w.p.SendMessage(&sarama.ProducerMessage{
+			Topic: w.topicOut,
+			Value: sarama.StringEncoder(bytes),
+		})
+		if err != nil {
+			w.log.Error("failed to send message", slog.String("error", err.Error()))
 		}
 	}
 }
 
-func (w *TxWorker) handleTxError(tx *sql.Tx, txUUID string, err error) {
-	tx.Rollback()
+func (w *TxWorker) handleTxError(txUUID string, err error) {
 	var (
 		msg      = internalError
 		txStatus = uint32(serverFailureStatus)
@@ -134,13 +126,17 @@ func (w *TxWorker) handleTxError(tx *sql.Tx, txUUID string, err error) {
 		txStatus = userFailureStatus
 	}
 
-	bytes, _ := json.Marshal(txResponse{
+	bytes, _ := json.Marshal(models.Response{
 		Status:  txStatus,
 		Uuid:    txUUID,
 		Message: msg,
 	})
-	w.p.SendMessage(&sarama.ProducerMessage{
+
+	_, _, err = w.p.SendMessage(&sarama.ProducerMessage{
 		Topic: w.topicOut,
 		Value: sarama.StringEncoder(bytes),
 	})
+	if err != nil {
+		w.log.Error("failed to send message", slog.String("error", err.Error()))
+	}
 }

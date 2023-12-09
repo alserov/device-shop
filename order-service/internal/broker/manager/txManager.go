@@ -2,7 +2,6 @@ package manager
 
 import (
 	"encoding/json"
-	"fmt"
 	"github.com/IBM/sarama"
 	"github.com/alserov/device-shop/order-service/internal/broker"
 	"github.com/alserov/device-shop/order-service/internal/broker/manager/models"
@@ -58,13 +57,12 @@ func (t *txManager) DoTx(in models.TxBody) error {
 
 	var (
 		wg    = &sync.WaitGroup{}
-		chErr = make(chan error, 1)
+		chErr = make(chan error, 2)
 	)
 	wg.Add(txAmount)
 
 	go func() {
 		defer wg.Done()
-		defer fmt.Println("tx 1")
 		err := t.startTx(t.broker.Topics.User.In, t.broker.Topics.User.Out, models.BalanceReq{
 			TxUUID:     txUUID,
 			OrderPrice: in.OrderPrice,
@@ -78,7 +76,6 @@ func (t *txManager) DoTx(in models.TxBody) error {
 
 	go func() {
 		defer wg.Done()
-		defer fmt.Println("tx 2")
 		err := t.startTx(t.broker.Topics.Device.In, t.broker.Topics.Device.Out, models.DeviceReq{
 			OrderDevices: in.OrderDevices,
 			TxUUID:       txUUID,
@@ -97,18 +94,14 @@ func (t *txManager) DoTx(in models.TxBody) error {
 	//	}
 	//}()
 
-	go func() {
-		wg.Wait()
-		close(chErr)
-	}()
+	wg.Wait()
+	close(chErr)
 
 	for err := range chErr {
-		t.log.Error("tx error", slog.String("error", err.Error()))
 		t.notifyWorkers(userFailureStatus, txUUID)
 		return err
 	}
 
-	fmt.Println("not")
 	t.notifyWorkers(successStatus, txUUID)
 	return nil
 }
@@ -125,6 +118,11 @@ func (t *txManager) startTx(topicIn string, topicOut string, body interface{}, t
 		return err
 	}
 
+	pConsumer, err := t.subscribe(topicOut, cons)
+	if err != nil {
+		return err
+	}
+
 	_, _, err = t.p.SendMessage(&sarama.ProducerMessage{
 		Topic: topicIn,
 		Value: sarama.StringEncoder(bytes),
@@ -133,23 +131,18 @@ func (t *txManager) startTx(topicIn string, topicOut string, body interface{}, t
 		return err
 	}
 
-	msgs, err := t.subscribe(topicOut, cons)
-	if err != nil {
-		return err
-	}
-
-	for msg := range msgs {
-		var m models.Response
-		if err = json.Unmarshal(msg, &m); err != nil {
+	for msg := range pConsumer.Messages() {
+		var res models.Response
+		if err = json.Unmarshal(msg.Value, &res); err != nil {
 			return err
 		}
 
-		if txUUID == m.UUID {
-			switch m.Status {
+		if txUUID == res.UUID {
+			switch res.Status {
 			case successStatus:
 				return nil
 			case userFailureStatus:
-				return status.Error(codes.Canceled, m.Message)
+				return status.Error(codes.Canceled, res.Message)
 			default:
 				return status.Error(codes.Internal, internalError)
 			}
@@ -159,7 +152,7 @@ func (t *txManager) startTx(topicIn string, topicOut string, body interface{}, t
 	return nil
 }
 
-func (t *txManager) subscribe(topic string, c sarama.Consumer) (<-chan []byte, error) {
+func (t *txManager) subscribe(topic string, c sarama.Consumer) (sarama.PartitionConsumer, error) {
 	op := "txManager.subscribe"
 
 	pList, err := c.Partitions(topic)
@@ -168,24 +161,16 @@ func (t *txManager) subscribe(topic string, c sarama.Consumer) (<-chan []byte, e
 	}
 	offset := sarama.OffsetNewest
 
-	var (
-		chMessages = make(chan []byte, 5)
-	)
-	go func() {
-		defer close(chMessages)
-		for _, p := range pList {
-			pConsumer, err := c.ConsumePartition(topic, p, offset)
-			if err != nil {
-				t.log.Error("failed to consume partition", slog.String("error", err.Error()), slog.String("op", op))
-				return
-			}
-			for msg := range pConsumer.Messages() {
-				chMessages <- msg.Value
-			}
+	var pConsumer sarama.PartitionConsumer
+	for _, p := range pList {
+		pConsumer, err = c.ConsumePartition(topic, p, offset)
+		if err != nil {
+			t.log.Error("failed to consume partition", slog.String("error", err.Error()), slog.String("op", op))
+			return nil, status.Error(codes.Internal, internalError)
 		}
-	}()
+	}
 
-	return chMessages, nil
+	return pConsumer, nil
 }
 
 func (t *txManager) notifyWorkers(txStatus uint32, txUUID string) {

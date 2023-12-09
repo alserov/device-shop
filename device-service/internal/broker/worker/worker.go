@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
-	"fmt"
 	"github.com/IBM/sarama"
 	"github.com/alserov/device-shop/device-service/internal/broker"
 	"github.com/alserov/device-shop/device-service/internal/broker/worker/models"
@@ -15,8 +14,6 @@ import (
 	"github.com/alserov/device-shop/device-service/internal/db"
 	"github.com/alserov/device-shop/device-service/internal/db/postgres"
 	"github.com/alserov/device-shop/device-service/internal/utils/converter"
-
-	"log"
 
 	"log/slog"
 )
@@ -77,48 +74,50 @@ func (w *TxWorker) MustStart() {
 	}
 
 	w.log.Info("worker is running")
-	for msg := range msgs {
+	for msg := range msgs.Messages() {
 		var req models.Request
-		if err = json.Unmarshal(msg, &req); err != nil {
+		if err = json.Unmarshal(msg.Value, &req); err != nil {
 			w.log.Error("failed to unmarshall balance req: " + err.Error())
 			continue
 		}
 
-		fmt.Println(req)
-
 		if _, ok := w.txs[req.TxUUID]; ok {
 			switch req.Status {
 			case successStatus:
-				if err := w.txs[req.TxUUID].Commit(); err != nil {
-					log.Println(err)
+				if err = w.txs[req.TxUUID].Commit(); err != nil {
+					w.log.Error("failed to commit tx", slog.String("error", err.Error()))
 				}
 			default:
-				w.txs[req.TxUUID].Rollback()
+				if err = w.txs[req.TxUUID].Rollback(); err != nil {
+					w.log.Error("failed to rollback tx", slog.String("error", err.Error()))
+				}
 			}
 			delete(w.txs, req.TxUUID)
-		} else {
-			tx, err := w.repo.DecreaseDevicesAmountTx(context.Background(), w.conv.OrderDevicesToRepo(req.OrderDevices))
-			if err != nil {
-				w.handleTxError(tx, req.TxUUID, err)
-			} else {
-				w.txs[req.TxUUID] = tx
+			continue
+		}
 
-				bytes, _ := json.Marshal(models.Response{
-					Status: successStatus,
-					Uuid:   req.TxUUID,
-				})
-				w.p.SendMessage(&sarama.ProducerMessage{
-					Topic: w.topicOut,
-					Value: sarama.StringEncoder(bytes),
-				})
-				fmt.Println("send")
-			}
+		tx, err := w.repo.DecreaseDevicesAmountTx(context.Background(), w.conv.OrderDevicesToRepo(req.OrderDevices))
+		w.txs[req.TxUUID] = tx
+		if err != nil {
+			w.handleTxError(req.TxUUID, err)
+			continue
+		}
+
+		bytes, _ := json.Marshal(models.Response{
+			Status: successStatus,
+			Uuid:   req.TxUUID,
+		})
+		_, _, err = w.p.SendMessage(&sarama.ProducerMessage{
+			Topic: w.topicOut,
+			Value: sarama.StringEncoder(bytes),
+		})
+		if err != nil {
+			w.log.Error("failed to send message", slog.String("error", err.Error()))
 		}
 	}
 }
 
-func (w *TxWorker) handleTxError(tx *sql.Tx, txUUID string, err error) {
-	tx.Rollback()
+func (w *TxWorker) handleTxError(txUUID string, err error) {
 	var (
 		msg      = internalError
 		txStatus = uint32(serverFailureStatus)
@@ -133,8 +132,12 @@ func (w *TxWorker) handleTxError(tx *sql.Tx, txUUID string, err error) {
 		Uuid:    txUUID,
 		Message: msg,
 	})
-	w.p.SendMessage(&sarama.ProducerMessage{
+
+	_, _, err = w.p.SendMessage(&sarama.ProducerMessage{
 		Topic: w.topicOut,
 		Value: sarama.StringEncoder(bytes),
 	})
+	if err != nil {
+		w.log.Error("failed to send message", slog.String("error", err.Error()))
+	}
 }

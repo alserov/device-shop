@@ -46,7 +46,7 @@ func (h *ordersHandler) CreateOrder(c *gin.Context) {
 	}
 	defer cc.Close()
 
-	ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
 	defer cancel()
 
 	res, err := cl.CreateOrder(ctx, order)

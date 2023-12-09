@@ -3,11 +3,11 @@ package service
 import (
 	"context"
 	"database/sql"
-	"github.com/alserov/device-shop/order-service/internal/broker"
-	"github.com/alserov/device-shop/order-service/internal/broker/manager"
-	models2 "github.com/alserov/device-shop/order-service/internal/broker/manager/models"
 	"log/slog"
 
+	"github.com/alserov/device-shop/order-service/internal/broker"
+	"github.com/alserov/device-shop/order-service/internal/broker/manager"
+	txManager "github.com/alserov/device-shop/order-service/internal/broker/manager/models"
 	"github.com/alserov/device-shop/order-service/internal/db"
 	"github.com/alserov/device-shop/order-service/internal/db/postgres"
 	"github.com/alserov/device-shop/order-service/internal/service/models"
@@ -47,7 +47,7 @@ func NewService(ordersDB *sql.DB, broker *broker.Broker, log *slog.Logger) Servi
 func (s *service) CreateOrder(ctx context.Context, req models.CreateOrderReq) (models.CreateOrderRes, error) {
 	orderUUID := uuid.New().String()
 
-	if err := s.txManager.DoTx(models2.TxBody{
+	if err := s.txManager.DoTx(txManager.TxBody{
 		OrderDevices: req.OrderDevices,
 		OrderPrice:   req.OrderPrice,
 		UserUUID:     req.UserUUID,

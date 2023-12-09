@@ -5,26 +5,19 @@ import (
 	"log"
 )
 
-func Subscribe(topic string, c sarama.Consumer) (<-chan []byte, error) {
+func Subscribe(topic string, c sarama.Consumer) (sarama.PartitionConsumer, error) {
 	pList, err := c.Partitions(topic)
 	if err != nil {
 		return nil, err
 	}
 
-	chMessages := make(chan []byte)
-	go func() {
-		defer close(chMessages)
-		for _, p := range pList {
-			pConsumer, err := c.ConsumePartition(topic, p, sarama.OffsetNewest)
-			if err != nil {
-				log.Println(err)
-				return
-			}
-			for msg := range pConsumer.Messages() {
-				chMessages <- msg.Value
-			}
+	var pConsumer sarama.PartitionConsumer
+	for _, p := range pList {
+		pConsumer, err = c.ConsumePartition(topic, p, sarama.OffsetNewest)
+		if err != nil {
+			log.Println(err)
 		}
-	}()
+	}
 
-	return chMessages, nil
+	return pConsumer, nil
 }
