@@ -1,7 +1,14 @@
 package models
 
-import "github.com/alserov/device-shop/order-service/internal/service/models"
+import (
+	"github.com/alserov/device-shop/order-service/internal/db"
+	"github.com/alserov/device-shop/order-service/internal/service/models"
+)
 
+// Response from worker
+// Status - indicates if the tx was successful, or not and why
+// Message - if it was user error, returns error
+// UUID - tx uuid
 type Response struct {
 	// -1 - failed (server error)
 	// 0 - failed (user error)
@@ -25,6 +32,10 @@ type DeviceReq struct {
 }
 
 type TxBody struct {
+	Repo      db.OrderRepo
+	Order     models.CreateOrderReq
+	OrderUUID string
+
 	UserUUID     string
 	OrderDevices []*models.OrderDevice
 	OrderPrice   float32

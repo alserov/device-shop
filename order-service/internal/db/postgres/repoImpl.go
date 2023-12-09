@@ -3,6 +3,7 @@ package postgres
 import (
 	"context"
 	"database/sql"
+	"errors"
 	oStatus "github.com/alserov/device-shop/order-service/internal/utils/status"
 
 	"github.com/alserov/device-shop/order-service/internal/db"
@@ -14,9 +15,10 @@ import (
 	"sync"
 )
 
-func NewOrderRepo(db *sql.DB) db.OrderRepo {
+func NewOrderRepo(db *sql.DB, log *slog.Logger) db.OrderRepo {
 	return &repo{
-		db: db,
+		log: log,
+		db:  db,
 	}
 }
 
@@ -27,9 +29,10 @@ type repo struct {
 
 const (
 	internalError = "internal error"
+	orderNotFound = "order not found"
 )
 
-func (r *repo) CreateOrder(_ context.Context, req models.CreateOrderReq) error {
+func (r *repo) CreateOrderTx(_ context.Context, req models.CreateOrderReq) (*sql.Tx, error) {
 	op := "repo.CreateOrder"
 	var (
 		chErr = make(chan error)
@@ -39,9 +42,8 @@ func (r *repo) CreateOrder(_ context.Context, req models.CreateOrderReq) error {
 
 	tx, err := r.db.Begin()
 	if err != nil {
-		tx.Rollback()
 		r.log.Error("failed to start transaction", slog.String("error", err.Error()), slog.String("op", op))
-		return err
+		return tx, err
 	}
 
 	go func() {
@@ -75,15 +77,15 @@ func (r *repo) CreateOrder(_ context.Context, req models.CreateOrderReq) error {
 	for err = range chErr {
 		tx.Rollback()
 		r.log.Error("failed to create order", slog.String("error", err.Error()), slog.String("op", op))
-		return status.Error(codes.Internal, internalError)
+		return tx, status.Error(codes.Internal, internalError)
 	}
 
-	tx.Commit()
-
-	return nil
+	return tx, nil
 }
 
 func (r *repo) CheckOrder(ctx context.Context, orderUUID string) (models.CheckOrderRes, error) {
+	op := "repo.CheckOrder"
+
 	var (
 		chErr   = make(chan error)
 		wg      = &sync.WaitGroup{}
@@ -131,6 +133,10 @@ func (r *repo) CheckOrder(ctx context.Context, orderUUID string) (models.CheckOr
 	}()
 
 	for err := range chErr {
+		if errors.Is(sql.ErrNoRows, err) {
+			return models.CheckOrderRes{}, status.Error(codes.InvalidArgument, orderNotFound)
+		}
+		r.log.Error("failed to create order", slog.String("error", err.Error()), slog.String("op", op))
 		return models.CheckOrderRes{}, err
 	}
 

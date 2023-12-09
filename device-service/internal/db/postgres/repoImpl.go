@@ -27,9 +27,9 @@ type repo struct {
 
 const (
 	internalError = "internal error"
-	notFound      = "device found"
+	notFound      = "device(s) not found"
 
-	invalidDeviceAmountError  = "invalid device amount"
+	notEnoughDevicesError     = "not enough devices in storage"
 	amountConstraintErrorCode = "23514"
 )
 
@@ -259,7 +259,7 @@ func (r *repo) DecreaseDevicesAmountTx(ctx context.Context, devices []*models.Or
 		}
 		switch err.(*pq.Error).Code {
 		case amountConstraintErrorCode:
-			return tx, status.Error(codes.Canceled, invalidDeviceAmountError)
+			return tx, status.Error(codes.Canceled, notEnoughDevicesError)
 		default:
 			return tx, status.Error(codes.Internal, internalError)
 		}

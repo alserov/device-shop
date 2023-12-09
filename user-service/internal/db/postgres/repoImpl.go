@@ -27,7 +27,7 @@ type repo struct {
 const (
 	notFound      = "user not found"
 	internalError = "internal error"
-	balanceError  = "not enough money"
+	balanceError  = "insufficient funds"
 
 	balanceConstraintErrorCode = "23514"
 )

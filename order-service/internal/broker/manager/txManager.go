@@ -1,10 +1,14 @@
 package manager
 
 import (
+	"context"
+	"database/sql"
 	"encoding/json"
 	"github.com/IBM/sarama"
 	"github.com/alserov/device-shop/order-service/internal/broker"
 	"github.com/alserov/device-shop/order-service/internal/broker/manager/models"
+	"github.com/alserov/device-shop/order-service/internal/utils/converter"
+	"time"
 
 	"github.com/alserov/device-shop/order-service/internal/broker/producer"
 	"github.com/google/uuid"
@@ -19,11 +23,13 @@ type txManager struct {
 
 	broker *broker.Broker
 
+	conv *converter.ServiceConverter
+
 	p sarama.SyncProducer
 }
 
 type TxManager interface {
-	DoTx(in models.TxBody) error
+	CreateOrderTx(in models.TxBody) error
 }
 
 const (
@@ -44,20 +50,23 @@ func NewTxManager(b *broker.Broker, log *slog.Logger) TxManager {
 }
 
 const (
-	userFailureStatus = 1
-	successStatus     = 2
+	serverFailureStatus = 0
+	userFailureStatus   = 1
+	successStatus       = 2
 
-	txAmount = 2
+	// txAmount - number of services
+	txAmount = 3
 
 	internalError = "internal error"
 )
 
-func (t *txManager) DoTx(in models.TxBody) error {
+func (t *txManager) CreateOrderTx(in models.TxBody) error {
 	txUUID := uuid.New().String()
 
 	var (
 		wg    = &sync.WaitGroup{}
 		chErr = make(chan error, 2)
+		tx    *sql.Tx
 	)
 	wg.Add(txAmount)
 
@@ -69,7 +78,6 @@ func (t *txManager) DoTx(in models.TxBody) error {
 			UserUUID:   in.UserUUID,
 		}, txUUID)
 		if err != nil {
-			t.log.Error("failed to execute balance tx", slog.String("error", err.Error()))
 			chErr <- err
 		}
 	}()
@@ -81,7 +89,19 @@ func (t *txManager) DoTx(in models.TxBody) error {
 			TxUUID:       txUUID,
 		}, txUUID)
 		if err != nil {
-			t.log.Error("failed to execute device tx", slog.String("error", err.Error()))
+			chErr <- err
+		}
+	}()
+
+	go func() {
+		defer wg.Done()
+
+		var err error
+		ctx, cancel := context.WithTimeout(context.Background(), time.Millisecond*200)
+		defer cancel()
+
+		tx, err = in.Repo.CreateOrderTx(ctx, t.conv.CreateOrderReqToRepo(in.Order, in.OrderUUID))
+		if err != nil {
 			chErr <- err
 		}
 	}()
@@ -98,10 +118,12 @@ func (t *txManager) DoTx(in models.TxBody) error {
 	close(chErr)
 
 	for err := range chErr {
+		tx.Rollback()
 		t.notifyWorkers(userFailureStatus, txUUID)
 		return err
 	}
 
+	tx.Commit()
 	t.notifyWorkers(successStatus, txUUID)
 	return nil
 }
@@ -193,6 +215,10 @@ func (t *txManager) notifyWorkers(txStatus uint32, txUUID string) {
 		Value: sarama.StringEncoder(bytes),
 	})
 	t.handleSendMessageError(err, t.broker.Topics.Device.In)
+
+	if txStatus == serverFailureStatus {
+		t.log.Error("failed to execute tx", slog.String("error", err.Error()))
+	}
 }
 
 func (t *txManager) handleSendMessageError(err error, topic string) {
