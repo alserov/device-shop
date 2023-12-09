@@ -5,14 +5,18 @@ import (
 	repo "github.com/alserov/device-shop/user-service/internal/db/models"
 )
 
-type BrokerConverter struct {
+type brokerConverter struct {
 }
 
-func NewBrokerConverter() *BrokerConverter {
-	return &BrokerConverter{}
+type BrokerConverter interface {
+	WorkerBalanceReqToRepo(req models.Request) repo.BalanceReq
 }
 
-func (s *BrokerConverter) WorkerBalanceReqToRepo(req models.Request) repo.BalanceReq {
+func NewBrokerConverter() BrokerConverter {
+	return &brokerConverter{}
+}
+
+func (s *brokerConverter) WorkerBalanceReqToRepo(req models.Request) repo.BalanceReq {
 	return repo.BalanceReq{
 		UserUUID: req.UserUUID,
 		Cash:     req.OrderPrice,

@@ -27,7 +27,7 @@ type service struct {
 
 	db db.OrderRepo
 
-	conv *converter.ServiceConverter
+	conv converter.ServiceConverter
 
 	broker    *broker.Broker
 	txManager manager.TxManager

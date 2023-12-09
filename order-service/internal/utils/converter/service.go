@@ -7,13 +7,19 @@ import (
 	"time"
 )
 
-type ServiceConverter struct{}
+type serviceConverter struct{}
 
-func NewServiceConverter() *ServiceConverter {
-	return &ServiceConverter{}
+type ServiceConverter interface {
+	CreateOrderReqToRepo(req models.CreateOrderReq, orderUUID string) repo.CreateOrderReq
+	CreateOrderResToService(orderUUID string) models.CreateOrderRes
+	CheckOrderToService(res repo.CheckOrderRes) models.CheckOrderRes
 }
 
-func (*ServiceConverter) CreateOrderReqToRepo(req models.CreateOrderReq, orderUUID string) repo.CreateOrderReq {
+func NewServiceConverter() ServiceConverter {
+	return &serviceConverter{}
+}
+
+func (*serviceConverter) CreateOrderReqToRepo(req models.CreateOrderReq, orderUUID string) repo.CreateOrderReq {
 	now := time.Now()
 	return repo.CreateOrderReq{
 		OrderUUID:    orderUUID,
@@ -53,13 +59,13 @@ func repoOrderDevicesToService(res []*repo.OrderDevice) []*models.OrderDevice {
 	return devices
 }
 
-func (*ServiceConverter) CreateOrderResToService(orderUUID string) models.CreateOrderRes {
+func (*serviceConverter) CreateOrderResToService(orderUUID string) models.CreateOrderRes {
 	return models.CreateOrderRes{
 		OrderUUID: orderUUID,
 	}
 }
 
-func (*ServiceConverter) CheckOrderToService(res repo.CheckOrderRes) models.CheckOrderRes {
+func (*serviceConverter) CheckOrderToService(res repo.CheckOrderRes) models.CheckOrderRes {
 	return models.CheckOrderRes{
 		Status:       status.StatusCodeToString(res.Status),
 		CreatedAt:    res.CreatedAt,

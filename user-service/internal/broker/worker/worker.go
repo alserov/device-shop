@@ -17,7 +17,7 @@ import (
 	"log/slog"
 )
 
-type TxWorker struct {
+type worker struct {
 	log *slog.Logger
 
 	txs map[string]*sql.Tx
@@ -26,7 +26,7 @@ type TxWorker struct {
 	topicOut string
 
 	repo db.UserRepo
-	conv *converter.BrokerConverter
+	conv converter.BrokerConverter
 
 	c sarama.Consumer
 	p sarama.SyncProducer
@@ -37,7 +37,11 @@ const (
 	kafkaClientID = "USER_WORKER"
 )
 
-func NewTxWorker(broker *broker.Broker, db *sql.DB, log *slog.Logger) *TxWorker {
+type Worker interface {
+	MustStart()
+}
+
+func NewTxWorker(broker *broker.Broker, db *sql.DB, log *slog.Logger) Worker {
 	cons, err := sarama.NewConsumer([]string{broker.BrokerAddr}, nil)
 	if err != nil {
 		panic("failed to start kafka consumer: " + err.Error())
@@ -48,7 +52,7 @@ func NewTxWorker(broker *broker.Broker, db *sql.DB, log *slog.Logger) *TxWorker 
 		panic("failed to start kafka producer: " + err.Error())
 	}
 
-	return &TxWorker{
+	return &worker{
 		log:      log,
 		c:        cons,
 		p:        prod,
@@ -66,7 +70,7 @@ const (
 	successStatus       = 2
 )
 
-func (w *TxWorker) MustStart() {
+func (w *worker) MustStart() {
 	msgs, err := consumer.Subscribe(w.topicIn, w.c)
 	if err != nil {
 		panic("failed to subscribe on topic: " + err.Error())
@@ -106,7 +110,7 @@ func (w *TxWorker) MustStart() {
 	}
 }
 
-func (w *TxWorker) sendMessage(txUUID string) {
+func (w *worker) sendMessage(txUUID string) {
 	bytes, _ := json.Marshal(models.Response{
 		Status: successStatus,
 		Uuid:   txUUID,
@@ -120,7 +124,7 @@ func (w *TxWorker) sendMessage(txUUID string) {
 	}
 }
 
-func (w *TxWorker) handleTxError(txUUID string, err error) {
+func (w *worker) handleTxError(txUUID string, err error) {
 	var (
 		msg      = internalError
 		txStatus = uint32(serverFailureStatus)

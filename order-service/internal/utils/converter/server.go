@@ -8,14 +8,22 @@ import (
 	"time"
 )
 
-type ServerConverter struct {
+type serverConverter struct{}
+
+type ServerConverter interface {
+	CreateOrderResToPb(res models.CreateOrderRes) *order.CreateOrderRes
+	CreateOrderReqToService(req *order.CreateOrderReq, orderPrice float32) models.CreateOrderReq
+	CheckOrderReqToService(req *order.CheckOrderReq) models.CheckOrderReq
+	CheckOrderResToPb(res models.CheckOrderRes, devices []*device.Device) *order.CheckOrderRes
+	UpdateOrderReqToService(req *order.UpdateOrderReq) models.UpdateOrderReq
+	UpdateOrderResToPb(status string) *order.UpdateOrderRes
 }
 
-func NewServerConverter() *ServerConverter {
-	return &ServerConverter{}
+func NewServerConverter() ServerConverter {
+	return &serverConverter{}
 }
 
-func (*ServerConverter) CreateOrderReqToService(req *order.CreateOrderReq, orderPrice float32) models.CreateOrderReq {
+func (*serverConverter) CreateOrderReqToService(req *order.CreateOrderReq, orderPrice float32) models.CreateOrderReq {
 	return models.CreateOrderReq{
 		OrderDevices: pbOrderDevicesToService(req.OrderDevices),
 		UserUUID:     req.UserUUID,
@@ -44,19 +52,19 @@ func toTimepb(t *time.Time) *timestamppb.Timestamp {
 	}
 }
 
-func (*ServerConverter) CreateOrderResToPb(res models.CreateOrderRes) *order.CreateOrderRes {
+func (*serverConverter) CreateOrderResToPb(res models.CreateOrderRes) *order.CreateOrderRes {
 	return &order.CreateOrderRes{
 		OrderUUID: res.OrderUUID,
 	}
 }
 
-func (*ServerConverter) CheckOrderReqToService(req *order.CheckOrderReq) models.CheckOrderReq {
+func (*serverConverter) CheckOrderReqToService(req *order.CheckOrderReq) models.CheckOrderReq {
 	return models.CheckOrderReq{
 		OrderUUID: req.OrderUUID,
 	}
 }
 
-func (*ServerConverter) CheckOrderResToPb(res models.CheckOrderRes, devices []*device.Device) *order.CheckOrderRes {
+func (*serverConverter) CheckOrderResToPb(res models.CheckOrderRes, devices []*device.Device) *order.CheckOrderRes {
 	return &order.CheckOrderRes{
 		Price:     res.OrderPrice,
 		Status:    res.Status,
@@ -65,14 +73,14 @@ func (*ServerConverter) CheckOrderResToPb(res models.CheckOrderRes, devices []*d
 	}
 }
 
-func (*ServerConverter) UpdateOrderReqToService(req *order.UpdateOrderReq) models.UpdateOrderReq {
+func (*serverConverter) UpdateOrderReqToService(req *order.UpdateOrderReq) models.UpdateOrderReq {
 	return models.UpdateOrderReq{
 		OrderUUID: req.OrderUUID,
 		Status:    req.Status,
 	}
 }
 
-func (*ServerConverter) UpdateOrderResToPb(status string) *order.UpdateOrderRes {
+func (*serverConverter) UpdateOrderResToPb(status string) *order.UpdateOrderRes {
 	return &order.UpdateOrderRes{
 		Status: status,
 	}

@@ -5,14 +5,18 @@ import (
 	repo "github.com/alserov/device-shop/device-service/internal/db/models"
 )
 
-type WorkerConverter struct {
+type workerConverter struct {
 }
 
-func NewWorkerConverter() *WorkerConverter {
-	return &WorkerConverter{}
+type WorkerConverter interface {
+	OrderDevicesToRepo(req []*models.OrderDevice) []*repo.OrderDevice
 }
 
-func (*WorkerConverter) OrderDevicesToRepo(req []*models.OrderDevice) []*repo.OrderDevice {
+func NewWorkerConverter() WorkerConverter {
+	return &workerConverter{}
+}
+
+func (*workerConverter) OrderDevicesToRepo(req []*models.OrderDevice) []*repo.OrderDevice {
 	var devices []*repo.OrderDevice
 
 	for _, d := range req {

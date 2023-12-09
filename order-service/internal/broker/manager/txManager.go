@@ -24,7 +24,7 @@ type txManager struct {
 
 	broker *broker.Broker
 
-	conv *converter.ServiceConverter
+	conv converter.ServiceConverter
 
 	p sarama.SyncProducer
 }

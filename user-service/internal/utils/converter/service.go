@@ -18,7 +18,6 @@ func NewServiceConverter() *ServiceConverter {
 }
 
 type serviceAuth struct{}
-
 type ServiceAuth interface {
 	SignupReqToRepo(req models.SignupReq) repo.SignupReq
 	SignupResToService(res models.SignupReq, info repo.SignupInfo, token string) models.SignupRes
