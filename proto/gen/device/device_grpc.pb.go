@@ -30,6 +30,7 @@ type DevicesClient interface {
 	CreateDevice(ctx context.Context, in *CreateDeviceReq, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	DeleteDevice(ctx context.Context, in *DeleteDeviceReq, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	UpdateDevice(ctx context.Context, in *UpdateDeviceReq, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	IncreaseDeviceAmount(ctx context.Context, in *IncreaseDeviceAmountByUUIDReq, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	GetDeviceByUUID(ctx context.Context, in *GetDeviceByUUIDReq, opts ...grpc.CallOption) (*Device, error)
 }
 
@@ -104,6 +105,15 @@ func (c *devicesClient) UpdateDevice(ctx context.Context, in *UpdateDeviceReq, o
 	return out, nil
 }
 
+func (c *devicesClient) IncreaseDeviceAmount(ctx context.Context, in *IncreaseDeviceAmountByUUIDReq, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, "/device.Devices/IncreaseDeviceAmount", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *devicesClient) GetDeviceByUUID(ctx context.Context, in *GetDeviceByUUIDReq, opts ...grpc.CallOption) (*Device, error) {
 	out := new(Device)
 	err := c.cc.Invoke(ctx, "/device.Devices/GetDeviceByUUID", in, out, opts...)
@@ -124,6 +134,7 @@ type DevicesServer interface {
 	CreateDevice(context.Context, *CreateDeviceReq) (*emptypb.Empty, error)
 	DeleteDevice(context.Context, *DeleteDeviceReq) (*emptypb.Empty, error)
 	UpdateDevice(context.Context, *UpdateDeviceReq) (*emptypb.Empty, error)
+	IncreaseDeviceAmount(context.Context, *IncreaseDeviceAmountByUUIDReq) (*emptypb.Empty, error)
 	GetDeviceByUUID(context.Context, *GetDeviceByUUIDReq) (*Device, error)
 	mustEmbedUnimplementedDevicesServer()
 }
@@ -152,6 +163,9 @@ func (UnimplementedDevicesServer) DeleteDevice(context.Context, *DeleteDeviceReq
 }
 func (UnimplementedDevicesServer) UpdateDevice(context.Context, *UpdateDeviceReq) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpdateDevice not implemented")
+}
+func (UnimplementedDevicesServer) IncreaseDeviceAmount(context.Context, *IncreaseDeviceAmountByUUIDReq) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method IncreaseDeviceAmount not implemented")
 }
 func (UnimplementedDevicesServer) GetDeviceByUUID(context.Context, *GetDeviceByUUIDReq) (*Device, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetDeviceByUUID not implemented")
@@ -295,6 +309,24 @@ func _Devices_UpdateDevice_Handler(srv interface{}, ctx context.Context, dec fun
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Devices_IncreaseDeviceAmount_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(IncreaseDeviceAmountByUUIDReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DevicesServer).IncreaseDeviceAmount(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/device.Devices/IncreaseDeviceAmount",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DevicesServer).IncreaseDeviceAmount(ctx, req.(*IncreaseDeviceAmountByUUIDReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _Devices_GetDeviceByUUID_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetDeviceByUUIDReq)
 	if err := dec(in); err != nil {
@@ -347,6 +379,10 @@ var Devices_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "UpdateDevice",
 			Handler:    _Devices_UpdateDevice_Handler,
+		},
+		{
+			MethodName: "IncreaseDeviceAmount",
+			Handler:    _Devices_IncreaseDeviceAmount_Handler,
 		},
 		{
 			MethodName: "GetDeviceByUUID",
