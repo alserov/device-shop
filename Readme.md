@@ -9,3 +9,4 @@
 6. Kafka (sarama)
 
 ![Image not found](docs/schema.png)
+![Image not found](docs/manager.png)
