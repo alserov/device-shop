@@ -40,9 +40,15 @@ func MustSetupLogger(env string) *slog.Logger {
 	return log
 }
 
-func Error(err error) slog.Attr {
-	return slog.Attr{
-		Key:   "error",
-		Value: slog.StringValue(err.Error()),
+func Error(err error, op string) []slog.Attr {
+	return []slog.Attr{
+		{
+			Key:   "error",
+			Value: slog.StringValue(err.Error()),
+		},
+		{
+			Key:   "op",
+			Value: slog.StringValue(op),
+		},
 	}
 }

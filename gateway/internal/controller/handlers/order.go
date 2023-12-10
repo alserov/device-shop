@@ -2,14 +2,15 @@ package handlers
 
 import (
 	"context"
-	"github.com/alserov/device-shop/gateway/internal/controller/handlers/models"
+	"github.com/alserov/device-shop/gateway/internal/logger"
+
 	"github.com/alserov/device-shop/gateway/internal/utils"
 	"github.com/alserov/device-shop/gateway/internal/utils/validation"
 	"github.com/alserov/device-shop/gateway/pkg/client"
 	"github.com/alserov/device-shop/gateway/pkg/responser"
 	"github.com/alserov/device-shop/proto/gen/order"
+
 	"github.com/gin-gonic/gin"
-	"google.golang.org/grpc/status"
 	"log/slog"
 	"net/http"
 	"time"
@@ -23,30 +24,34 @@ type OrdersHandler interface {
 
 func NewOrderHandler(orderAddr string, log *slog.Logger) OrdersHandler {
 	return &ordersHandler{
-		services: models.Services{
-			Order: models.Service{
-				Addr: orderAddr,
-			},
-		},
-		log: log,
+		serviceAddr: orderAddr,
+		log:         log,
 	}
 }
 
+const (
+	invalidQueryParam = "invalid query param"
+)
+
 type ordersHandler struct {
-	services models.Services
-	log      *slog.Logger
+	serviceAddr string
+	log         *slog.Logger
 }
 
 func (h *ordersHandler) CreateOrder(c *gin.Context) {
+	w := responser.NewResponser(c.Writer)
+	op := "ordersHandler.CreateOrder"
+
 	order, err := utils.Decode[order.CreateOrderReq](c.Request, validation.CheckCreateOrder)
 	if err != nil {
-		responser.UserError(c.Writer, err.Error())
+		w.UserError(err.Error())
 		return
 	}
 
-	cl, cc, err := client.DialOrder(h.services.Order.Addr)
+	cl, cc, err := client.DialOrder(h.serviceAddr)
 	if err != nil {
-		responser.ServerError(c.Writer, h.log, err)
+		h.log.Error("failed to dial order service", logger.Error(err, op))
+		w.ServerError()
 		return
 	}
 	defer cc.Close()
@@ -56,29 +61,27 @@ func (h *ordersHandler) CreateOrder(c *gin.Context) {
 
 	res, err := cl.CreateOrder(ctx, order)
 	if err != nil {
-		if st, ok := status.FromError(err); ok {
-			responser.UserError(c.Writer, st.Message())
-			return
-		}
-		responser.ServerError(c.Writer, h.log, err)
+		w.HandleServiceError(err, "cl.CreateOrder", h.log)
 		return
 	}
 
-	responser.Data(c.Writer, responser.H{
-		"orderUUID": res.OrderUUID,
-	})
+	w.Value(res)
 }
 
 func (h *ordersHandler) UpdateOrder(c *gin.Context) {
+	w := responser.NewResponser(c.Writer)
+	op := "ordersHandler.UpdateOrder"
+
 	orderStatus, err := utils.Decode[order.UpdateOrderReq](c.Request, validation.CheckUpdateOrder)
 	if err != nil {
-		responser.UserError(c.Writer, err.Error())
+		w.UserError(err.Error())
 		return
 	}
 
-	cl, cc, err := client.DialOrder(h.services.Order.Addr)
+	cl, cc, err := client.DialOrder(h.serviceAddr)
 	if err != nil {
-		responser.ServerError(c.Writer, h.log, err)
+		h.log.Error("failed to dial order service", logger.Error(err, op))
+		w.ServerError()
 		return
 	}
 	defer cc.Close()
@@ -88,11 +91,7 @@ func (h *ordersHandler) UpdateOrder(c *gin.Context) {
 
 	_, err = cl.UpdateOrder(ctx, orderStatus)
 	if err != nil {
-		if st, ok := status.FromError(err); ok {
-			responser.UserError(c.Writer, st.Message())
-			return
-		}
-		responser.ServerError(c.Writer, h.log, err)
+		w.HandleServiceError(err, "cl.UpdateOrder", h.log)
 		return
 	}
 
@@ -100,15 +99,19 @@ func (h *ordersHandler) UpdateOrder(c *gin.Context) {
 }
 
 func (h *ordersHandler) CheckOrder(c *gin.Context) {
+	w := responser.NewResponser(c.Writer)
+	op := "ordersHandler.CheckOrder"
+
 	orderUUID := c.Param("orderUUID")
 	if orderUUID == "" {
-		responser.UserError(c.Writer, "invalid orderUUID param")
+		w.UserError(invalidQueryParam)
 		return
 	}
 
-	cl, cc, err := client.DialOrder(h.services.Order.Addr)
+	cl, cc, err := client.DialOrder(h.serviceAddr)
 	if err != nil {
-		responser.ServerError(c.Writer, h.log, err)
+		h.log.Error("failed to dial order service", logger.Error(err, op))
+		w.ServerError()
 		return
 	}
 	defer cc.Close()
@@ -118,15 +121,11 @@ func (h *ordersHandler) CheckOrder(c *gin.Context) {
 
 	order, err := cl.CheckOrder(ctx, &order.CheckOrderReq{OrderUUID: orderUUID})
 	if err != nil {
-		if st, ok := status.FromError(err); ok {
-			responser.UserError(c.Writer, st.Message())
-			return
-		}
-		responser.ServerError(c.Writer, h.log, err)
+		w.HandleServiceError(err, "cl.CheckOrder", h.log)
 		return
 	}
 
-	responser.Data(c.Writer, responser.H{
+	w.Data(responser.H{
 		"status":    order.Status,
 		"price":     order.Price,
 		"createdAt": order.CreatedAt.AsTime(),

@@ -2,7 +2,7 @@ package handlers
 
 import (
 	"context"
-	"github.com/alserov/device-shop/gateway/internal/controller/handlers/models"
+	"github.com/alserov/device-shop/gateway/internal/logger"
 	"github.com/alserov/device-shop/gateway/internal/utils"
 	"github.com/alserov/device-shop/gateway/internal/utils/validation"
 	"github.com/alserov/device-shop/gateway/pkg/client"
@@ -10,44 +10,74 @@ import (
 	"github.com/alserov/device-shop/proto/gen/device"
 
 	"github.com/gin-gonic/gin"
-	"google.golang.org/grpc/status"
 	"log/slog"
-	"net/http"
 	"time"
 )
+
+func handleServiceError(msg string) {
+
+}
 
 type AdminHandler interface {
 	CreateDevice(c *gin.Context)
 	DeleteDevice(c *gin.Context)
 	UpdateDevice(c *gin.Context)
+	UpdateDeviceAmount(c *gin.Context)
 }
 
 func NewAdminHandler(deviceAddr string, logger *slog.Logger) AdminHandler {
 	return &adminHandler{
-		log: logger,
-		services: models.Services{
-			Device: models.Service{
-				Addr: deviceAddr,
-			},
-		},
+		log:         logger,
+		serviceAddr: deviceAddr,
 	}
 }
 
 type adminHandler struct {
-	services models.Services
-	log      *slog.Logger
+	serviceAddr string
+	log         *slog.Logger
 }
 
-func (h *adminHandler) CreateDevice(c *gin.Context) {
-	device, err := utils.Decode[device.CreateDeviceReq](c.Request, validation.CheckCreateDevice)
+func (h *adminHandler) UpdateDeviceAmount(c *gin.Context) {
+	w := responser.NewResponser(c.Writer)
+	op := "increase device amount"
+
+	deviceUUIDandAmount, err := utils.Decode[device.IncreaseDeviceAmountByUUIDReq](c.Request)
 	if err != nil {
-		responser.UserError(c.Writer, err.Error())
+		w.UserError(err.Error())
 		return
 	}
 
-	cl, cc, err := client.DialDevice(h.services.Device.Addr)
+	cl, cc, err := client.DialDevice(h.serviceAddr)
 	if err != nil {
-		responser.ServerError(c.Writer, h.log, err)
+		h.log.Error("failed to dial device service", logger.Error(err, op))
+		w.ServerError()
+		return
+	}
+	defer cc.Close()
+
+	_, err = cl.IncreaseDeviceAmount(c.Request.Context(), deviceUUIDandAmount)
+	if err != nil {
+		w.HandleServiceError(err, "cl.IncreaseDeviceAmount", h.log)
+		return
+	}
+
+	w.OK()
+}
+
+func (h *adminHandler) CreateDevice(c *gin.Context) {
+	w := responser.NewResponser(c.Writer)
+	op := "adminHandler.CreateDevice"
+
+	device, err := utils.Decode[device.CreateDeviceReq](c.Request, validation.CheckCreateDevice)
+	if err != nil {
+		w.UserError(err.Error())
+		return
+	}
+
+	cl, cc, err := client.DialDevice(h.serviceAddr)
+	if err != nil {
+		h.log.Error("failed to dial device service", logger.Error(err, op))
+		w.ServerError()
 		return
 	}
 	defer cc.Close()
@@ -57,28 +87,27 @@ func (h *adminHandler) CreateDevice(c *gin.Context) {
 
 	_, err = cl.CreateDevice(ctx, device)
 	if err != nil {
-		if st, ok := status.FromError(err); ok {
-			responser.UserError(c.Writer, st.Message())
-			return
-		}
-		responser.ServerError(c.Writer, h.log, err)
+		w.HandleServiceError(err, "cl.CreateDevice", h.log)
 		return
 	}
 
-	c.Status(http.StatusOK)
+	w.OK()
 }
 
 func (h *adminHandler) DeleteDevice(c *gin.Context) {
-	deviceUUID := c.Param("deviceUUID")
+	w := responser.NewResponser(c.Writer)
+	op := "adminHandler.DeleteDevice"
 
+	deviceUUID := c.Param("deviceUUID")
 	if deviceUUID == "" {
-		responser.UserError(c.Writer, "invalid device uuid value")
+		w.UserError("device uuid is empty")
 		return
 	}
 
-	cl, cc, err := client.DialDevice(h.services.Device.Addr)
+	cl, cc, err := client.DialDevice(h.serviceAddr)
 	if err != nil {
-		responser.ServerError(c.Writer, h.log, err)
+		h.log.Error("failed to dial device service", logger.Error(err, op))
+		w.ServerError()
 		return
 	}
 	defer cc.Close()
@@ -88,27 +117,27 @@ func (h *adminHandler) DeleteDevice(c *gin.Context) {
 
 	_, err = cl.DeleteDevice(ctx, &device.DeleteDeviceReq{UUID: deviceUUID})
 	if err != nil {
-		if st, ok := status.FromError(err); ok {
-			responser.UserError(c.Writer, st.Message())
-			return
-		}
-		responser.ServerError(c.Writer, h.log, err)
+		w.HandleServiceError(err, "cl.DeleteDevice", h.log)
 		return
 	}
 
-	c.Status(http.StatusOK)
+	w.OK()
 }
 
 func (h *adminHandler) UpdateDevice(c *gin.Context) {
+	w := responser.NewResponser(c.Writer)
+	op := "adminHandler.UpdateDevice"
+
 	device, err := utils.Decode[device.UpdateDeviceReq](c.Request, validation.CheckUpdateDevice)
 	if err != nil {
-		responser.UserError(c.Writer, err.Error())
+		w.UserError(err.Error())
 		return
 	}
 
-	cl, cc, err := client.DialDevice(h.services.Device.Addr)
+	cl, cc, err := client.DialDevice(h.serviceAddr)
 	if err != nil {
-		responser.ServerError(c.Writer, h.log, err)
+		h.log.Error("failed to dial device service", logger.Error(err, op))
+		w.ServerError()
 		return
 	}
 	defer cc.Close()
@@ -118,13 +147,9 @@ func (h *adminHandler) UpdateDevice(c *gin.Context) {
 
 	_, err = cl.UpdateDevice(ctx, device)
 	if err != nil {
-		if st, ok := status.FromError(err); ok {
-			responser.UserError(c.Writer, st.Message())
-			return
-		}
-		responser.ServerError(c.Writer, h.log, err)
+		w.HandleServiceError(err, "cl.UpdateDevice", h.log)
 		return
 	}
 
-	c.Status(http.StatusOK)
+	w.OK()
 }

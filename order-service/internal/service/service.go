@@ -70,6 +70,7 @@ func (s *service) CheckOrder(ctx context.Context, req models.CheckOrderReq) (mod
 	return s.conv.CheckOrderToService(order), nil
 }
 
+// TODO: finish update order func
 func (s *service) UpdateOrder(ctx context.Context, req models.UpdateOrderReq) error {
 	if status.StatusToCode(req.Status) == status.CANCELED_CODE {
 

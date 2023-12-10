@@ -9,4 +9,5 @@ type Services struct {
 	User   Service
 	Auth   Service
 	Order  Service
+	Coll   Service
 }

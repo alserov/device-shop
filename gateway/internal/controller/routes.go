@@ -45,6 +45,7 @@ func LoadRoutes(r *gin.Engine, h *Controller) {
 	admin.POST("/new-device", h.adminHandler.CreateDevice)
 	admin.DELETE("/delete-device/:deviceUUID", h.adminHandler.DeleteDevice)
 	admin.PUT("/update-device", h.adminHandler.UpdateDevice)
+	admin.PUT("/update-device-amount", h.adminHandler.UpdateDeviceAmount)
 
 	// DEVICE ROUTES
 	device := r.Group(devicesPath)
@@ -52,4 +53,5 @@ func LoadRoutes(r *gin.Engine, h *Controller) {
 	device.GET("/title/:title", h.devicesHandler.GetDevicesByTitle)
 	device.GET("/manufacturer/:manu", h.devicesHandler.GetDevicesByManufacturer)
 	device.GET("/price", h.devicesHandler.GetDevicesByPrice)
+	device.GET("/:uuid", h.devicesHandler.GetDeviceByUUID)
 }

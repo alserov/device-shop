@@ -3,7 +3,7 @@ module github.com/alserov/device-shop/gateway
 go 1.21.0
 
 require (
-	github.com/alserov/device-shop/proto v0.0.0-20231204151820-a705c9a94556
+	github.com/alserov/device-shop/proto v0.0.0-20231210102300-c9b33d272140
 	github.com/asaskevich/govalidator v0.0.0-20230301143203-a9d515a09cc2
 	github.com/gin-gonic/gin v1.9.1
 	github.com/go-playground/validator/v10 v10.16.0

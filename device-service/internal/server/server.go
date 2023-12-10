@@ -157,3 +157,16 @@ func (s *server) UpdateDevice(ctx context.Context, req *device.UpdateDeviceReq) 
 
 	return &emptypb.Empty{}, nil
 }
+
+func (s *server) IncreaseDeviceAmount(ctx context.Context, req *device.IncreaseDeviceAmountByUUIDReq) (*emptypb.Empty, error) {
+	if err := s.valid.Admin.ValidateIncreaseDeviceAmountReq(req); err != nil {
+		return nil, err
+	}
+
+	err := s.service.IncreaseDeviceAmountByUUID(ctx, s.conv.Admin.IncreaseDeviceAmountToService(req))
+	if err != nil {
+		return nil, err
+	}
+
+	return &emptypb.Empty{}, nil
+}

@@ -3,7 +3,7 @@ package handlers
 import (
 	"context"
 	"fmt"
-	"github.com/alserov/device-shop/gateway/internal/controller/handlers/models"
+	"github.com/alserov/device-shop/gateway/internal/logger"
 	"github.com/go-redis/redis"
 
 	"github.com/alserov/device-shop/gateway/internal/cache"
@@ -14,8 +14,6 @@ import (
 	"github.com/alserov/device-shop/proto/gen/device"
 	"github.com/gin-gonic/gin"
 
-	"google.golang.org/grpc/status"
-	"log"
 	"log/slog"
 	"strconv"
 	"strings"
@@ -27,30 +25,57 @@ type DevicesHandler interface {
 	GetDevicesByTitle(*gin.Context)
 	GetDevicesByManufacturer(*gin.Context)
 	GetDevicesByPrice(*gin.Context)
+	GetDeviceByUUID(*gin.Context)
 }
 
 type devicesHandler struct {
-	services models.Services
-	cache    cache.Repository
-	log      *slog.Logger
+	serviceAddr string
+	cache       cache.Repository
+	log         *slog.Logger
 }
 
 func NewDevicesHandler(deviceAddr string, rd *redis.Client, log *slog.Logger) DevicesHandler {
 	return &devicesHandler{
-		services: models.Services{
-			Device: models.Service{
-				Addr: deviceAddr,
-			},
-		},
-		cache: cache.NewRepo(rd),
-		log:   log,
+		serviceAddr: deviceAddr,
+		cache:       cache.NewRepo(rd),
+		log:         log,
 	}
 }
 
+func (h *devicesHandler) GetDeviceByUUID(c *gin.Context) {
+	w := responser.NewResponser(c.Writer)
+	op := "devicesHandler.GetDeviceByUUID"
+
+	uuid, err := utils.Decode[device.GetDeviceByUUIDReq](c.Request)
+	if err != nil {
+		w.UserError(err.Error())
+		return
+	}
+
+	cl, cc, err := client.DialDevice(h.serviceAddr)
+	if err != nil {
+		h.log.Error("failed to dial device service", logger.Error(err, op))
+		w.ServerError()
+		return
+	}
+	defer cc.Close()
+
+	device, err := cl.GetDeviceByUUID(c.Request.Context(), uuid)
+	if err != nil {
+		w.HandleServiceError(err, "cl.GetDeviceByUUID", h.log)
+		return
+	}
+
+	w.Value(device)
+}
+
 func (h *devicesHandler) GetAllDevices(c *gin.Context) {
+	w := responser.NewResponser(c.Writer)
+	op := "devicesHandler.GetAllDevices"
+
 	getDevicesCred, err := utils.Decode[device.GetAllDevicesReq](c.Request, validation.CheckGetAll)
 	if err != nil {
-		responser.UserError(c.Writer, err.Error())
+		w.UserError(err.Error())
 		return
 	}
 
@@ -58,13 +83,13 @@ func (h *devicesHandler) GetAllDevices(c *gin.Context) {
 	if err == nil {
 		devices, ok := val.([]interface{})
 		if ok {
-			responser.Data(c.Writer, responser.H{
+			w.Data(responser.H{
 				"data":   val,
 				"amount": len(devices),
 				"index":  getDevicesCred.Index + 1,
 			})
 		} else {
-			responser.Data(c.Writer, responser.H{
+			w.Data(responser.H{
 				"data":   val,
 				"amount": 0,
 				"index":  getDevicesCred.Index + 1,
@@ -73,9 +98,10 @@ func (h *devicesHandler) GetAllDevices(c *gin.Context) {
 		return
 	}
 
-	cl, cc, err := client.DialDevice(h.services.Device.Addr)
+	cl, cc, err := client.DialDevice(h.serviceAddr)
 	if err != nil {
-		responser.ServerError(c.Writer, h.log, err)
+		h.log.Error("failed to dial device service", logger.Error(err, op))
+		w.ServerError()
 		return
 	}
 	defer cc.Close()
@@ -85,11 +111,7 @@ func (h *devicesHandler) GetAllDevices(c *gin.Context) {
 
 	devices, err := cl.GetAllDevices(ctx, getDevicesCred)
 	if err != nil {
-		if st, ok := status.FromError(err); ok {
-			responser.UserError(c.Writer, st.Message())
-			return
-		}
-		responser.ServerError(c.Writer, h.log, err)
+		w.HandleServiceError(err, "cl.GetAllDevices", h.log)
 		return
 	}
 
@@ -98,10 +120,10 @@ func (h *devicesHandler) GetAllDevices(c *gin.Context) {
 		Key: fmt.Sprintf("%d%d", getDevicesCred.Index, getDevicesCred.Amount),
 	})
 	if err != nil {
-		log.Println("failed to cache: ", err)
+		h.log.Error("failed to set cache", logger.Error(err, "h.cache.SetValue"))
 	}
 
-	responser.Data(c.Writer, responser.H{
+	w.Data(responser.H{
 		"data":   devices.Devices,
 		"amount": len(devices.Devices),
 		"index":  getDevicesCred.Index + 1,
@@ -109,18 +131,25 @@ func (h *devicesHandler) GetAllDevices(c *gin.Context) {
 }
 
 func (h *devicesHandler) GetDevicesByTitle(c *gin.Context) {
+	w := responser.NewResponser(c.Writer)
+	op := "devicesHandler.GetDevicesByTitle"
+
 	title := strings.ToLower(c.Param("title"))
+	if title == "" {
+		w.UserError(invalidQueryParam)
+		return
+	}
 
 	val, err := h.cache.GetValue(c.Request.Context(), title)
 	if err == nil {
 		devices, ok := val.([]interface{})
 		if ok {
-			responser.Data(c.Writer, responser.H{
+			w.Data(responser.H{
 				"data":   val,
 				"amount": len(devices),
 			})
 		} else {
-			responser.Data(c.Writer, responser.H{
+			w.Data(responser.H{
 				"data":   val,
 				"amount": 0,
 			})
@@ -128,14 +157,10 @@ func (h *devicesHandler) GetDevicesByTitle(c *gin.Context) {
 		return
 	}
 
-	if title == "" {
-		responser.UserError(c.Writer, "search value can't be empty string")
-		return
-	}
-
-	cl, cc, err := client.DialDevice(h.services.Device.Addr)
+	cl, cc, err := client.DialDevice(h.serviceAddr)
 	if err != nil {
-		responser.ServerError(c.Writer, h.log, err)
+		h.log.Error("failed to dial device service", logger.Error(err, op))
+		w.ServerError()
 		return
 	}
 	defer cc.Close()
@@ -145,11 +170,7 @@ func (h *devicesHandler) GetDevicesByTitle(c *gin.Context) {
 
 	devices, err := cl.GetDevicesByTitle(ctx, &device.GetDeviceByTitleReq{Title: title})
 	if err != nil {
-		if st, ok := status.FromError(err); ok {
-			responser.UserError(c.Writer, st.Message())
-			return
-		}
-		responser.ServerError(c.Writer, h.log, err)
+		w.HandleServiceError(err, "cl.GetDevicesByTitle", h.log)
 		return
 	}
 
@@ -158,34 +179,38 @@ func (h *devicesHandler) GetDevicesByTitle(c *gin.Context) {
 		Key: title,
 	})
 	if err != nil {
-		log.Println("failed to cache: ", err)
+		h.log.Error("failed to set cache", logger.Error(err, "h.cache.SetValue"))
 	}
 
-	responser.Data(c.Writer, responser.H{
+	w.Data(responser.H{
 		"data":   devices.Devices,
 		"amount": len(devices.Devices),
 	})
 }
 
 func (h *devicesHandler) GetDevicesByManufacturer(c *gin.Context) {
+	w := responser.NewResponser(c.Writer)
+	op := "devicesHandler.GetDevicesByManufacturer"
+
 	manu := strings.ToLower(c.Param("manu"))
 	if manu == "" {
-		responser.UserError(c.Writer, "invalid manufacturer")
+		w.UserError(invalidQueryParam)
 		return
 	}
 
 	val, err := h.cache.GetValue(c.Request.Context(), manu)
 	if err == nil {
-		responser.Data(c.Writer, responser.H{
+		w.Data(responser.H{
 			"data":   val,
 			"amount": len(val.([]interface{})),
 		})
 		return
 	}
 
-	cl, cc, err := client.DialDevice(h.services.Device.Addr)
+	cl, cc, err := client.DialDevice(h.serviceAddr)
 	if err != nil {
-		responser.ServerError(c.Writer, h.log, err)
+		h.log.Error("failed to dial device service", logger.Error(err, op))
+		w.ServerError()
 		return
 	}
 	defer cc.Close()
@@ -197,11 +222,7 @@ func (h *devicesHandler) GetDevicesByManufacturer(c *gin.Context) {
 		Manufacturer: manu,
 	})
 	if err != nil {
-		if st, ok := status.FromError(err); ok {
-			responser.UserError(c.Writer, st.Message())
-			return
-		}
-		responser.ServerError(c.Writer, h.log, err)
+		w.HandleServiceError(err, "cl.GetDevicesByManufacturer", h.log)
 		return
 	}
 
@@ -210,45 +231,49 @@ func (h *devicesHandler) GetDevicesByManufacturer(c *gin.Context) {
 		Val: d.Devices,
 	})
 	if err != nil {
-		log.Println("failed to cache: ", err)
+		h.log.Error("failed to set cache", logger.Error(err, "h.cache.SetValue"))
 	}
 
-	responser.Data(c.Writer, responser.H{
+	w.Data(responser.H{
 		"data":   d.Devices,
 		"amount": len(d.Devices),
 	})
 }
 
 func (h *devicesHandler) GetDevicesByPrice(c *gin.Context) {
+	w := responser.NewResponser(c.Writer)
+	op := "devicesHandler.GetDevicesByPrice"
+
 	minVal, err := strconv.Atoi(c.Query("min"))
 	if err != nil {
-		responser.UserError(c.Writer, "invalid value for 'min' param")
+		w.UserError("invalid value for 'min' param")
 		return
 	}
 
 	maxVal, err := strconv.Atoi(c.Query("max"))
 	if err != nil {
-		responser.UserError(c.Writer, "invalid value for 'max' param")
+		w.UserError("invalid value for 'max' param")
 		return
 	}
 
 	if minVal >= maxVal {
-		responser.UserError(c.Writer, "'min' value can't be equal or greater than 'max' value")
+		w.UserError("'min' value can't be equal or greater than 'max' value")
 		return
 	}
 
 	val, err := h.cache.GetValue(c.Request.Context(), fmt.Sprintf("%d%d", minVal, maxVal))
 	if err == nil {
-		responser.Data(c.Writer, responser.H{
+		w.Data(responser.H{
 			"data":   val,
 			"amount": len(val.([]interface{})),
 		})
 		return
 	}
 
-	cl, cc, err := client.DialDevice(h.services.Device.Addr)
+	cl, cc, err := client.DialDevice(h.serviceAddr)
 	if err != nil {
-		responser.ServerError(c.Writer, h.log, err)
+		h.log.Error("failed to dial device service", logger.Error(err, op))
+		w.ServerError()
 		return
 	}
 	defer cc.Close()
@@ -263,11 +288,7 @@ func (h *devicesHandler) GetDevicesByPrice(c *gin.Context) {
 
 	d, err := cl.GetDevicesByPrice(ctx, r)
 	if err != nil {
-		if st, ok := status.FromError(err); ok {
-			responser.UserError(c.Writer, st.Message())
-			return
-		}
-		responser.ServerError(c.Writer, h.log, err)
+		w.HandleServiceError(err, "cl.GetDevicesByPrice", h.log)
 		return
 	}
 
@@ -276,10 +297,10 @@ func (h *devicesHandler) GetDevicesByPrice(c *gin.Context) {
 		Val: d.Devices,
 	})
 	if err != nil {
-		log.Println("failed to cache: ", err)
+		h.log.Error("failed to set cache", logger.Error(err, "h.cache.SetValue"))
 	}
 
-	responser.Data(c.Writer, responser.H{
+	w.Data(responser.H{
 		"data":   d.Devices,
 		"amount": len(d.Devices),
 	})

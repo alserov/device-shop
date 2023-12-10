@@ -18,6 +18,10 @@ github.com/alserov/device-shop/proto v0.0.0-20231203181948-a6565f2185eb h1:Pg5Uy
 github.com/alserov/device-shop/proto v0.0.0-20231203181948-a6565f2185eb/go.mod h1:jTRYFmTaJqxlcsigo+73JGY8OQJ0e5uTv1D3bTDAPV4=
 github.com/alserov/device-shop/proto v0.0.0-20231204151820-a705c9a94556 h1:7mwh7SjUxfG2ho1noz0dc563Mqu9muVbmhIPNkZ3JB4=
 github.com/alserov/device-shop/proto v0.0.0-20231204151820-a705c9a94556/go.mod h1:jTRYFmTaJqxlcsigo+73JGY8OQJ0e5uTv1D3bTDAPV4=
+github.com/alserov/device-shop/proto v0.0.0-20231209160149-49da868d75c7 h1:OYGjf4JZGKvFU/l+qLJ0VghiLgRDP1clMVKnDmtPc0g=
+github.com/alserov/device-shop/proto v0.0.0-20231209160149-49da868d75c7/go.mod h1:jTRYFmTaJqxlcsigo+73JGY8OQJ0e5uTv1D3bTDAPV4=
+github.com/alserov/device-shop/proto v0.0.0-20231210102300-c9b33d272140 h1:Gsrp0qSDXVjMwRH01dVtcnj873Fhd2ula1ZL9/ppPE4=
+github.com/alserov/device-shop/proto v0.0.0-20231210102300-c9b33d272140/go.mod h1:jTRYFmTaJqxlcsigo+73JGY8OQJ0e5uTv1D3bTDAPV4=
 github.com/asaskevich/govalidator v0.0.0-20230301143203-a9d515a09cc2 h1:DklsrG3dyBCFEj5IhUbnKptjxatkF07cF2ak3yi77so=
 github.com/asaskevich/govalidator v0.0.0-20230301143203-a9d515a09cc2/go.mod h1:WaHUgvxTVq04UNunO+XhnAqY/wQc+bxr74GqbsZ/Jqw=
 github.com/bytedance/sonic v1.5.0/go.mod h1:ED5hyg4y6t3/9Ku1R6dU/4KyJ48DZ4jPhfY1O2AihPM=

@@ -23,6 +23,7 @@ type serverAdmin struct{}
 type ServerAdmin interface {
 	CreateDeviceToService(req *device.CreateDeviceReq) models.CreateDeviceReq
 	UpdateDeviceToService(req *device.UpdateDeviceReq) models.UpdateDeviceReq
+	IncreaseDeviceAmountToService(req *device.IncreaseDeviceAmountByUUIDReq) models.IncreaseDeviceAmountReq
 	RemoveDeviceFromCollectionsReqToPb(req *device.DeleteDeviceReq) *collection.RemoveDeletedDeviceReq
 }
 
@@ -41,6 +42,13 @@ func (*serverAdmin) CreateDeviceToService(req *device.CreateDeviceReq) models.Cr
 		Price:        req.Price,
 		Manufacturer: strings.ToLower(req.Manufacturer),
 		Amount:       req.Amount,
+	}
+}
+
+func (*serverAdmin) IncreaseDeviceAmountToService(req *device.IncreaseDeviceAmountByUUIDReq) models.IncreaseDeviceAmountReq {
+	return models.IncreaseDeviceAmountReq{
+		Amount:     req.Amount,
+		DeviceUUID: req.DeviceUUID,
 	}
 }
 

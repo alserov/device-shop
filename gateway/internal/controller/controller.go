@@ -2,8 +2,8 @@ package controller
 
 import (
 	"github.com/alserov/device-shop/gateway/internal/cache"
-	"github.com/alserov/device-shop/gateway/internal/config"
 	"github.com/alserov/device-shop/gateway/internal/controller/handlers"
+	"github.com/alserov/device-shop/gateway/internal/controller/handlers/models"
 	"github.com/go-redis/redis"
 	"log/slog"
 )
@@ -19,7 +19,7 @@ type Controller struct {
 	userHandler        handlers.UsersHandler
 }
 
-func NewController(c *redis.Client, lg *slog.Logger, services *config.Services) *Controller {
+func NewController(c *redis.Client, lg *slog.Logger, services *models.Services) *Controller {
 	return &Controller{
 		cache:              cache.NewRepo(c),
 		logger:             lg,

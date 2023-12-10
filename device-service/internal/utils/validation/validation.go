@@ -33,6 +33,7 @@ type AdminValidator interface {
 	ValidateCreateDeviceReq(req *device.CreateDeviceReq) error
 	ValidateDeleteDeviceReq(req *device.DeleteDeviceReq) error
 	ValidateUpdateDeviceReq(req *device.UpdateDeviceReq) error
+	ValidateIncreaseDeviceAmountReq(req *device.IncreaseDeviceAmountByUUIDReq) error
 }
 
 type deviceValidator struct{}
@@ -90,6 +91,18 @@ func (*adminValidator) ValidateUpdateDeviceReq(req *device.UpdateDeviceReq) erro
 
 	if req.GetDescription() == "" {
 		return status.Error(codes.InvalidArgument, emptyDesc)
+	}
+
+	return nil
+}
+
+func (*adminValidator) ValidateIncreaseDeviceAmountReq(req *device.IncreaseDeviceAmountByUUIDReq) error {
+	if req.GetAmount() < 1 {
+		return status.Error(codes.InvalidArgument, invalidAmount)
+	}
+
+	if req.GetDeviceUUID() == "" {
+		return status.Error(codes.InvalidArgument, emptyUUID)
 	}
 
 	return nil

@@ -38,7 +38,7 @@ type Service interface {
 	CreateDevice(context.Context, models.CreateDeviceReq) error
 	DeleteDevice(context.Context, string) error
 	UpdateDevice(context.Context, models.UpdateDeviceReq) error
-	IncreaseDeviceAmountByUUID(ctx context.Context, deviceUUID string, amount uint32) error
+	IncreaseDeviceAmountByUUID(ctx context.Context, req models.IncreaseDeviceAmountReq) error
 }
 
 func (s *service) CreateDevice(ctx context.Context, req models.CreateDeviceReq) error {
@@ -111,8 +111,8 @@ func (s *service) GetDevicesByPrice(ctx context.Context, req models.GetByPrice) 
 	return s.conv.Device.DevicesToService(devices), nil
 }
 
-func (s *service) IncreaseDeviceAmountByUUID(ctx context.Context, deviceUUID string, amount uint32) error {
-	err := s.db.IncreaseDeviceAmountByUUID(ctx, deviceUUID, amount)
+func (s *service) IncreaseDeviceAmountByUUID(ctx context.Context, req models.IncreaseDeviceAmountReq) error {
+	err := s.db.IncreaseDeviceAmountByUUID(ctx, req.DeviceUUID, req.Amount)
 	if err != nil {
 		return err
 	}

@@ -20,13 +20,12 @@ service Devices {
   rpc GetDevicesByTitle(GetDeviceByTitleReq) returns (DevicesRes);
   rpc GetDevicesByManufacturer(GetByManufacturer) returns(DevicesRes);
   rpc GetDevicesByPrice(GetByPrice) returns(DevicesRes);
+  rpc GetDeviceByUUID(GetDeviceByUUIDReq) returns(Device);
 
   rpc CreateDevice(CreateDeviceReq) returns(google.protobuf.Empty);
   rpc DeleteDevice(DeleteDeviceReq) returns(google.protobuf.Empty);
   rpc UpdateDevice(UpdateDeviceReq) returns(google.protobuf.Empty);
   rpc IncreaseDeviceAmount(IncreaseDeviceAmountByUUIDReq) returns (google.protobuf.Empty);
-
-  rpc GetDeviceByUUID(GetDeviceByUUIDReq) returns(Device);
 }
 
 message IncreaseDeviceAmountReq {

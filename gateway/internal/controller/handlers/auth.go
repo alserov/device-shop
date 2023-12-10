@@ -2,7 +2,8 @@ package handlers
 
 import (
 	"context"
-	"github.com/alserov/device-shop/gateway/internal/controller/handlers/models"
+	"github.com/alserov/device-shop/gateway/internal/logger"
+
 	"github.com/alserov/device-shop/gateway/internal/utils"
 	"github.com/alserov/device-shop/gateway/internal/utils/validation"
 	"github.com/alserov/device-shop/gateway/pkg/client"
@@ -11,8 +12,6 @@ import (
 
 	"github.com/asaskevich/govalidator"
 	"github.com/gin-gonic/gin"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 	"log/slog"
 	"time"
 )
@@ -24,36 +23,36 @@ type AuthHandler interface {
 }
 
 type authHandler struct {
-	log      *slog.Logger
-	services models.Services
+	log         *slog.Logger
+	serviceAddr string
 }
 
 func NewAuthHandler(authAddr string, log *slog.Logger) AuthHandler {
 	return &authHandler{
-		log: log,
-		services: models.Services{
-			Auth: models.Service{
-				Addr: authAddr,
-			},
-		},
+		log:         log,
+		serviceAddr: authAddr,
 	}
 }
 
 func (h *authHandler) Signup(c *gin.Context) {
+	w := responser.NewResponser(c.Writer)
+	op := "authHandler.Signup"
+
 	userInfo, err := utils.Decode[user.SignupReq](c.Request, validation.CheckSignup)
 	if err != nil {
-		responser.UserError(c.Writer, err.Error())
+		w.UserError(err.Error())
 		return
 	}
 
 	if valid := govalidator.IsEmail(userInfo.Email); !valid {
-		responser.UserError(c.Writer, "invalid email")
+		w.UserError("invalid email")
 		return
 	}
 
-	cl, cc, err := client.DialUser(h.services.Auth.Addr)
+	cl, cc, err := client.DialUser(h.serviceAddr)
 	if err != nil {
-		responser.ServerError(c.Writer, h.log, err)
+		h.log.Error("failed to dial device service", logger.Error(err, op))
+		w.ServerError()
 		return
 	}
 	defer cc.Close()
@@ -63,31 +62,29 @@ func (h *authHandler) Signup(c *gin.Context) {
 
 	user, err := cl.Signup(ctx, userInfo)
 	if err != nil {
-		if st, ok := status.FromError(err); ok {
-			switch st.Code() {
-			case codes.Internal:
-				responser.ServerError(c.Writer, h.log, err)
-			default:
-				responser.UserError(c.Writer, st.Message())
-			}
-			return
-		}
-	}
-
-	c.SetCookie("token", user.Token, 604800, "/", "localhost", false, true)
-	responser.Value(c.Writer, user)
-}
-
-func (h *authHandler) Login(c *gin.Context) {
-	userInfo, err := utils.Decode[user.LoginReq](c.Request, validation.CheckLogin)
-	if err != nil {
-		responser.UserError(c.Writer, err.Error())
+		w.HandleServiceError(err, "cl.Signup", h.log)
 		return
 	}
 
-	cl, cc, err := client.DialUser(h.services.Auth.Addr)
+	c.SetCookie("token", user.Token, 604800, "/", "localhost", false, true)
+
+	w.Value(user)
+}
+
+func (h *authHandler) Login(c *gin.Context) {
+	w := responser.NewResponser(c.Writer)
+	op := "authHandler.Login"
+
+	userInfo, err := utils.Decode[user.LoginReq](c.Request, validation.CheckLogin)
 	if err != nil {
-		responser.ServerError(c.Writer, h.log, err)
+		w.UserError(err.Error())
+		return
+	}
+
+	cl, cc, err := client.DialUser(h.serviceAddr)
+	if err != nil {
+		h.log.Error("failed to dial device service", logger.Error(err, op))
+		w.ServerError()
 		return
 	}
 	defer cc.Close()
@@ -97,36 +94,33 @@ func (h *authHandler) Login(c *gin.Context) {
 
 	res, err := cl.Login(ctx, userInfo)
 	if err != nil {
-		if st, ok := status.FromError(err); ok {
-			switch st.Code() {
-			case codes.Internal:
-				responser.ServerError(c.Writer, h.log, err)
-			default:
-				responser.UserError(c.Writer, st.Message())
-			}
-			return
-		}
+		w.HandleServiceError(err, "cl.Login", h.log)
+		return
 	}
 
 	c.SetCookie("token", res.Token, 604800, "/", "localhost", false, true)
 
-	responser.Data(c.Writer, responser.H{
+	w.Data(responser.H{
 		"refreshToken": res.RefreshToken,
 		"userUUID":     res.UUID,
 	})
 }
 
 func (h *authHandler) GetInfo(c *gin.Context) {
+	w := responser.NewResponser(c.Writer)
+	op := "authHandler.getInfo"
+
 	userUUID := c.Param("userUUID")
 
 	if userUUID == "" {
-		responser.UserError(c.Writer, "userUUID cannot be empty")
+		w.UserError("userUUID can not be empty")
 		return
 	}
 
-	cl, cc, err := client.DialUser(h.services.Auth.Addr)
+	cl, cc, err := client.DialUser(h.serviceAddr)
 	if err != nil {
-		responser.ServerError(c.Writer, h.log, err)
+		h.log.Error("failed to dial user service", logger.Error(err, op))
+		w.ServerError()
 		return
 	}
 	defer cc.Close()
@@ -138,13 +132,9 @@ func (h *authHandler) GetInfo(c *gin.Context) {
 		UserUUID: userUUID,
 	})
 	if err != nil {
-		if st, ok := status.FromError(err); ok {
-			responser.UserError(c.Writer, st.Message())
-			return
-		}
-		responser.ServerError(c.Writer, h.log, err)
+		w.HandleServiceError(err, "cl.GetUserInfo", h.log)
 		return
 	}
 
-	responser.Value(c.Writer, res)
+	w.Value(res)
 }
