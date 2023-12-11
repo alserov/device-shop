@@ -11,7 +11,7 @@ db:
   host: 127.0.0.1
 services:
   collection: 127.0.0.1:3004
-kafka:
-  brokerAddr: 127.0.0.1:9092
+broker:
+  addr: 127.0.0.1:9092
   workerTopicIn: DEVICE_SERVICE_IN_TX
   workerTopicOut: DEVICE_SERVICE_OUT_TX

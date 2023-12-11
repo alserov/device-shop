@@ -1,7 +1,8 @@
 package validation
 
 import (
-	pb "github.com/alserov/device-shop/proto/gen"
+	"github.com/alserov/device-shop/proto/gen/collection"
+	"github.com/alserov/device-shop/proto/gen/device"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
@@ -13,10 +14,10 @@ type test[T any] struct {
 }
 
 func TestCheckCollection(t *testing.T) {
-	tests := []test[pb.ChangeCollectionReq]{
+	tests := []test[collection.ChangeCollectionReq]{
 		{
 			testName: "empty user uuid",
-			in: pb.ChangeCollectionReq{
+			in: collection.ChangeCollectionReq{
 				DeviceUUID: "uuid",
 				UserUUID:   "",
 			},
@@ -24,7 +25,7 @@ func TestCheckCollection(t *testing.T) {
 		},
 		{
 			testName: "empty device uuid",
-			in: pb.ChangeCollectionReq{
+			in: collection.ChangeCollectionReq{
 				DeviceUUID: "",
 				UserUUID:   "uuid",
 			},
@@ -32,7 +33,7 @@ func TestCheckCollection(t *testing.T) {
 		},
 		{
 			testName: "valid",
-			in: pb.ChangeCollectionReq{
+			in: collection.ChangeCollectionReq{
 				DeviceUUID: "uuid",
 				UserUUID:   "uuid",
 			},
@@ -50,10 +51,10 @@ func TestCheckCollection(t *testing.T) {
 }
 
 func TestCheckCreateDevice(t *testing.T) {
-	tests := []test[pb.CreateDeviceReq]{
+	tests := []test[device.CreateDeviceReq]{
 		{
 			testName: "invalid price",
-			in: pb.CreateDeviceReq{
+			in: device.CreateDeviceReq{
 				Title:        "title",
 				Description:  "description",
 				Price:        0,
@@ -64,7 +65,7 @@ func TestCheckCreateDevice(t *testing.T) {
 		},
 		{
 			testName: "invalid amount",
-			in: pb.CreateDeviceReq{
+			in: device.CreateDeviceReq{
 				Title:        "title",
 				Description:  "description",
 				Price:        1,
@@ -75,7 +76,7 @@ func TestCheckCreateDevice(t *testing.T) {
 		},
 		{
 			testName: "empty title",
-			in: pb.CreateDeviceReq{
+			in: device.CreateDeviceReq{
 				Title:        "",
 				Description:  "description",
 				Price:        1,
@@ -86,7 +87,7 @@ func TestCheckCreateDevice(t *testing.T) {
 		},
 		{
 			testName: "empty description",
-			in: pb.CreateDeviceReq{
+			in: device.CreateDeviceReq{
 				Title:        "title",
 				Description:  "",
 				Price:        1,
@@ -97,7 +98,7 @@ func TestCheckCreateDevice(t *testing.T) {
 		},
 		{
 			testName: "empty manufacturer",
-			in: pb.CreateDeviceReq{
+			in: device.CreateDeviceReq{
 				Title:        "title",
 				Description:  "description",
 				Price:        1,
@@ -108,7 +109,7 @@ func TestCheckCreateDevice(t *testing.T) {
 		},
 		{
 			testName: "valid",
-			in: pb.CreateDeviceReq{
+			in: device.CreateDeviceReq{
 				Title:        "title",
 				Description:  "description",
 				Price:        1,
@@ -129,10 +130,10 @@ func TestCheckCreateDevice(t *testing.T) {
 }
 
 func TestCheckUpdateDevice(t *testing.T) {
-	tests := []test[pb.UpdateDeviceReq]{
+	tests := []test[device.UpdateDeviceReq]{
 		{
 			testName: "invalid price",
-			in: pb.UpdateDeviceReq{
+			in: device.UpdateDeviceReq{
 				Price:       0,
 				Title:       "title",
 				Description: "description",
@@ -142,7 +143,7 @@ func TestCheckUpdateDevice(t *testing.T) {
 		},
 		{
 			testName: "empty title",
-			in: pb.UpdateDeviceReq{
+			in: device.UpdateDeviceReq{
 				Price:       1,
 				Title:       "",
 				Description: "description",
@@ -152,7 +153,7 @@ func TestCheckUpdateDevice(t *testing.T) {
 		},
 		{
 			testName: "empty description",
-			in: pb.UpdateDeviceReq{
+			in: device.UpdateDeviceReq{
 				Price:       1,
 				Title:       "title",
 				Description: "",
@@ -162,7 +163,7 @@ func TestCheckUpdateDevice(t *testing.T) {
 		},
 		{
 			testName: "empty uuid",
-			in: pb.UpdateDeviceReq{
+			in: device.UpdateDeviceReq{
 				Price:       1,
 				Title:       "title",
 				Description: "description",
@@ -172,7 +173,7 @@ func TestCheckUpdateDevice(t *testing.T) {
 		},
 		{
 			testName: "valid",
-			in: pb.UpdateDeviceReq{
+			in: device.UpdateDeviceReq{
 				Price:       1,
 				Title:       "title",
 				Description: "description",

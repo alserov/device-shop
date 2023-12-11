@@ -6,8 +6,6 @@ import (
 	"encoding/json"
 	"github.com/IBM/sarama"
 	"github.com/alserov/device-shop/user-service/internal/broker"
-	"github.com/alserov/device-shop/user-service/internal/broker/consumer"
-	"github.com/alserov/device-shop/user-service/internal/broker/producer"
 	"github.com/alserov/device-shop/user-service/internal/broker/worker/models"
 	"github.com/alserov/device-shop/user-service/internal/db"
 	"github.com/alserov/device-shop/user-service/internal/db/postgres"
@@ -47,7 +45,7 @@ func NewTxWorker(broker *broker.Broker, db *sql.DB, log *slog.Logger) Worker {
 		panic("failed to start kafka consumer: " + err.Error())
 	}
 
-	prod, err := producer.NewProducer([]string{broker.BrokerAddr}, kafkaClientID)
+	prod, err := broker.NewProducer([]string{broker.BrokerAddr}, kafkaClientID)
 	if err != nil {
 		panic("failed to start kafka producer: " + err.Error())
 	}
@@ -71,7 +69,7 @@ const (
 )
 
 func (w *worker) MustStart() {
-	msgs, err := consumer.Subscribe(w.topicIn, w.c)
+	msgs, err := broker.Subscribe(w.topicIn, w.c)
 	if err != nil {
 		panic("failed to subscribe on topic: " + err.Error())
 	}

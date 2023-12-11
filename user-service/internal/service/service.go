@@ -4,8 +4,8 @@ import (
 	"context"
 	"database/sql"
 	"github.com/IBM/sarama"
+	"github.com/alserov/device-shop/user-service/internal/broker"
 
-	"github.com/alserov/device-shop/user-service/internal/broker/producer"
 	"github.com/alserov/device-shop/user-service/internal/db"
 	repo "github.com/alserov/device-shop/user-service/internal/db/models"
 	"github.com/alserov/device-shop/user-service/internal/db/postgres"
@@ -113,7 +113,7 @@ func (s *service) Signup(ctx context.Context, req models.SignupReq) (models.Sign
 		return models.SignupRes{}, err
 	}
 
-	producer, err := producer.NewProducer([]string{s.brokerAddr}, kafkaClientID)
+	producer, err := broker.NewProducer([]string{s.brokerAddr}, kafkaClientID)
 	if err != nil {
 		s.log.Error("failed to initialize new kafka producer", slog.String("error", err.Error()), slog.String("op", op))
 	}

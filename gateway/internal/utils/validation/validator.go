@@ -2,11 +2,16 @@ package validation
 
 import (
 	"errors"
+	"fmt"
 	"github.com/alserov/device-shop/proto/gen/collection"
 	"github.com/alserov/device-shop/proto/gen/device"
 	"github.com/alserov/device-shop/proto/gen/order"
 	"github.com/alserov/device-shop/proto/gen/user"
 	"net/mail"
+)
+
+const (
+	emptyUUIDError = "uuid can not be empty"
 )
 
 // ADMIN VALIDATORS
@@ -106,28 +111,49 @@ func CheckGetAll(r *device.GetAllDevicesReq) error {
 
 // ORDER VALIDATORS
 func CheckCreateOrder(r *order.CreateOrderReq) error {
-	if len(r.Devices) < 1 {
+	if len(r.GetOrderDevices()) < 1 {
 		return errors.New("length of cart should be more than 0 to create an order")
 	}
 
-	if r.UserUUID == "" {
+	if r.GetUserUUID() == "" {
 		return errors.New("user uuid can't be empty")
 	}
 
 	return nil
 }
 
+const (
+	CANCELED_STATUS   = "canceled"
+	PENDING_STATUS    = "pending"
+	DELIVERING_STATUS = "delivering"
+	READY_STATUS      = "ready"
+	CREATING_STATUS   = "creating"
+)
+
+func checkStatus(s string) error {
+	switch s {
+	case CANCELED_STATUS:
+		return nil
+	case PENDING_STATUS:
+		return nil
+	case DELIVERING_STATUS:
+		return nil
+	case READY_STATUS:
+		return nil
+	case CREATING_STATUS:
+		return nil
+	default:
+		return fmt.Errorf("invalid order status: %s", s)
+	}
+}
+
 func CheckUpdateOrder(r *order.UpdateOrderReq) error {
-	status := map[string]struct{}{
-		"canceled":   {},
-		"pending":    {},
-		"delivering": {},
-		"ready":      {},
-		"creating":   {},
+	if r.GetOrderUUID() == "" {
+		return fmt.Errorf("order %s", emptyUUIDError)
 	}
 
-	if _, ok := status[r.Status]; !ok {
-		return errors.New("invalid status")
+	if err := checkStatus(r.GetStatus()); err != nil {
+		return err
 	}
 
 	return nil

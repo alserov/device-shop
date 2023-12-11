@@ -3,16 +3,15 @@ package handlers
 import (
 	"context"
 	"fmt"
-	"github.com/alserov/device-shop/gateway/internal/logger"
-	"github.com/go-redis/redis"
-
 	"github.com/alserov/device-shop/gateway/internal/cache"
+	"github.com/alserov/device-shop/gateway/internal/logger"
 	"github.com/alserov/device-shop/gateway/internal/utils"
 	"github.com/alserov/device-shop/gateway/internal/utils/validation"
 	"github.com/alserov/device-shop/gateway/pkg/client"
 	"github.com/alserov/device-shop/gateway/pkg/responser"
 	"github.com/alserov/device-shop/proto/gen/device"
 	"github.com/gin-gonic/gin"
+	"github.com/go-redis/redis"
 
 	"log/slog"
 	"strconv"
@@ -29,9 +28,9 @@ type DevicesHandler interface {
 }
 
 type devicesHandler struct {
+	log         *slog.Logger
 	serviceAddr string
 	cache       cache.Repository
-	log         *slog.Logger
 }
 
 func NewDevicesHandler(deviceAddr string, rd *redis.Client, log *slog.Logger) DevicesHandler {

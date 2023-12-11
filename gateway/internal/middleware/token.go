@@ -8,19 +8,21 @@ import (
 
 func CheckIfAuthorized() gin.HandlerFunc {
 	return func(c *gin.Context) {
+		w := responser.NewResponser(c.Writer)
+
 		token, err := c.Cookie("token")
 		if err != nil {
-			responser.UserError(c.Writer, err.Error())
+			w.UserError(err.Error())
 			c.Abort()
 		}
 
 		if token == "" {
-			responser.UserError(c.Writer, "not authorized")
+			w.UserError("not authorized")
 			c.Abort()
 		}
 
 		if err = utils.ValidateToken(token); err != nil {
-			responser.UserError(c.Writer, err.Error())
+			w.UserError(err.Error())
 			c.Abort()
 		}
 
@@ -30,21 +32,23 @@ func CheckIfAuthorized() gin.HandlerFunc {
 
 func CheckIfAllowed() gin.HandlerFunc {
 	return func(c *gin.Context) {
+		w := responser.NewResponser(c.Writer)
+
 		token, err := c.Cookie("token")
 		if err != nil {
-			responser.UserError(c.Writer, err.Error())
+			w.UserError(err.Error())
 			c.Abort()
 			return
 		}
 
 		if token == "" {
-			responser.UserError(c.Writer, "not authorized")
+			w.UserError("not authorized")
 			c.Abort()
 			return
 		}
 
 		if err = utils.CheckIfAdmin(token); err != nil {
-			responser.NotAllowed(c.Writer)
+			w.NotAllowed()
 			c.Abort()
 			return
 		}

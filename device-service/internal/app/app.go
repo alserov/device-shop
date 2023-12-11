@@ -41,11 +41,11 @@ func New(cfg *config.Config, log *slog.Logger) *App {
 		},
 		gRPCServer: grpc.NewServer(),
 		broker: &broker.Broker{
-			BrokerAddr: cfg.Kafka.BrokerAddr,
+			BrokerAddr: cfg.Broker.Addr,
 			Topics: broker.Topics{
 				Manager: broker.Topic{
-					In:  cfg.Kafka.WorkerTopicIn,
-					Out: cfg.Kafka.WorkerTopicOut,
+					In:  cfg.Broker.WorkerTopicIn,
+					Out: cfg.Broker.WorkerTopicOut,
 				},
 			},
 		},

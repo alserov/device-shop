@@ -8,7 +8,6 @@ import (
 
 	"github.com/alserov/device-shop/order-service/internal/broker"
 	"github.com/alserov/device-shop/order-service/internal/broker/manager/models"
-	"github.com/alserov/device-shop/order-service/internal/broker/producer"
 	"github.com/alserov/device-shop/order-service/internal/utils/converter"
 
 	"github.com/google/uuid"
@@ -38,7 +37,7 @@ const (
 )
 
 func NewTxManager(b *broker.Broker, log *slog.Logger) TxManager {
-	prod, err := producer.NewProducer([]string{b.BrokerAddr}, kafkaClientID)
+	prod, err := broker.NewProducer([]string{b.BrokerAddr}, kafkaClientID)
 	if err != nil {
 		panic("failed to create producer: " + err.Error())
 	}

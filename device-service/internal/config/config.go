@@ -8,19 +8,19 @@ import (
 )
 
 type Config struct {
-	Env      string      `yaml:"env" env-default:"local"`
-	DB       DBConfig    `yaml:"db"`
-	GRPC     GRPCConfig  `yaml:"grpc"`
-	Kafka    KafkaConfig `yaml:"kafka"`
-	Services Services    `yaml:"services"`
+	Env      string       `yaml:"env" env-default:"local"`
+	DB       DBConfig     `yaml:"db"`
+	GRPC     GRPCConfig   `yaml:"grpc"`
+	Broker   BrokerConfig `yaml:"kafka"`
+	Services Services     `yaml:"services"`
 }
 
 type Services struct {
 	CollectionAddr string `yaml:"collection"`
 }
 
-type KafkaConfig struct {
-	BrokerAddr     string `yaml:"brokerAddr"`
+type BrokerConfig struct {
+	Addr           string `yaml:"addr"`
 	WorkerTopicIn  string `yaml:"workerTopicIn"`
 	WorkerTopicOut string `yaml:"workerTopicOut"`
 }

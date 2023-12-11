@@ -9,8 +9,6 @@ import (
 	"github.com/alserov/device-shop/device-service/internal/broker/worker/models"
 	"google.golang.org/grpc/status"
 
-	"github.com/alserov/device-shop/device-service/internal/broker/consumer"
-	"github.com/alserov/device-shop/device-service/internal/broker/producer"
 	"github.com/alserov/device-shop/device-service/internal/db"
 	"github.com/alserov/device-shop/device-service/internal/db/postgres"
 	"github.com/alserov/device-shop/device-service/internal/utils/converter"
@@ -48,7 +46,7 @@ func NewTxWorker(b *broker.Broker, db *sql.DB, log *slog.Logger) Worker {
 		panic("failed to start kafka consumer: " + err.Error())
 	}
 
-	prod, err := producer.NewProducer([]string{b.BrokerAddr}, kafkaClientID)
+	prod, err := broker.NewProducer([]string{b.BrokerAddr}, kafkaClientID)
 	if err != nil {
 		panic("failed to start kafka producer: " + err.Error())
 	}
@@ -72,7 +70,7 @@ const (
 )
 
 func (w *worker) MustStart() {
-	partition, err := consumer.Subscribe(w.topicIn, w.c)
+	partition, err := broker.Subscribe(w.topicIn, w.c)
 	if err != nil {
 		panic("failed to subscribe on topic: " + err.Error())
 	}
