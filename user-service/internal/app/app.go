@@ -55,7 +55,7 @@ func (a *App) MustStart() {
 	db := postgres.MustConnect(a.dbDsn)
 	a.log.Info("db connected")
 
-	w := worker.NewTxWorker(a.broker, db, a.log)
+	w := worker.NewWorker(a.broker, db, a.log)
 	go w.MustStart()
 
 	server.Register(&server.Server{

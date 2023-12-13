@@ -8,7 +8,7 @@ type Broker struct {
 type Topics struct {
 	Email string
 
-	Manager Topic
+	Worker Topic
 }
 
 type Topic struct {

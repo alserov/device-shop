@@ -3,6 +3,9 @@ package server
 import (
 	"context"
 	"database/sql"
+	"github.com/alserov/device-shop/user-service/internal/broker"
+	"github.com/alserov/device-shop/user-service/internal/broker/worker"
+	"github.com/alserov/device-shop/user-service/internal/db/postgres"
 
 	"github.com/alserov/device-shop/proto/gen/user"
 	"github.com/alserov/device-shop/user-service/internal/service"
@@ -24,9 +27,18 @@ type Server struct {
 }
 
 func Register(s *Server) {
+	dbRepo := postgres.NewRepo(s.DB, s.Log)
+
+	work := worker.NewWorker(&broker.Broker{
+		BrokerAddr: s.BrokerAddr,
+		Topics: broker.Topics{
+			Email: s.EmailTopic,
+		},
+	}, dbRepo, s.Log)
+
 	user.RegisterUsersServer(s.GRPCServer, &server{
 		log:     s.Log,
-		service: service.NewService(s.DB, s.Log, s.BrokerAddr, s.EmailTopic),
+		service: service.NewService(dbRepo, work, s.Log),
 		valid:   validation.NewValidator(),
 		conv:    converter.NewServerConverter(),
 	})

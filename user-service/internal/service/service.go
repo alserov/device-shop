@@ -2,13 +2,12 @@ package service
 
 import (
 	"context"
-	"database/sql"
-	"github.com/IBM/sarama"
-	"github.com/alserov/device-shop/user-service/internal/broker"
+	"github.com/alserov/device-shop/user-service/internal/logger"
 
+	"github.com/alserov/device-shop/user-service/internal/broker/mail"
+	"github.com/alserov/device-shop/user-service/internal/broker/worker"
 	"github.com/alserov/device-shop/user-service/internal/db"
 	repo "github.com/alserov/device-shop/user-service/internal/db/models"
-	"github.com/alserov/device-shop/user-service/internal/db/postgres"
 	"github.com/alserov/device-shop/user-service/internal/service/models"
 	"github.com/alserov/device-shop/user-service/internal/utils"
 	"github.com/alserov/device-shop/user-service/internal/utils/converter"
@@ -21,22 +20,22 @@ import (
 )
 
 type service struct {
-	log *slog.Logger
-	db  db.UserRepo
+	log  *slog.Logger
+	repo db.UserRepo
 
-	brokerAddr string
-	emailTopic string
+	w worker.Worker
+	e mail.Emailer
 
 	conv *converter.ServiceConverter
 }
 
-func NewService(pg *sql.DB, log *slog.Logger, brokerAddr string, emailTopic string) Service {
+func NewService(repo db.UserRepo, w worker.Worker, e mail.Emailer, log *slog.Logger) Service {
 	return &service{
-		log:        log,
-		db:         postgres.NewRepo(pg, log),
-		conv:       converter.NewServiceConverter(),
-		brokerAddr: brokerAddr,
-		emailTopic: emailTopic,
+		log:  log,
+		repo: repo,
+		conv: converter.NewServiceConverter(),
+		w:    w,
+		e:    e,
 	}
 }
 
@@ -52,7 +51,7 @@ type Service interface {
 }
 
 func (s *service) TopUpBalance(ctx context.Context, req models.BalanceReq) (float32, error) {
-	cash, err := s.db.TopUpBalance(ctx, repo.BalanceReq{
+	cash, err := s.repo.TopUpBalance(ctx, repo.BalanceReq{
 		Cash:     req.Cash,
 		UserUUID: req.UserUUID,
 	})
@@ -64,7 +63,7 @@ func (s *service) TopUpBalance(ctx context.Context, req models.BalanceReq) (floa
 }
 
 func (s *service) DebitBalance(ctx context.Context, req models.BalanceReq) (float32, error) {
-	cash, err := s.db.DebitBalance(ctx, repo.BalanceReq{
+	cash, err := s.repo.DebitBalance(ctx, repo.BalanceReq{
 		Cash:     req.Cash,
 		UserUUID: req.UserUUID,
 	})
@@ -76,15 +75,14 @@ func (s *service) DebitBalance(ctx context.Context, req models.BalanceReq) (floa
 }
 
 const (
-	defaultRole   = "user"
-	kafkaClientID = "SIGNUP_RPC"
-	internalErr   = "internal error"
+	defaultRole = "user"
+	internalErr = "internal error"
 )
 
 func (s *service) Signup(ctx context.Context, req models.SignupReq) (models.SignupRes, error) {
 	op := "service.Signup"
 	// err == nil => means that user already exists
-	if _, _, err := s.db.GetPasswordAndRoleByUsername(ctx, req.Username); err == nil {
+	if _, _, err := s.repo.GetPasswordAndRoleByUsername(ctx, req.Username); err == nil {
 		return models.SignupRes{}, status.Error(codes.AlreadyExists, "user with this username already exists")
 	}
 
@@ -109,22 +107,12 @@ func (s *service) Signup(ctx context.Context, req models.SignupReq) (models.Sign
 		CreatedAt:    &now,
 		RefreshToken: rToken,
 	}
-	if err = s.db.Signup(ctx, s.conv.Auth.SignupReqToRepo(req), info); err != nil {
+	if err = s.repo.Signup(ctx, s.conv.Auth.SignupReqToRepo(req), info); err != nil {
 		return models.SignupRes{}, err
 	}
 
-	producer, err := broker.NewProducer([]string{s.brokerAddr}, kafkaClientID)
-	if err != nil {
-		s.log.Error("failed to initialize new kafka producer", slog.String("error", err.Error()), slog.String("op", op))
-	}
-	if err == nil {
-		_, _, err = producer.SendMessage(&sarama.ProducerMessage{
-			Value: sarama.StringEncoder(req.Email),
-			Topic: s.emailTopic,
-		})
-		if err != nil {
-			s.log.Error("failed to send message", slog.String("error", err.Error()), slog.String("op", op))
-		}
+	if err = s.e.Send(req.Email); err != nil {
+		s.log.Error("failed to send message", logger.Error(err))
 	}
 
 	return s.conv.Auth.SignupResToService(req, info, token), nil
@@ -133,7 +121,7 @@ func (s *service) Signup(ctx context.Context, req models.SignupReq) (models.Sign
 func (s *service) Login(ctx context.Context, req models.LoginReq) (models.LoginRes, error) {
 	op := "service.Login"
 
-	password, role, err := s.db.GetPasswordAndRoleByUsername(ctx, req.Username)
+	password, role, err := s.repo.GetPasswordAndRoleByUsername(ctx, req.Username)
 	if err != nil {
 		return models.LoginRes{}, err
 	}
@@ -148,7 +136,7 @@ func (s *service) Login(ctx context.Context, req models.LoginReq) (models.LoginR
 		return models.LoginRes{}, status.Error(codes.Internal, internalErr)
 	}
 
-	userUUID, err := s.db.Login(ctx, s.conv.Auth.LoginReqToRepo(req), rToken)
+	userUUID, err := s.repo.Login(ctx, s.conv.Auth.LoginReqToRepo(req), rToken)
 	if err != nil {
 		return models.LoginRes{}, err
 	}
@@ -157,7 +145,7 @@ func (s *service) Login(ctx context.Context, req models.LoginReq) (models.LoginR
 }
 
 func (s *service) GetUserInfo(ctx context.Context, uuid string) (models.GetUserInfoRes, error) {
-	info, err := s.db.GetUserInfo(ctx, uuid)
+	info, err := s.repo.GetUserInfo(ctx, uuid)
 	if err != nil {
 		return models.GetUserInfoRes{}, err
 	}
@@ -166,7 +154,7 @@ func (s *service) GetUserInfo(ctx context.Context, uuid string) (models.GetUserI
 }
 
 func (s *service) CheckIfAdmin(ctx context.Context, uuid string) (bool, error) {
-	isAdmin, err := s.db.CheckIfAdmin(ctx, uuid)
+	isAdmin, err := s.repo.CheckIfAdmin(ctx, uuid)
 	if err != nil {
 		return false, err
 	}

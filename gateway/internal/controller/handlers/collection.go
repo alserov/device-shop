@@ -29,10 +29,15 @@ type collectionsHandler struct {
 	log         *slog.Logger
 }
 
-func NewCollectionsHandler(userAddr string, log *slog.Logger) CollectionsHandler {
+type CollectionH struct {
+	UserAddr string
+	Log      *slog.Logger
+}
+
+func NewCollectionsHandler(ch *CollectionH) CollectionsHandler {
 	return &collectionsHandler{
-		serviceAddr: userAddr,
-		log:         log,
+		serviceAddr: ch.UserAddr,
+		log:         ch.Log,
 	}
 }
 

@@ -8,7 +8,6 @@ import (
 	"github.com/alserov/device-shop/user-service/internal/broker"
 	"github.com/alserov/device-shop/user-service/internal/broker/worker/models"
 	"github.com/alserov/device-shop/user-service/internal/db"
-	"github.com/alserov/device-shop/user-service/internal/db/postgres"
 	"github.com/alserov/device-shop/user-service/internal/utils/converter"
 	"google.golang.org/grpc/status"
 
@@ -39,13 +38,13 @@ type Worker interface {
 	MustStart()
 }
 
-func NewTxWorker(broker *broker.Broker, db *sql.DB, log *slog.Logger) Worker {
-	cons, err := sarama.NewConsumer([]string{broker.BrokerAddr}, nil)
+func NewWorker(b *broker.Broker, repo db.UserRepo, log *slog.Logger) Worker {
+	cons, err := sarama.NewConsumer([]string{b.BrokerAddr}, nil)
 	if err != nil {
 		panic("failed to start kafka consumer: " + err.Error())
 	}
 
-	prod, err := broker.NewProducer([]string{broker.BrokerAddr}, kafkaClientID)
+	prod, err := broker.NewProducer([]string{b.BrokerAddr}, kafkaClientID)
 	if err != nil {
 		panic("failed to start kafka producer: " + err.Error())
 	}
@@ -55,9 +54,9 @@ func NewTxWorker(broker *broker.Broker, db *sql.DB, log *slog.Logger) Worker {
 		c:        cons,
 		p:        prod,
 		conv:     converter.NewBrokerConverter(),
-		repo:     postgres.NewRepo(db, log),
-		topicIn:  broker.Topics.Manager.In,
-		topicOut: broker.Topics.Manager.Out,
+		repo:     repo,
+		topicIn:  b.Topics.Worker.In,
+		topicOut: b.Topics.Worker.Out,
 		txs:      make(map[string]*sql.Tx),
 	}
 }

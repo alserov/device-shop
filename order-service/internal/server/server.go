@@ -5,6 +5,8 @@ import (
 	"database/sql"
 	"github.com/alserov/device-shop/gateway/pkg/client"
 	"github.com/alserov/device-shop/order-service/internal/broker"
+	"github.com/alserov/device-shop/order-service/internal/broker/manager"
+	"github.com/alserov/device-shop/order-service/internal/db/postgres"
 
 	"github.com/alserov/device-shop/order-service/internal/service"
 	"github.com/alserov/device-shop/order-service/internal/utils"
@@ -28,9 +30,13 @@ type Server struct {
 }
 
 func Register(s *Server) {
+	dbRepo := postgres.NewRepo(s.DB, s.Log)
+
+	manager := manager.NewTxManager(s.Broker, s.Log)
+
 	order.RegisterOrdersServer(s.GRPCServer, &server{
 		log:     s.Log,
-		service: service.NewService(s.DB, s.Broker, s.Log),
+		service: service.NewService(dbRepo, manager, s.Log),
 		valid:   validation.NewValidator(),
 		conv:    converter.NewServerConverter(),
 		services: services{
@@ -47,7 +53,7 @@ type server struct {
 
 	services services
 
-	conv  *converter.ServerConverter
+	conv  converter.ServerConverter
 	valid *validation.Validator
 }
 

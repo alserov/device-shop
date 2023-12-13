@@ -7,6 +7,7 @@ require (
 	github.com/alserov/device-shop/proto v0.0.0-20231203181948-a6565f2185eb
 	github.com/golang-jwt/jwt/v4 v4.5.0
 	github.com/golang-migrate/migrate/v4 v4.16.2
+	github.com/golang/mock v1.6.0
 	github.com/google/uuid v1.3.1
 	github.com/ilyakaznacheev/cleanenv v1.5.0
 	github.com/lib/pq v1.10.9

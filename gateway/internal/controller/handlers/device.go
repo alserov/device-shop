@@ -3,6 +3,8 @@ package handlers
 import (
 	"context"
 	"fmt"
+	"github.com/IBM/sarama"
+	"github.com/alserov/device-shop/gateway/internal/broker"
 	"github.com/alserov/device-shop/gateway/internal/cache"
 	"github.com/alserov/device-shop/gateway/internal/logger"
 	"github.com/alserov/device-shop/gateway/internal/utils"
@@ -19,7 +21,7 @@ import (
 	"time"
 )
 
-type DevicesHandler interface {
+type DeviceHandler interface {
 	GetAllDevices(*gin.Context)
 	GetDevicesByTitle(*gin.Context)
 	GetDevicesByManufacturer(*gin.Context)
@@ -31,13 +33,24 @@ type devicesHandler struct {
 	log         *slog.Logger
 	serviceAddr string
 	cache       cache.Repository
+
+	p broker.RequestProducer
 }
 
-func NewDevicesHandler(deviceAddr string, rd *redis.Client, log *slog.Logger) DevicesHandler {
+type DeviceH struct {
+	DeviceAddr   string
+	RedisClient  *redis.Client
+	Producer     sarama.SyncProducer
+	RequestTopic *broker.RequestTopics
+	Log          *slog.Logger
+}
+
+func NewDeviceHandler(dh *DeviceH) DeviceHandler {
 	return &devicesHandler{
-		serviceAddr: deviceAddr,
-		cache:       cache.NewRepo(rd),
-		log:         log,
+		serviceAddr: dh.DeviceAddr,
+		cache:       cache.NewRepo(dh.RedisClient),
+		log:         dh.Log,
+		p:           broker.NewRequestProducer(dh.Producer, dh.RequestTopic),
 	}
 }
 
@@ -71,6 +84,10 @@ func (h *devicesHandler) GetDeviceByUUID(c *gin.Context) {
 func (h *devicesHandler) GetAllDevices(c *gin.Context) {
 	w := responser.NewResponser(c.Writer)
 	op := "devicesHandler.GetAllDevices"
+
+	if err := h.p.Inc(); err != nil {
+		h.log.Error("failed to inc requests counter", logger.Error(err, "h.p.Inc()"))
+	}
 
 	getDevicesCred, err := utils.Decode[device.GetAllDevicesReq](c.Request, validation.CheckGetAll)
 	if err != nil {
@@ -120,6 +137,10 @@ func (h *devicesHandler) GetAllDevices(c *gin.Context) {
 	})
 	if err != nil {
 		h.log.Error("failed to set cache", logger.Error(err, "h.cache.SetValue"))
+	}
+
+	if err = h.p.IncSuccess(); err != nil {
+		h.log.Error("failed to inc successful requests counter", logger.Error(err, "h.p.IncSuccess()"))
 	}
 
 	w.Data(responser.H{

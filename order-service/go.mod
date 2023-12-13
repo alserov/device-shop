@@ -7,6 +7,7 @@ require (
 	github.com/alserov/device-shop/gateway v0.0.0-20231204190602-9d348540f28e
 	github.com/alserov/device-shop/proto v0.0.0-20231205192541-ed68a96b3d7a
 	github.com/golang-migrate/migrate/v4 v4.16.2
+	github.com/golang/mock v1.6.0
 	github.com/google/uuid v1.4.0
 	github.com/ilyakaznacheev/cleanenv v1.5.0
 	github.com/lib/pq v1.10.9
@@ -17,8 +18,6 @@ require (
 
 require (
 	github.com/BurntSushi/toml v1.2.1 // indirect
-	github.com/Shopify/sarama v1.38.1 // indirect
-	github.com/bsm/sarama-cluster v2.1.15+incompatible // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/eapache/go-resiliency v1.4.0 // indirect
 	github.com/eapache/go-xerial-snappy v0.0.0-20230731223053-c322873962e3 // indirect

@@ -16,10 +16,10 @@ type requestWorker struct {
 
 	count request.Counter
 
-	topic string
+	topics *broker.RequestTopics
 }
 
-func NewRequestWorker(brokerAddr string, topic string) (Worker, prometheus.Collector) {
+func NewRequestWorker(brokerAddr string, topics *broker.RequestTopics) (Worker, prometheus.Collector) {
 	c, err := sarama.NewConsumer([]string{brokerAddr}, sarama.NewConfig())
 	if err != nil {
 		panic("failed to init consumer: " + err.Error())
@@ -28,14 +28,34 @@ func NewRequestWorker(brokerAddr string, topic string) (Worker, prometheus.Colle
 	count := request.NewCounter()
 
 	return &requestWorker{
-		c:     c,
-		topic: topic,
-		count: count,
+		c:      c,
+		topics: topics,
+		count:  count,
 	}, count.Metric()
 }
 
 func (r *requestWorker) Start() {
-	msgs, err := broker.Subscribe(r.topic, r.c)
+	go r.startTotalCounter()
+	go r.startSuccessfulCounter()
+
+	select {}
+}
+
+func (r *requestWorker) startTotalCounter() {
+	msgs, err := broker.Subscribe(r.topics.Total, r.c)
+	go func() {
+		for e := range err {
+			r.log.Error("consumer failed", logger.Error(e, ""))
+		}
+	}()
+
+	for _ = range msgs.Messages() {
+		r.count.Inc()
+	}
+}
+
+func (r *requestWorker) startSuccessfulCounter() {
+	msgs, err := broker.Subscribe(r.topics.Successful, r.c)
 	go func() {
 		for e := range err {
 			r.log.Error("consumer failed", logger.Error(e, ""))

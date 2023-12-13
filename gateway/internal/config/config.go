@@ -8,11 +8,28 @@ import (
 )
 
 type Config struct {
-	Env      string        `yaml:"env"`
-	Port     int           `yaml:"port"`
-	Timeout  time.Duration `yaml:"timeout"`
-	Cache    Cache         `yaml:"cache"`
-	Services Services      `yaml:"services"`
+	Env      string   `yaml:"env"`
+	Server   Server   `yaml:"server"`
+	Cache    Cache    `yaml:"cache"`
+	Services Services `yaml:"services"`
+	Broker   Broker   `yaml:"broker"`
+}
+
+type Broker struct {
+	Addr   string `yaml:"addr"`
+	Topics struct {
+		Metrics struct {
+			Request struct {
+				Total      string `yaml:"total"`
+				Successful string `yaml:"successful"`
+			} `yaml:"request"`
+		} `yaml:"metrics"`
+	} `yaml:"topics"`
+}
+
+type Server struct {
+	Port    int           `yaml:"port"`
+	Timeout time.Duration `yaml:"timeout"`
 }
 
 type Services struct {

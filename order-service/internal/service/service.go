@@ -2,15 +2,14 @@ package service
 
 import (
 	"context"
-	"database/sql"
-	"github.com/alserov/device-shop/order-service/internal/broker"
+
 	"github.com/alserov/device-shop/order-service/internal/broker/manager"
-	txManager "github.com/alserov/device-shop/order-service/internal/broker/manager/models"
+	broker "github.com/alserov/device-shop/order-service/internal/broker/manager/models"
 	"github.com/alserov/device-shop/order-service/internal/db"
-	"github.com/alserov/device-shop/order-service/internal/db/postgres"
 	"github.com/alserov/device-shop/order-service/internal/service/models"
 	"github.com/alserov/device-shop/order-service/internal/utils/converter"
 	"github.com/alserov/device-shop/order-service/internal/utils/status"
+
 	"log/slog"
 
 	"github.com/google/uuid"
@@ -25,32 +24,30 @@ type Service interface {
 type service struct {
 	log *slog.Logger
 
-	db db.OrderRepo
+	repo db.OrderRepo
 
 	conv converter.ServiceConverter
 
-	broker    *broker.Broker
 	txManager manager.TxManager
 }
 
-func NewService(ordersDB *sql.DB, broker *broker.Broker, log *slog.Logger) Service {
+func NewService(repo db.OrderRepo, txManager manager.TxManager, log *slog.Logger) Service {
 	return &service{
 		log:       log,
-		db:        postgres.NewRepo(ordersDB, log),
+		repo:      repo,
 		conv:      converter.NewServiceConverter(),
-		broker:    broker,
-		txManager: manager.NewTxManager(broker, log),
+		txManager: txManager,
 	}
 }
 
 func (s *service) CreateOrder(_ context.Context, req models.CreateOrderReq) (models.CreateOrderRes, error) {
 	orderUUID := uuid.New().String()
 
-	err := s.txManager.CreateOrderTx(txManager.TxBody{
+	err := s.txManager.CreateOrderTx(broker.TxBody{
 		OrderDevices: req.OrderDevices,
 		OrderPrice:   req.OrderPrice,
 		UserUUID:     req.UserUUID,
-		Repo:         s.db,
+		Repo:         s.repo,
 		Order:        req,
 		OrderUUID:    orderUUID,
 	})
@@ -62,7 +59,7 @@ func (s *service) CreateOrder(_ context.Context, req models.CreateOrderReq) (mod
 }
 
 func (s *service) CheckOrder(ctx context.Context, req models.CheckOrderReq) (models.CheckOrderRes, error) {
-	order, err := s.db.CheckOrder(ctx, req.OrderUUID)
+	order, err := s.repo.CheckOrder(ctx, req.OrderUUID)
 	if err != nil {
 		return models.CheckOrderRes{}, err
 	}
@@ -76,7 +73,7 @@ func (s *service) UpdateOrder(ctx context.Context, req models.UpdateOrderReq) er
 
 	}
 
-	err := s.db.UpdateOrder(ctx, req.Status, req.OrderUUID)
+	err := s.repo.UpdateOrder(ctx, req.Status, req.OrderUUID)
 	if err != nil {
 		return err
 	}

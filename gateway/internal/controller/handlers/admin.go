@@ -25,10 +25,15 @@ type AdminHandler interface {
 	UpdateDeviceAmount(c *gin.Context)
 }
 
-func NewAdminHandler(deviceAddr string, logger *slog.Logger) AdminHandler {
+type AdminH struct {
+	DeviceAddr string
+	Log        *slog.Logger
+}
+
+func NewAdminHandler(ah *AdminH) AdminHandler {
 	return &adminHandler{
-		log:         logger,
-		serviceAddr: deviceAddr,
+		log:         ah.Log,
+		serviceAddr: ah.DeviceAddr,
 	}
 }
 

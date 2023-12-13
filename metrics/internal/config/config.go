@@ -7,22 +7,25 @@ import (
 )
 
 type Config struct {
-	Env    string `yaml:"env"`
-	Server Server `yaml:"server"`
-	Broker Broker `yaml:"broker"`
+	Env    string       `yaml:"env"`
+	Server ServerConfig `yaml:"server"`
+	Broker BrokerConfig `yaml:"broker"`
 }
 
-type Server struct {
+type ServerConfig struct {
 	Port int `yaml:"port"`
 }
 
-type Broker struct {
+type BrokerConfig struct {
 	Addr   string `yaml:"addr"`
 	Topics Topics `yaml:"topics"`
 }
 
 type Topics struct {
-	Request string `yaml:"request"`
+	Request struct {
+		Total      string `yaml:"total"`
+		Successful string `yaml:"successful"`
+	} `yaml:"request"`
 }
 
 func MustLoad() *Config {

@@ -8,22 +8,24 @@ import (
 	"github.com/alserov/device-shop/metrics/internal/metric"
 	"github.com/alserov/device-shop/metrics/internal/workers"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"log/slog"
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
-	"time"
 )
 
 type app struct {
 	log    *slog.Logger
 	broker *broker.Broker
 
-	port         int
-	readTimeout  time.Duration
-	writeTimeout time.Duration
-	server       *http.Server
+	server *server
+}
+
+type server struct {
+	port   int
+	server *http.Server
 }
 
 type App interface {
@@ -36,18 +38,23 @@ func New(cfg *config.Config, log *slog.Logger) App {
 		broker: &broker.Broker{
 			Addr: cfg.Broker.Addr,
 			Topics: &broker.Topics{
-				Request: cfg.Broker.Topics.Request,
+				Request: &broker.RequestTopics{
+					Total:      cfg.Broker.Topics.Request.Total,
+					Successful: cfg.Broker.Topics.Request.Successful,
+				},
 			},
 		},
-		port: cfg.Server.Port,
-		server: &http.Server{
-			Addr: fmt.Sprintf(":%d", cfg.Server.Port),
+		server: &server{
+			port: cfg.Server.Port,
+			server: &http.Server{
+				Addr: fmt.Sprintf(":%d", cfg.Server.Port),
+			},
 		},
 	}
 }
 
 func (a *app) MustStart() {
-	a.log.Info("starting app", slog.Int("port", a.port))
+	a.log.Info("starting app", slog.Int("port", a.server.port))
 
 	reg := prometheus.NewRegistry()
 
@@ -58,8 +65,13 @@ func (a *app) MustStart() {
 
 	metric.Setup(reg, counterMetric)
 
+	pMux := http.NewServeMux()
+	prmHandler := promhttp.HandlerFor(reg, promhttp.HandlerOpts{})
+	pMux.Handle("/metrics", prmHandler)
+
 	go func() {
-		if err := a.server.ListenAndServe(); err != nil {
+		a.log.Info("app is running", slog.Int("port", a.server.port))
+		if err := http.ListenAndServe(fmt.Sprintf(":%d", a.server.port), pMux); err != nil {
 			panic("failed to start server: " + err.Error())
 		}
 	}()
@@ -73,7 +85,7 @@ func (a *app) MustStart() {
 }
 
 func (a *app) stop() {
-	if err := a.server.Shutdown(context.Background()); err != nil {
+	if err := a.server.server.Shutdown(context.Background()); err != nil {
 		panic("failed to shutdown server: " + err.Error())
 	}
 }

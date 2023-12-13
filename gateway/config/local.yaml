@@ -1,8 +1,20 @@
 env: local
-port: 3001
-timeout: 10s
+
+server:
+  port: 3001
+  timeout: 10s
+
+broker:
+  addr: 127.0.0.1:9092
+  topics:
+    metrics:
+      request:
+        total: REQUEST_AMOUNT_METRIC
+        successful: REQUEST_SUCCESS_METRIC
+
 cache:
   addr: 127.0.0.1:4001
+
 services:
   user:
     addr: 127.0.0.1:3002

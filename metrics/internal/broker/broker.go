@@ -6,5 +6,10 @@ type Broker struct {
 }
 
 type Topics struct {
-	Request string
+	Request *RequestTopics
+}
+
+type RequestTopics struct {
+	Total      string
+	Successful string
 }

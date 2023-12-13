@@ -1,7 +1,10 @@
 env: "local"
 server:
   port: 3030
+
 broker:
   addr: 127.0.0.1:9092
   topics:
-    request: REQUEST_METRICS
+    request:
+      total: REQUEST_AMOUNT_METRIC
+      successful: REQUEST_SUCCESS_METRIC

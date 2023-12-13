@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"context"
-	"github.com/alserov/device-shop/gateway/internal/controller/handlers/models"
 	"github.com/alserov/device-shop/gateway/internal/logger"
 	"github.com/alserov/device-shop/gateway/internal/utils"
 	"github.com/alserov/device-shop/gateway/internal/utils/validation"
@@ -19,18 +18,19 @@ type UsersHandler interface {
 }
 
 type usersHandler struct {
-	services models.Services
-	log      *slog.Logger
+	serviceAddr string
+	log         *slog.Logger
 }
 
-func NewUserHandler(userAddr string, log *slog.Logger) UsersHandler {
+type UserH struct {
+	UserAddr string
+	Log      *slog.Logger
+}
+
+func NewUserHandler(uh *UserH) UsersHandler {
 	return &usersHandler{
-		services: models.Services{
-			User: models.Service{
-				Addr: userAddr,
-			},
-		},
-		log: log,
+		serviceAddr: uh.UserAddr,
+		log:         uh.Log,
 	}
 }
 
@@ -44,7 +44,7 @@ func (h *usersHandler) TopUpBalance(c *gin.Context) {
 		return
 	}
 
-	cl, cc, err := client.DialUser(h.services.User.Addr)
+	cl, cc, err := client.DialUser(h.serviceAddr)
 	if err != nil {
 		h.log.Error("failed to dial user service", logger.Error(err, op))
 		w.ServerError()

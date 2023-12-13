@@ -11,7 +11,7 @@ type Config struct {
 	Env      string       `yaml:"env" env-default:"local"`
 	DB       DBConfig     `yaml:"db"`
 	GRPC     GRPCConfig   `yaml:"grpc"`
-	Broker   BrokerConfig `yaml:"kafka"`
+	Broker   BrokerConfig `yaml:"broker"`
 	Services Services     `yaml:"services"`
 }
 

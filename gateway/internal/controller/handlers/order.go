@@ -22,10 +22,15 @@ type OrdersHandler interface {
 	CheckOrder(c *gin.Context)
 }
 
-func NewOrderHandler(orderAddr string, log *slog.Logger) OrdersHandler {
+type OrderH struct {
+	OrderAddr string
+	Log       *slog.Logger
+}
+
+func NewOrderHandler(oh *OrderH) OrdersHandler {
 	return &ordersHandler{
-		serviceAddr: orderAddr,
-		log:         log,
+		serviceAddr: oh.OrderAddr,
+		log:         oh.Log,
 	}
 }
 

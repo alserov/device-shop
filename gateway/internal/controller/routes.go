@@ -11,7 +11,7 @@ const (
 	authPath    = "/auth"
 	adminPath   = "/admin"
 	devicesPath = "/devices"
-	actionsPath = "/actions"
+	userPath    = "/user"
 	ordersPath  = "/orders"
 )
 
@@ -22,17 +22,17 @@ func LoadRoutes(r *gin.Engine, h *Controller) {
 	userAuth := r.Group(authPath)
 	userAuth.POST("/signup", h.authHandler.Signup)
 	userAuth.POST("/login", h.authHandler.Login)
+	userAuth.GET("/info/:userUUID", h.authHandler.GetInfo)
 
 	// USER ACTIONS
-	userActions := r.Group(actionsPath).Use(middleware.CheckIfAuthorized())
+	userActions := r.Group(userPath).Use(middleware.CheckIfAuthorized())
 	userActions.PUT("/balance", h.userHandler.TopUpBalance)
-	userActions.GET("/info/:userUUID", h.authHandler.GetInfo)
-	userActions.POST("/new-favourite", h.collectionsHandler.AddToFavourite)
-	userActions.DELETE("/delete-favourite", h.collectionsHandler.RemoveFromFavourite)
-	userActions.GET("/favourite/:userUUID", h.collectionsHandler.GetFavourite)
-	userActions.POST("/new-cart", h.collectionsHandler.AddToCart)
-	userActions.DELETE("/delete-cart", h.collectionsHandler.RemoveFromCart)
-	userActions.GET("/cart/:userUUID", h.collectionsHandler.GetCart)
+	userActions.POST("/new-favourite", h.collectionHandler.AddToFavourite)
+	userActions.DELETE("/delete-favourite", h.collectionHandler.RemoveFromFavourite)
+	userActions.GET("/favourite/:userUUID", h.collectionHandler.GetFavourite)
+	userActions.POST("/new-cart", h.collectionHandler.AddToCart)
+	userActions.DELETE("/delete-cart", h.collectionHandler.RemoveFromCart)
+	userActions.GET("/cart/:userUUID", h.collectionHandler.GetCart)
 
 	// ORDERS
 	order := r.Group(ordersPath).Use(middleware.CheckIfAuthorized())
@@ -49,9 +49,9 @@ func LoadRoutes(r *gin.Engine, h *Controller) {
 
 	// DEVICE ROUTES
 	device := r.Group(devicesPath)
-	device.GET("/", h.devicesHandler.GetAllDevices)
-	device.GET("/title/:title", h.devicesHandler.GetDevicesByTitle)
-	device.GET("/manufacturer/:manu", h.devicesHandler.GetDevicesByManufacturer)
-	device.GET("/price", h.devicesHandler.GetDevicesByPrice)
-	device.GET("/:uuid", h.devicesHandler.GetDeviceByUUID)
+	device.GET("/", h.deviceHandler.GetAllDevices)
+	device.GET("/title/:title", h.deviceHandler.GetDevicesByTitle)
+	device.GET("/manufacturer/:manu", h.deviceHandler.GetDevicesByManufacturer)
+	device.GET("/price", h.deviceHandler.GetDevicesByPrice)
+	device.GET("/:uuid", h.deviceHandler.GetDeviceByUUID)
 }

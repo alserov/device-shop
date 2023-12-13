@@ -27,10 +27,15 @@ type authHandler struct {
 	serviceAddr string
 }
 
-func NewAuthHandler(authAddr string, log *slog.Logger) AuthHandler {
+type AuthH struct {
+	AuthAddr string
+	Log      *slog.Logger
+}
+
+func NewAuthHandler(ah *AuthH) AuthHandler {
 	return &authHandler{
-		log:         log,
-		serviceAddr: authAddr,
+		log:         ah.Log,
+		serviceAddr: ah.AuthAddr,
 	}
 }
 

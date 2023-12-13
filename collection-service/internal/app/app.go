@@ -46,7 +46,7 @@ func (a *App) MustStart() {
 	db := mongo.MustConnect(ctx, a.dbUri)
 	a.log.Info("db connected")
 
-	server.Register(a.gRPCServer, db, a.log, a.services.DeviceAddr)
+	server.Register(a.gRPCServer, db, a.services.DeviceAddr, a.log)
 
 	l, err := net.Listen("tcp", fmt.Sprintf(":%d", a.port))
 	if err != nil {

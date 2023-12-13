@@ -12,7 +12,13 @@ type Counter interface {
 }
 
 func NewCounter() Counter {
-	return &counter{}
+	return &counter{
+		m: prometheus.NewCounterVec(prometheus.CounterOpts{
+			Name:      "shop",
+			Namespace: "requests",
+			Help:      "metrics for requests",
+		}, []string{"requests"}),
+	}
 }
 
 func (c *counter) Metric() prometheus.Collector {

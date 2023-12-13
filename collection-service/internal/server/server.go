@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"github.com/alserov/device-shop/collection-service/internal/db/mongo"
 	"github.com/alserov/device-shop/gateway/pkg/client"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -11,16 +12,18 @@ import (
 	"github.com/alserov/device-shop/collection-service/internal/utils/validation"
 	"github.com/alserov/device-shop/proto/gen/collection"
 
-	"go.mongodb.org/mongo-driver/mongo"
+	mg "go.mongodb.org/mongo-driver/mongo"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"log/slog"
 )
 
-func Register(s *grpc.Server, db *mongo.Client, log *slog.Logger, deviceServiceAddr string) {
+func Register(s *grpc.Server, db *mg.Client, deviceServiceAddr string, log *slog.Logger) {
+	dbRepo := mongo.NewCollectionsRepo(db, log)
+
 	collection.RegisterCollectionsServer(s, &server{
 		log:     log,
-		service: service.NewService(db, log),
+		service: service.NewService(dbRepo, log),
 		valid:   validation.NewValidator(),
 		conv:    converter.NewServerConverter(),
 		services: services{

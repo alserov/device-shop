@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"database/sql"
+	"github.com/alserov/device-shop/device-service/internal/db/postgres"
 	"github.com/alserov/device-shop/device-service/internal/service"
 	"github.com/alserov/device-shop/device-service/internal/utils/converter"
 	"github.com/alserov/device-shop/device-service/internal/utils/validation"
@@ -16,9 +17,12 @@ import (
 )
 
 func Register(s *grpc.Server, db *sql.DB, log *slog.Logger, collectionAddr string) {
+	dbRepo := postgres.NewRepo(db, log)
+	service := service.NewService(dbRepo, log)
+
 	device.RegisterDevicesServer(s, &server{
 		log:     log,
-		service: service.NewService(db, log),
+		service: service,
 		services: services{
 			collectionAddr: collectionAddr,
 		},
