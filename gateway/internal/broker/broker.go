@@ -10,10 +10,7 @@ type Topics struct {
 }
 
 type Metrics struct {
-	Request *RequestTopics
-}
-
-type RequestTopics struct {
-	Total      string
-	Successful string
+	Users   string `yaml:"users"`
+	Orders  string `yaml:"orders"`
+	Latency string `yaml:"latency"`
 }

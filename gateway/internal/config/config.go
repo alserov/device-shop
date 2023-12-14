@@ -19,10 +19,9 @@ type Broker struct {
 	Addr   string `yaml:"addr"`
 	Topics struct {
 		Metrics struct {
-			Request struct {
-				Total      string `yaml:"total"`
-				Successful string `yaml:"successful"`
-			} `yaml:"request"`
+			Users   string `yaml:"users"`
+			Orders  string `yaml:"orders"`
+			Latency string `yaml:"latency"`
 		} `yaml:"metrics"`
 	} `yaml:"topics"`
 }

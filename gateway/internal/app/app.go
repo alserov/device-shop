@@ -47,10 +47,9 @@ func New(cfg *config.Config, log *slog.Logger) *App {
 			Addr: cfg.Broker.Addr,
 			Topics: &broker.Topics{
 				Metrics: &broker.Metrics{
-					Request: &broker.RequestTopics{
-						Total:      cfg.Broker.Topics.Metrics.Request.Total,
-						Successful: cfg.Broker.Topics.Metrics.Request.Total,
-					},
+					Users:   cfg.Broker.Topics.Metrics.Users,
+					Orders:  cfg.Broker.Topics.Metrics.Orders,
+					Latency: cfg.Broker.Topics.Metrics.Latency,
 				},
 			},
 		},

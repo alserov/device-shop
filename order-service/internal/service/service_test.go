@@ -3,7 +3,7 @@ package service
 import (
 	"context"
 	brokermock "github.com/alserov/device-shop/order-service/internal/broker/manager/mocks"
-	mock "github.com/alserov/device-shop/order-service/internal/db/mocks"
+	repomock "github.com/alserov/device-shop/order-service/internal/db/mocks"
 	repo "github.com/alserov/device-shop/order-service/internal/db/models"
 	"github.com/alserov/device-shop/order-service/internal/service/models"
 	"github.com/alserov/device-shop/order-service/internal/utils/status"
@@ -52,7 +52,7 @@ func TestCheckOrder(t *testing.T) {
 
 	now := time.Now()
 
-	store := mock.NewMockOrderRepo(ctrl)
+	store := repomock.NewMockOrderRepo(ctrl)
 	store.EXPECT().CheckOrder(gomock.Any(), gomock.Any()).Return(repo.CheckOrderRes{
 		Status:     status.PENDING_CODE,
 		OrderPrice: 100,

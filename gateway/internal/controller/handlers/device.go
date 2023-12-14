@@ -38,11 +38,11 @@ type devicesHandler struct {
 }
 
 type DeviceH struct {
-	DeviceAddr   string
-	RedisClient  *redis.Client
-	Producer     sarama.SyncProducer
-	RequestTopic *broker.RequestTopics
-	Log          *slog.Logger
+	DeviceAddr  string
+	RedisClient *redis.Client
+	Producer    sarama.SyncProducer
+	Metrics     *broker.Metrics
+	Log         *slog.Logger
 }
 
 func NewDeviceHandler(dh *DeviceH) DeviceHandler {
@@ -50,7 +50,7 @@ func NewDeviceHandler(dh *DeviceH) DeviceHandler {
 		serviceAddr: dh.DeviceAddr,
 		cache:       cache.NewRepo(dh.RedisClient),
 		log:         dh.Log,
-		p:           broker.NewRequestProducer(dh.Producer, dh.RequestTopic),
+		p:           broker.NewRequestProducer(dh.Producer, dh.Metrics),
 	}
 }
 
@@ -85,9 +85,7 @@ func (h *devicesHandler) GetAllDevices(c *gin.Context) {
 	w := responser.NewResponser(c.Writer)
 	op := "devicesHandler.GetAllDevices"
 
-	if err := h.p.Inc(); err != nil {
-		h.log.Error("failed to inc requests counter", logger.Error(err, "h.p.Inc()"))
-	}
+	start := time.Now()
 
 	getDevicesCred, err := utils.Decode[device.GetAllDevicesReq](c.Request, validation.CheckGetAll)
 	if err != nil {
@@ -139,8 +137,8 @@ func (h *devicesHandler) GetAllDevices(c *gin.Context) {
 		h.log.Error("failed to set cache", logger.Error(err, "h.cache.SetValue"))
 	}
 
-	if err = h.p.IncSuccess(); err != nil {
-		h.log.Error("failed to inc successful requests counter", logger.Error(err, "h.p.IncSuccess()"))
+	if err := h.p.Latency(time.Since(start)); err != nil {
+		h.log.Error("failed to send message to topic", logger.Error(err, "h.p.Latency()"))
 	}
 
 	w.Data(responser.H{

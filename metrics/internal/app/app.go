@@ -38,10 +38,9 @@ func New(cfg *config.Config, log *slog.Logger) App {
 		broker: &broker.Broker{
 			Addr: cfg.Broker.Addr,
 			Topics: &broker.Topics{
-				Request: &broker.RequestTopics{
-					Total:      cfg.Broker.Topics.Request.Total,
-					Successful: cfg.Broker.Topics.Request.Successful,
-				},
+				User:    cfg.Broker.Topics.UsersAmount,
+				Order:   cfg.Broker.Topics.Orders,
+				Latency: cfg.Broker.Topics.Latency,
 			},
 		},
 		server: &server{
@@ -58,12 +57,17 @@ func (a *app) MustStart() {
 
 	reg := prometheus.NewRegistry()
 
-	counterWorker, counterMetric := workers.NewRequestWorker(a.broker.Addr, a.broker.Topics.Request)
+	counterWorker, counterMetric := workers.NewRequestWorker(a.broker.Addr, a.broker.Topics, a.log)
 	go func() {
 		counterWorker.Start()
 	}()
 
-	metric.Setup(reg, counterMetric)
+	latencyWorker, latencyMetric := workers.NewLatencyWorker(a.broker.Addr, a.broker.Topics, a.log)
+	go func() {
+		latencyWorker.Start()
+	}()
+
+	metric.Setup(reg, latencyMetric, counterMetric)
 
 	pMux := http.NewServeMux()
 	prmHandler := promhttp.HandlerFor(reg, promhttp.HandlerOpts{})

@@ -4,7 +4,7 @@ import (
 	"github.com/IBM/sarama"
 	"github.com/alserov/device-shop/metrics/internal/broker"
 	"github.com/alserov/device-shop/metrics/internal/logger"
-	"github.com/alserov/device-shop/metrics/internal/metric/request"
+	"github.com/alserov/device-shop/metrics/internal/metric/counter"
 	"github.com/prometheus/client_golang/prometheus"
 	"log/slog"
 )
@@ -14,35 +14,35 @@ type requestWorker struct {
 
 	c sarama.Consumer
 
-	count request.Counter
+	count counter.Counter
 
-	topics *broker.RequestTopics
+	topics *broker.Topics
 }
 
-func NewRequestWorker(brokerAddr string, topics *broker.RequestTopics) (Worker, prometheus.Collector) {
+func NewRequestWorker(brokerAddr string, topics *broker.Topics, log *slog.Logger) (Worker, []prometheus.Collector) {
 	c, err := sarama.NewConsumer([]string{brokerAddr}, sarama.NewConfig())
 	if err != nil {
 		panic("failed to init consumer: " + err.Error())
 	}
 
-	count := request.NewCounter()
+	count := counter.NewCounter()
 
 	return &requestWorker{
+		log:    log,
 		c:      c,
 		topics: topics,
 		count:  count,
-	}, count.Metric()
+	}, count.Metrics()
 }
 
 func (r *requestWorker) Start() {
-	go r.startTotalCounter()
-	go r.startSuccessfulCounter()
+	go r.startUsersCounter()
 
 	select {}
 }
 
-func (r *requestWorker) startTotalCounter() {
-	msgs, err := broker.Subscribe(r.topics.Total, r.c)
+func (r *requestWorker) startUsersCounter() {
+	msgs, err := broker.Subscribe(r.topics.User, r.c)
 	go func() {
 		for e := range err {
 			r.log.Error("consumer failed", logger.Error(e, ""))
@@ -50,19 +50,6 @@ func (r *requestWorker) startTotalCounter() {
 	}()
 
 	for _ = range msgs.Messages() {
-		r.count.Inc()
-	}
-}
-
-func (r *requestWorker) startSuccessfulCounter() {
-	msgs, err := broker.Subscribe(r.topics.Successful, r.c)
-	go func() {
-		for e := range err {
-			r.log.Error("consumer failed", logger.Error(e, ""))
-		}
-	}()
-
-	for _ = range msgs.Messages() {
-		r.count.Inc()
+		r.count.IncUsers()
 	}
 }

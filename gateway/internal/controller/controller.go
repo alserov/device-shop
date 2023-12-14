@@ -31,13 +31,12 @@ type C struct {
 }
 
 func NewController(c *C) *Controller {
-
 	deviceHandler := &handlers.DeviceH{
-		DeviceAddr:   c.Services.Device.Addr,
-		Producer:     c.Producer,
-		Log:          c.Log,
-		RequestTopic: c.Topics.Metrics.Request,
-		RedisClient:  c.RedisClient,
+		DeviceAddr:  c.Services.Device.Addr,
+		Producer:    c.Producer,
+		Log:         c.Log,
+		Metrics:     c.Topics.Metrics,
+		RedisClient: c.RedisClient,
 	}
 
 	adminHandler := &handlers.AdminH{

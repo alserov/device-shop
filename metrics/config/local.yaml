@@ -5,6 +5,6 @@ server:
 broker:
   addr: 127.0.0.1:9092
   topics:
-    request:
-      total: REQUEST_AMOUNT_METRIC
-      successful: REQUEST_SUCCESS_METRIC
+    usersAmount: USERS_METRIC
+    orders: ORDER_METRIC
+    latency: LATENCY_METRIC

@@ -22,10 +22,9 @@ type BrokerConfig struct {
 }
 
 type Topics struct {
-	Request struct {
-		Total      string `yaml:"total"`
-		Successful string `yaml:"successful"`
-	} `yaml:"request"`
+	UsersAmount string `yaml:"usersAmount"`
+	Orders      string `yaml:"orders"`
+	Latency     string `yaml:"latency"`
 }
 
 func MustLoad() *Config {
