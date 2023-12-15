@@ -2,22 +2,23 @@ package service
 
 import (
 	"context"
+	"database/sql"
 	"github.com/alserov/device-shop/order-service/internal/broker/manager"
 	broker "github.com/alserov/device-shop/order-service/internal/broker/manager/models"
 	"github.com/alserov/device-shop/order-service/internal/db"
+	repo "github.com/alserov/device-shop/order-service/internal/db/models"
 	"github.com/alserov/device-shop/order-service/internal/service/models"
 	"github.com/alserov/device-shop/order-service/internal/utils/converter"
-	"log/slog"
-
 	"github.com/google/uuid"
+	"log/slog"
+	"sync"
 )
 
 type Service interface {
 	CreateOrder(ctx context.Context, req models.CreateOrderReq) (string, error)
 	CheckOrder(ctx context.Context, orderUUID string) (models.CheckOrderRes, error)
 	UpdateOrder(ctx context.Context, req models.UpdateOrderReq) error
-	CancelOrder(ctx context.Context, orderUUID string, orderedDevices []models.OrderDevice) error
-	GetOrderDevices(_ context.Context, orderUUID string) ([]models.OrderDevice, error)
+	CancelOrder(ctx context.Context, orderUUID string) error
 }
 
 type service struct {
@@ -75,23 +76,66 @@ func (s *service) UpdateOrder(ctx context.Context, req models.UpdateOrderReq) er
 	return nil
 }
 
-func (s *service) CancelOrder(_ context.Context, orderUUID string, orderedDevices []models.OrderDevice) error {
-	err := s.txManager.CancelOrderTx(broker.CancelOrderTxBody{
-		Repo:         s.repo,
-		OrderUUID:    orderUUID,
-		OrderDevices: orderedDevices,
-	})
-	if err != nil {
+func (s *service) CancelOrder(ctx context.Context, orderUUID string) error {
+	var (
+		wg           = &sync.WaitGroup{}
+		chErr        = make(chan error)
+		chTxs        = make(chan *sql.Tx, 2)
+		orderDevices []repo.OrderDevice
+		orderInfo    repo.CancelOrderRes
+	)
+
+	wg.Add(2)
+
+	go func() {
+		defer wg.Done()
+		devices, tx, err := s.repo.CancelOrderDevicesTx(ctx, orderUUID)
+		chTxs <- tx
+		if err != nil {
+			chErr <- err
+		}
+		orderDevices = devices
+	}()
+
+	go func() {
+		defer wg.Done()
+		info, tx, err := s.repo.CancelOrderTx(ctx, orderUUID)
+		chTxs <- tx
+		if err != nil {
+			tx.Rollback()
+			chErr <- err
+		}
+		orderInfo = info
+	}()
+
+	go func() {
+		wg.Wait()
+		close(chErr)
+	}()
+
+	for err := range chErr {
+		for tx := range chTxs {
+			tx.Rollback()
+		}
 		return err
 	}
 
-	return nil
-}
-
-func (s *service) GetOrderDeviceUUIDs(ctx context.Context, orderUUID string) ([]models.OrderDevice, error) {
-	orderedDevices, err := s.repo.GetOrderDevices(ctx, orderUUID)
+	err := s.txManager.CancelOrderTx(broker.CancelOrderTxBody{
+		OrderUUID:    orderUUID,
+		OrderDevices: orderDevices,
+		OrderPrice:   orderInfo.Price,
+		UserUUID:     orderInfo.UserUUID,
+	})
 	if err != nil {
-		return nil, err
+		for tx := range chTxs {
+			tx.Rollback()
+		}
+		return err
 	}
-	return s.conv.OrderDevicesToService(orderedDevices), nil
+
+	for tx := range chTxs {
+		tx.Commit()
+	}
+
+	return nil
 }

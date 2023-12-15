@@ -139,12 +139,7 @@ func (s *server) CancelOrder(ctx context.Context, req *order.CancelOrderReq) (*e
 		return nil, err
 	}
 
-	orderedDevices, err := s.service.GetOrderDevices(ctx, req.OrderUUID)
-	if err != nil {
-		return nil, err
-	}
-
-	err = s.service.CancelOrder(ctx, req.OrderUUID, orderedDevices)
+	err := s.service.CancelOrder(ctx, req.OrderUUID)
 	if err != nil {
 		return nil, err
 	}

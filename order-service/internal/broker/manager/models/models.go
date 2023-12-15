@@ -2,6 +2,7 @@ package models
 
 import (
 	"github.com/alserov/device-shop/order-service/internal/db"
+	repo "github.com/alserov/device-shop/order-service/internal/db/models"
 	"github.com/alserov/device-shop/order-service/internal/service/models"
 )
 
@@ -25,17 +26,17 @@ type BalanceReq struct {
 	Status     uint32  `json:"status"`
 }
 
-type DeviceReq struct {
-	OrderDevices []models.OrderDevice
+type DeviceReq[T models.OrderDevice | repo.OrderDevice | interface{}] struct {
+	OrderDevices []T
 	TxUUID       string
 	Status       uint32
 }
 
 type CancelOrderTxBody struct {
-	Repo      db.OrderRepo
-	OrderUUID string
-
-	OrderDevices []models.OrderDevice
+	OrderUUID    string
+	UserUUID     string
+	OrderDevices []repo.OrderDevice
+	OrderPrice   float32
 }
 
 type CreateOrderTxBody struct {

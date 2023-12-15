@@ -11,5 +11,5 @@ type OrderRepo interface {
 	CheckOrder(ctx context.Context, orderUUID string) (models.CheckOrderRes, error)
 	UpdateOrder(ctx context.Context, status string, orderUUID string) error
 	CancelOrderTx(ctx context.Context, orderUUID string) (models.CancelOrderRes, *sql.Tx, error)
-	GetOrderDevices(_ context.Context, orderUUID string) ([]models.OrderDevice, error)
+	CancelOrderDevicesTx(ctx context.Context, orderUUID string) ([]models.OrderDevice, *sql.Tx, error)
 }

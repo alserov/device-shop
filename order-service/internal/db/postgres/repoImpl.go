@@ -84,7 +84,7 @@ func (r *repo) CreateOrderTx(_ context.Context, req models.CreateOrderReq) (*sql
 	return tx, nil
 }
 
-func (r *repo) GetOrderDevices(_ context.Context, orderUUID string) ([]models.OrderDevice, error) {
+func (r *repo) CancelOrderDevicesTx(_ context.Context, orderUUID string) ([]models.OrderDevice, error) {
 	query := `SELECT device_uuid, amount FROM ordered_devices WHERE order_uuid = $1`
 
 	var orderedDevices []models.OrderDevice

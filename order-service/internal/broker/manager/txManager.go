@@ -5,9 +5,11 @@ import (
 	"database/sql"
 	"encoding/json"
 	"github.com/IBM/sarama"
+	"github.com/alserov/device-shop/order-service/internal/service/models"
 
 	"github.com/alserov/device-shop/order-service/internal/broker"
-	"github.com/alserov/device-shop/order-service/internal/broker/manager/models"
+	brokermodels "github.com/alserov/device-shop/order-service/internal/broker/manager/models"
+	repo "github.com/alserov/device-shop/order-service/internal/db/models"
 	"github.com/alserov/device-shop/order-service/internal/utils/converter"
 
 	"github.com/google/uuid"
@@ -29,8 +31,8 @@ type txManager struct {
 }
 
 type TxManager interface {
-	CreateOrderTx(in models.CreateOrderTxBody) error
-	CancelOrderTx(in models.CancelOrderTxBody) error
+	CreateOrderTx(in brokermodels.CreateOrderTxBody) error
+	CancelOrderTx(in brokermodels.CancelOrderTxBody) error
 }
 
 const (
@@ -63,16 +65,7 @@ const (
 	internalError = "internal error"
 )
 
-func (t *txManager) CancelOrderTx(in models.CancelOrderTxBody) error {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Millisecond*200)
-	defer cancel()
-
-	order, tx, err := in.Repo.CancelOrderTx(ctx, in.OrderUUID)
-	if err != nil {
-		tx.Rollback()
-		return err
-	}
-
+func (t *txManager) CancelOrderTx(in brokermodels.CancelOrderTxBody) error {
 	txUUID := uuid.New().String()
 
 	var (
@@ -84,7 +77,7 @@ func (t *txManager) CancelOrderTx(in models.CancelOrderTxBody) error {
 
 	go func() {
 		defer wg.Done()
-		err = t.startTx(t.broker.Topics.DeviceRollback.In, t.broker.Topics.Device.Out, models.DeviceReq{
+		err := t.startTx(t.broker.Topics.DeviceRollback.In, t.broker.Topics.Device.Out, brokermodels.DeviceReq[repo.OrderDevice]{
 			TxUUID:       txUUID,
 			OrderDevices: in.OrderDevices,
 		}, txUUID)
@@ -95,10 +88,10 @@ func (t *txManager) CancelOrderTx(in models.CancelOrderTxBody) error {
 
 	go func() {
 		defer wg.Done()
-		err = t.startTx(t.broker.Topics.BalanceRefund.In, t.broker.Topics.BalanceRefund.Out, models.BalanceReq{
+		err := t.startTx(t.broker.Topics.BalanceRefund.In, t.broker.Topics.BalanceRefund.Out, brokermodels.BalanceReq{
 			TxUUID:     txUUID,
-			OrderPrice: order.Price,
-			UserUUID:   order.UserUUID,
+			OrderPrice: in.OrderPrice,
+			UserUUID:   in.UserUUID,
 		}, txUUID)
 		if err != nil {
 			chErr <- err
@@ -110,17 +103,16 @@ func (t *txManager) CancelOrderTx(in models.CancelOrderTxBody) error {
 		close(chErr)
 	}()
 
-	for err = range chErr {
+	for err := range chErr {
+		t.notifyWorkers(userFailureStatus, txUUID)
 		return err
 	}
 
-	tx.Commit()
 	t.notifyWorkers(successStatus, txUUID)
-
 	return nil
 }
 
-func (t *txManager) CreateOrderTx(in models.CreateOrderTxBody) error {
+func (t *txManager) CreateOrderTx(in brokermodels.CreateOrderTxBody) error {
 	txUUID := uuid.New().String()
 
 	var (
@@ -132,7 +124,7 @@ func (t *txManager) CreateOrderTx(in models.CreateOrderTxBody) error {
 
 	go func() {
 		defer wg.Done()
-		err := t.startTx(t.broker.Topics.Balance.In, t.broker.Topics.Balance.Out, models.BalanceReq{
+		err := t.startTx(t.broker.Topics.Balance.In, t.broker.Topics.Balance.Out, brokermodels.BalanceReq{
 			TxUUID:     txUUID,
 			OrderPrice: in.OrderPrice,
 			UserUUID:   in.UserUUID,
@@ -144,7 +136,7 @@ func (t *txManager) CreateOrderTx(in models.CreateOrderTxBody) error {
 
 	go func() {
 		defer wg.Done()
-		err := t.startTx(t.broker.Topics.Device.In, t.broker.Topics.Device.Out, models.DeviceReq{
+		err := t.startTx(t.broker.Topics.Device.In, t.broker.Topics.Device.Out, brokermodels.DeviceReq[models.OrderDevice]{
 			OrderDevices: in.OrderDevices,
 			TxUUID:       txUUID,
 		}, txUUID)
@@ -214,7 +206,7 @@ func (t *txManager) startTx(topicIn string, topicOut string, body interface{}, t
 	}
 
 	for msg := range pConsumer.Messages() {
-		var res models.Response
+		var res brokermodels.Response
 		if err = json.Unmarshal(msg.Value, &res); err != nil {
 			return err
 		}
@@ -256,7 +248,7 @@ func (t *txManager) subscribe(topic string, c sarama.Consumer) (sarama.Partition
 }
 
 func (t *txManager) notifyWorkers(txStatus uint32, txUUID string) {
-	bytes, _ := json.Marshal(models.BalanceReq{
+	bytes, _ := json.Marshal(brokermodels.BalanceReq{
 		TxUUID: txUUID,
 		Status: txStatus,
 	})
@@ -266,7 +258,7 @@ func (t *txManager) notifyWorkers(txStatus uint32, txUUID string) {
 	})
 	t.handleSendMessageError(err, t.broker.Topics.Balance.In)
 
-	bytes, _ = json.Marshal(models.DeviceReq{
+	bytes, _ = json.Marshal(brokermodels.DeviceReq[any]{
 		TxUUID: txUUID,
 		Status: txStatus,
 	})
