@@ -25,7 +25,7 @@ service Devices {
   rpc CreateDevice(CreateDeviceReq) returns(google.protobuf.Empty);
   rpc DeleteDevice(DeleteDeviceReq) returns(google.protobuf.Empty);
   rpc UpdateDevice(UpdateDeviceReq) returns(google.protobuf.Empty);
-  rpc IncreaseDeviceAmount(IncreaseDeviceAmountByUUIDReq) returns (google.protobuf.Empty);
+  rpc IncreaseDeviceAmount(IncreaseDeviceAmountReq) returns (google.protobuf.Empty);
 }
 
 message IncreaseDeviceAmountReq {
@@ -60,11 +60,6 @@ message GetAllDevicesReq {
 
 message GetDeviceByTitleReq {
   string Title = 1;
-}
-
-message IncreaseDeviceAmountByUUIDReq {
-  string DeviceUUID = 1;
-  uint32 Amount = 2;
 }
 
 message GetByPrice {
