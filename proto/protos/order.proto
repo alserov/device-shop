@@ -4,6 +4,7 @@ option go_package = "github.cim/alserov/device-shop/proto/gen/order";
 
 import "protos/device.proto";
 import "google/protobuf/timestamp.proto";
+import "google/protobuf/empty.proto";
 
 package order;
 
@@ -11,6 +12,11 @@ service Orders {
   rpc CreateOrder(CreateOrderReq) returns(CreateOrderRes);
   rpc CheckOrder(CheckOrderReq) returns(CheckOrderRes);
   rpc UpdateOrder(UpdateOrderReq) returns(UpdateOrderRes);
+  rpc CancelOrder(CancelOrderReq) returns(google.protobuf.Empty);
+}
+
+message CancelOrderReq {
+  string OrderUUID = 1;
 }
 
 message OrderDevice {

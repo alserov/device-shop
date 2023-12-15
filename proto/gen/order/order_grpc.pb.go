@@ -11,6 +11,7 @@ import (
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
+	emptypb "google.golang.org/protobuf/types/known/emptypb"
 )
 
 // This is a compile-time assertion to ensure that this generated file
@@ -25,6 +26,7 @@ type OrdersClient interface {
 	CreateOrder(ctx context.Context, in *CreateOrderReq, opts ...grpc.CallOption) (*CreateOrderRes, error)
 	CheckOrder(ctx context.Context, in *CheckOrderReq, opts ...grpc.CallOption) (*CheckOrderRes, error)
 	UpdateOrder(ctx context.Context, in *UpdateOrderReq, opts ...grpc.CallOption) (*UpdateOrderRes, error)
+	CancelOrder(ctx context.Context, in *CancelOrderReq, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
 
 type ordersClient struct {
@@ -62,6 +64,15 @@ func (c *ordersClient) UpdateOrder(ctx context.Context, in *UpdateOrderReq, opts
 	return out, nil
 }
 
+func (c *ordersClient) CancelOrder(ctx context.Context, in *CancelOrderReq, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, "/order.Orders/CancelOrder", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // OrdersServer is the server API for Orders service.
 // All implementations must embed UnimplementedOrdersServer
 // for forward compatibility
@@ -69,6 +80,7 @@ type OrdersServer interface {
 	CreateOrder(context.Context, *CreateOrderReq) (*CreateOrderRes, error)
 	CheckOrder(context.Context, *CheckOrderReq) (*CheckOrderRes, error)
 	UpdateOrder(context.Context, *UpdateOrderReq) (*UpdateOrderRes, error)
+	CancelOrder(context.Context, *CancelOrderReq) (*emptypb.Empty, error)
 	mustEmbedUnimplementedOrdersServer()
 }
 
@@ -84,6 +96,9 @@ func (UnimplementedOrdersServer) CheckOrder(context.Context, *CheckOrderReq) (*C
 }
 func (UnimplementedOrdersServer) UpdateOrder(context.Context, *UpdateOrderReq) (*UpdateOrderRes, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpdateOrder not implemented")
+}
+func (UnimplementedOrdersServer) CancelOrder(context.Context, *CancelOrderReq) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CancelOrder not implemented")
 }
 func (UnimplementedOrdersServer) mustEmbedUnimplementedOrdersServer() {}
 
@@ -152,6 +167,24 @@ func _Orders_UpdateOrder_Handler(srv interface{}, ctx context.Context, dec func(
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Orders_CancelOrder_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CancelOrderReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(OrdersServer).CancelOrder(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/order.Orders/CancelOrder",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(OrdersServer).CancelOrder(ctx, req.(*CancelOrderReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Orders_ServiceDesc is the grpc.ServiceDesc for Orders service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -170,6 +203,10 @@ var Orders_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "UpdateOrder",
 			Handler:    _Orders_UpdateOrder_Handler,
+		},
+		{
+			MethodName: "CancelOrder",
+			Handler:    _Orders_CancelOrder_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
