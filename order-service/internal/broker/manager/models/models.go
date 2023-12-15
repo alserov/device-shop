@@ -26,17 +26,24 @@ type BalanceReq struct {
 }
 
 type DeviceReq struct {
-	OrderDevices []*models.OrderDevice
+	OrderDevices []models.OrderDevice
 	TxUUID       string
 	Status       uint32
 }
 
-type TxBody struct {
+type CancelOrderTxBody struct {
+	Repo      db.OrderRepo
+	OrderUUID string
+
+	OrderDevices []models.OrderDevice
+}
+
+type CreateOrderTxBody struct {
 	Repo      db.OrderRepo
 	Order     models.CreateOrderReq
 	OrderUUID string
 
 	UserUUID     string
-	OrderDevices []*models.OrderDevice
+	OrderDevices []models.OrderDevice
 	OrderPrice   float32
 }

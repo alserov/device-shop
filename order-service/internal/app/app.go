@@ -40,9 +40,9 @@ func New(cfg *config.Config, log *slog.Logger) *App {
 			cfg.DB.Sslmode,
 		),
 		kafka: &broker.Broker{
-			BrokerAddr: cfg.Kafka.BrokerAddr,
+			Addr: cfg.Kafka.BrokerAddr,
 			Topics: broker.Topics{
-				User: broker.Topic{
+				Balance: broker.Topic{
 					In:  cfg.Kafka.UserTopicIn,
 					Out: cfg.Kafka.UserTopicOut,
 				},

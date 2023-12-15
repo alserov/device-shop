@@ -39,12 +39,12 @@ type Worker interface {
 }
 
 func NewWorker(b *broker.Broker, repo db.UserRepo, log *slog.Logger) Worker {
-	cons, err := sarama.NewConsumer([]string{b.BrokerAddr}, nil)
+	cons, err := sarama.NewConsumer([]string{b.Addr}, nil)
 	if err != nil {
 		panic("failed to start kafka consumer: " + err.Error())
 	}
 
-	prod, err := broker.NewProducer([]string{b.BrokerAddr}, kafkaClientID)
+	prod, err := broker.NewProducer([]string{b.Addr}, kafkaClientID)
 	if err != nil {
 		panic("failed to start kafka producer: " + err.Error())
 	}

@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"github.com/alserov/device-shop/user-service/internal/broker"
+	"github.com/alserov/device-shop/user-service/internal/broker/mail"
 	"github.com/alserov/device-shop/user-service/internal/broker/worker"
 	"github.com/alserov/device-shop/user-service/internal/db/postgres"
 
@@ -22,23 +23,29 @@ type Server struct {
 	DB         *sql.DB
 	Log        *slog.Logger
 
-	BrokerAddr string
-	EmailTopic string
+	Broker *broker.Broker
 }
 
-func Register(s *Server) {
+func MustRegister(s *Server) {
 	dbRepo := postgres.NewRepo(s.DB, s.Log)
 
 	work := worker.NewWorker(&broker.Broker{
-		BrokerAddr: s.BrokerAddr,
+		Addr: s.Broker.Addr,
 		Topics: broker.Topics{
-			Email: s.EmailTopic,
+			Email: s.Broker.Topics.Email,
 		},
 	}, dbRepo, s.Log)
 
+	prod, err := broker.NewProducer([]string{s.Broker.Addr}, "SIGNUP_EMAIL")
+	if err != nil {
+		panic("failed to init producer: " + err.Error())
+	}
+
+	email := mail.NewEmailer(s.Broker.Addr, s.Broker.Topics.Email, prod)
+
 	user.RegisterUsersServer(s.GRPCServer, &server{
 		log:     s.Log,
-		service: service.NewService(dbRepo, work, s.Log),
+		service: service.NewService(dbRepo, work, email, s.Log),
 		valid:   validation.NewValidator(),
 		conv:    converter.NewServerConverter(),
 	})

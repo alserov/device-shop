@@ -7,10 +7,17 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-type Validator struct{}
+type validator struct{}
 
-func NewValidator() *Validator {
-	return &Validator{}
+func NewValidator() Validator {
+	return &validator{}
+}
+
+type Validator interface {
+	ValidateCreateOrderReq(req *order.CreateOrderReq) error
+	ValidateCheckOrderReq(req *order.CheckOrderReq) error
+	ValidateUpdateOrderReq(req *order.UpdateOrderReq) error
+	ValidateCancelOrderReq(req *order.CancelOrderReq) error
 }
 
 const (
@@ -20,7 +27,7 @@ const (
 	invalidStatus  = "invalid order status"
 )
 
-func (*Validator) ValidateCreateOrderReq(req *order.CreateOrderReq) error {
+func (*validator) ValidateCreateOrderReq(req *order.CreateOrderReq) error {
 	if req.GetUserUUID() == "" {
 		return status.Error(codes.InvalidArgument, emptyUserUUID)
 	}
@@ -32,7 +39,7 @@ func (*Validator) ValidateCreateOrderReq(req *order.CreateOrderReq) error {
 	return nil
 }
 
-func (*Validator) ValidateCheckOrderReq(req *order.CheckOrderReq) error {
+func (*validator) ValidateCheckOrderReq(req *order.CheckOrderReq) error {
 	if req.GetOrderUUID() == "" {
 		return status.Error(codes.InvalidArgument, emptyOrderUUID)
 	}
@@ -40,13 +47,21 @@ func (*Validator) ValidateCheckOrderReq(req *order.CheckOrderReq) error {
 	return nil
 }
 
-func (*Validator) ValidateUpdateOrderReq(req *order.UpdateOrderReq) error {
+func (*validator) ValidateUpdateOrderReq(req *order.UpdateOrderReq) error {
 	if req.GetOrderUUID() == "" {
 		return status.Error(codes.InvalidArgument, emptyOrderUUID)
 	}
 
 	if -1 == orderStatus.StatusToCode(req.GetStatus()) {
 		return status.Error(codes.InvalidArgument, invalidStatus)
+	}
+
+	return nil
+}
+
+func (v *validator) ValidateCancelOrderReq(req *order.CancelOrderReq) error {
+	if req.OrderUUID == "" {
+		return status.Error(codes.InvalidArgument, emptyOrderUUID)
 	}
 
 	return nil

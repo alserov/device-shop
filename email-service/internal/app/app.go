@@ -3,7 +3,7 @@ package app
 import (
 	"context"
 	"github.com/IBM/sarama"
-	"github.com/alserov/device-shop/email-service/internal/broker/consumer"
+	"github.com/alserov/device-shop/email-service/internal/broker"
 	"github.com/alserov/device-shop/email-service/internal/config"
 	"github.com/alserov/device-shop/email-service/internal/email"
 	"log/slog"
@@ -45,7 +45,7 @@ func (a *EmailApp) mustStartEmailManager(ctx context.Context, cfg *config.EmailC
 	}
 
 	go func() {
-		msgs, err := consumer.Subscribe(cfg.Topics.Email.AuthTopic, cons)
+		msgs, err := broker.Subscribe(cfg.Topics.Email.AuthTopic, cons)
 		if err != nil {
 			panic("failed to subscribe for a topic: " + err.Error())
 		}
@@ -64,7 +64,7 @@ func (a *EmailApp) mustStartEmailManager(ctx context.Context, cfg *config.EmailC
 	}()
 
 	go func() {
-		msgs, err := consumer.Subscribe(cfg.Topics.Email.OrderTopic, cons)
+		msgs, err := broker.Subscribe(cfg.Topics.Email.OrderTopic, cons)
 		if err != nil {
 			panic("failed to subscribe for a topic: " + err.Error())
 		}

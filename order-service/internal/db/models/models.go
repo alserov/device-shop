@@ -8,7 +8,7 @@ type CreateOrderReq struct {
 	Status       int32
 	OrderPrice   float32
 	CreatedAt    *time.Time
-	OrderDevices []*OrderDevice
+	OrderDevices []OrderDevice
 }
 
 type UpdateOrderReq struct {
@@ -41,6 +41,11 @@ type CheckOrderRes struct {
 	Status       int32
 	CreatedAt    *time.Time
 	OrderPrice   float32
-	OrderDevices []*OrderDevice
+	OrderDevices []OrderDevice
 	UserUUID     string
+}
+
+type CancelOrderRes struct {
+	Price    float32
+	UserUUID string
 }

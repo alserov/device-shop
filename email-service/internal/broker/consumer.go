@@ -1,4 +1,4 @@
-package consumer
+package broker
 
 import (
 	"github.com/IBM/sarama"
@@ -29,4 +29,3 @@ func Subscribe(topic string, c sarama.Consumer) (<-chan []byte, error) {
 
 	return chMessages, nil
 }
-

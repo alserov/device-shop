@@ -3,15 +3,17 @@ package server
 import (
 	"context"
 	"database/sql"
+	"google.golang.org/protobuf/types/known/emptypb"
+
 	"github.com/alserov/device-shop/gateway/pkg/client"
 	"github.com/alserov/device-shop/order-service/internal/broker"
 	"github.com/alserov/device-shop/order-service/internal/broker/manager"
 	"github.com/alserov/device-shop/order-service/internal/db/postgres"
-
 	"github.com/alserov/device-shop/order-service/internal/service"
 	"github.com/alserov/device-shop/order-service/internal/utils"
 	"github.com/alserov/device-shop/order-service/internal/utils/converter"
 	"github.com/alserov/device-shop/order-service/internal/utils/validation"
+
 	"github.com/alserov/device-shop/proto/gen/order"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -54,7 +56,7 @@ type server struct {
 	services services
 
 	conv  converter.ServerConverter
-	valid *validation.Validator
+	valid validation.Validator
 }
 
 type services struct {
@@ -98,7 +100,7 @@ func (s *server) CheckOrder(ctx context.Context, req *order.CheckOrderReq) (*ord
 		return nil, err
 	}
 
-	order, err := s.service.CheckOrder(ctx, s.conv.CheckOrderReqToService(req))
+	order, err := s.service.CheckOrder(ctx, req.OrderUUID)
 	if err != nil {
 		return nil, err
 	}
@@ -130,4 +132,22 @@ func (s *server) UpdateOrder(ctx context.Context, req *order.UpdateOrderReq) (*o
 	}
 
 	return s.conv.UpdateOrderResToPb(req.Status), nil
+}
+
+func (s *server) CancelOrder(ctx context.Context, req *order.CancelOrderReq) (*emptypb.Empty, error) {
+	if err := s.valid.ValidateCancelOrderReq(req); err != nil {
+		return nil, err
+	}
+
+	orderedDevices, err := s.service.GetOrderDevices(ctx, req.OrderUUID)
+	if err != nil {
+		return nil, err
+	}
+
+	err = s.service.CancelOrder(ctx, req.OrderUUID, orderedDevices)
+	if err != nil {
+		return nil, err
+	}
+
+	return &emptypb.Empty{}, nil
 }

@@ -10,32 +10,73 @@ import (
 
 type serverConverter struct{}
 
+func (s *serverConverter) CancelOrderReqToService(req *order.CancelOrderReq) string {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (s *serverConverter) DeviceToIncreaseDeviceAmountPb(req *device.Device) *device.IncreaseDeviceAmountByUUIDReq {
+	//TODO implement me
+	panic("implement me")
+}
+
 type ServerConverter interface {
-	CreateOrderResToPb(res models.CreateOrderRes) *order.CreateOrderRes
-	CreateOrderReqToService(req *order.CreateOrderReq, orderPrice float32) models.CreateOrderReq
-	CheckOrderReqToService(req *order.CheckOrderReq) models.CheckOrderReq
-	CheckOrderResToPb(res models.CheckOrderRes, devices []*device.Device) *order.CheckOrderRes
+	CancelOrder
+	CreateOrder
+	CheckOrder
+	UpdateOrder
+}
+
+type CancelOrder interface {
+	CancelOrderReqToService(req *order.CancelOrderReq) string
+	DeviceToIncreaseDeviceAmountPb(req *device.Device) *device.IncreaseDeviceAmountByUUIDReq
+}
+
+type UpdateOrder interface {
 	UpdateOrderReqToService(req *order.UpdateOrderReq) models.UpdateOrderReq
 	UpdateOrderResToPb(status string) *order.UpdateOrderRes
+}
+
+type CheckOrder interface {
+	CheckOrderResToPb(res models.CheckOrderRes, devices []*device.Device) *order.CheckOrderRes
+}
+
+type CreateOrder interface {
+	CreateOrderResToPb(res string) *order.CreateOrderRes
+	CreateOrderReqToService(req *order.CreateOrderReq, orderPrice float32) models.CreateOrderReq
 }
 
 func NewServerConverter() ServerConverter {
 	return &serverConverter{}
 }
 
-func (*serverConverter) CreateOrderReqToService(req *order.CreateOrderReq, orderPrice float32) models.CreateOrderReq {
+func (s *serverConverter) CreateOrderReqToService(req *order.CreateOrderReq, orderPrice float32) models.CreateOrderReq {
 	return models.CreateOrderReq{
-		OrderDevices: pbOrderDevicesToService(req.OrderDevices),
+		OrderDevices: s.pbOrderDevicesToService(req.OrderDevices),
 		UserUUID:     req.UserUUID,
 		OrderPrice:   orderPrice,
 	}
 }
 
-func pbOrderDevicesToService(devices []*order.OrderDevice) []*models.OrderDevice {
-	var orderDevices []*models.OrderDevice
+func (*serverConverter) pbOrderDevicesToService(devices []*order.OrderDevice) []models.OrderDevice {
+	var orderDevices []models.OrderDevice
 
 	for _, device := range devices {
-		d := &models.OrderDevice{
+		d := models.OrderDevice{
+			DeviceUUID: device.DeviceUUID,
+			Amount:     device.Amount,
+		}
+		orderDevices = append(orderDevices, d)
+	}
+
+	return orderDevices
+}
+
+func (*serverConverter) serverOrderDevicesToPb(devices []order.OrderDevice) []models.OrderDevice {
+	var orderDevices []models.OrderDevice
+
+	for _, device := range devices {
+		d := models.OrderDevice{
 			DeviceUUID: device.DeviceUUID,
 			Amount:     device.Amount,
 		}
@@ -52,15 +93,9 @@ func toTimepb(t *time.Time) *timestamppb.Timestamp {
 	}
 }
 
-func (*serverConverter) CreateOrderResToPb(res models.CreateOrderRes) *order.CreateOrderRes {
+func (*serverConverter) CreateOrderResToPb(uuid string) *order.CreateOrderRes {
 	return &order.CreateOrderRes{
-		OrderUUID: res.OrderUUID,
-	}
-}
-
-func (*serverConverter) CheckOrderReqToService(req *order.CheckOrderReq) models.CheckOrderReq {
-	return models.CheckOrderReq{
-		OrderUUID: req.OrderUUID,
+		OrderUUID: uuid,
 	}
 }
 

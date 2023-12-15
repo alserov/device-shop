@@ -27,11 +27,11 @@ func NewService(repo db.DeviceRepo, log *slog.Logger) Service {
 }
 
 type Service interface {
-	GetDevicesByManufacturer(ctx context.Context, manu string) ([]*models.Device, error)
-	GetAllDevices(ctx context.Context, req models.GetAllDevicesReq) ([]*models.Device, error)
-	GetDevicesByTitle(ctx context.Context, title string) ([]*models.Device, error)
+	GetDevicesByManufacturer(ctx context.Context, manu string) ([]models.Device, error)
+	GetAllDevices(ctx context.Context, req models.GetAllDevicesReq) ([]models.Device, error)
+	GetDevicesByTitle(ctx context.Context, title string) ([]models.Device, error)
 	GetDeviceByUUID(ctx context.Context, uuid string) (models.Device, error)
-	GetDevicesByPrice(ctx context.Context, req models.GetByPrice) ([]*models.Device, error)
+	GetDevicesByPrice(ctx context.Context, req models.GetByPrice) ([]models.Device, error)
 
 	CreateDevice(context.Context, models.CreateDeviceReq) error
 	DeleteDevice(context.Context, string) error
@@ -64,7 +64,7 @@ func (s *service) UpdateDevice(ctx context.Context, req models.UpdateDeviceReq) 
 	return nil
 }
 
-func (s *service) GetAllDevices(ctx context.Context, req models.GetAllDevicesReq) ([]*models.Device, error) {
+func (s *service) GetAllDevices(ctx context.Context, req models.GetAllDevicesReq) ([]models.Device, error) {
 	devices, err := s.repo.GetAllDevices(ctx, req.Index, req.Amount)
 	if err != nil {
 		return nil, err
@@ -73,7 +73,7 @@ func (s *service) GetAllDevices(ctx context.Context, req models.GetAllDevicesReq
 	return s.conv.Device.DevicesToService(devices), nil
 }
 
-func (s *service) GetDevicesByTitle(ctx context.Context, title string) ([]*models.Device, error) {
+func (s *service) GetDevicesByTitle(ctx context.Context, title string) ([]models.Device, error) {
 	devices, err := s.repo.GetDevicesByTitle(ctx, strings.ToLower(title))
 	if err != nil {
 		return nil, err
@@ -91,7 +91,7 @@ func (s *service) GetDeviceByUUID(ctx context.Context, uuid string) (models.Devi
 	return s.conv.Device.DeviceToService(foundDevice), nil
 }
 
-func (s *service) GetDevicesByManufacturer(ctx context.Context, manu string) ([]*models.Device, error) {
+func (s *service) GetDevicesByManufacturer(ctx context.Context, manu string) ([]models.Device, error) {
 	devices, err := s.repo.GetDevicesByManufacturer(ctx, manu)
 	if err != nil {
 		return nil, err
@@ -100,7 +100,7 @@ func (s *service) GetDevicesByManufacturer(ctx context.Context, manu string) ([]
 	return s.conv.Device.DevicesToService(devices), nil
 }
 
-func (s *service) GetDevicesByPrice(ctx context.Context, req models.GetByPrice) ([]*models.Device, error) {
+func (s *service) GetDevicesByPrice(ctx context.Context, req models.GetByPrice) ([]models.Device, error) {
 	devices, err := s.repo.GetDevicesByPrice(ctx, uint(req.Min), uint(req.Max))
 	if err != nil {
 		return nil, err

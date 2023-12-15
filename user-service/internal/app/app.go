@@ -29,7 +29,7 @@ func New(cfg *config.Config, log *slog.Logger) *App {
 		log:        log,
 		gRPCServer: grpc.NewServer(),
 		broker: &broker.Broker{
-			BrokerAddr: cfg.Kafka.BrokerAddr,
+			Addr: cfg.Kafka.BrokerAddr,
 			Topics: broker.Topics{
 				Email: cfg.Kafka.EmailTopic,
 				Manager: broker.Topic{
@@ -58,11 +58,11 @@ func (a *App) MustStart() {
 	w := worker.NewWorker(a.broker, db, a.log)
 	go w.MustStart()
 
-	server.Register(&server.Server{
+	server.MustRegister(&server.Server{
 		GRPCServer: a.gRPCServer,
 		DB:         db,
 		Log:        a.log,
-		BrokerAddr: a.broker.BrokerAddr,
+		BrokerAddr: a.broker.Addr,
 		EmailTopic: a.broker.Topics.Email,
 	})
 

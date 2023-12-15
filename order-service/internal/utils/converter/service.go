@@ -11,8 +11,8 @@ type serviceConverter struct{}
 
 type ServiceConverter interface {
 	CreateOrderReqToRepo(req models.CreateOrderReq, orderUUID string) repo.CreateOrderReq
-	CreateOrderResToService(orderUUID string) models.CreateOrderRes
 	CheckOrderToService(res repo.CheckOrderRes) models.CheckOrderRes
+	OrderDevicesToService(res []repo.OrderDevice) []models.OrderDevice
 }
 
 func NewServiceConverter() ServiceConverter {
@@ -31,11 +31,16 @@ func (*serviceConverter) CreateOrderReqToRepo(req models.CreateOrderReq, orderUU
 	}
 }
 
-func serviceOrderDevicesToRepo(req []*models.OrderDevice) []*repo.OrderDevice {
-	var devices []*repo.OrderDevice
+func (c *serviceConverter) OrderDevicesToService(res []repo.OrderDevice) []models.OrderDevice {
+	//TODO implement me
+	panic("implement me")
+}
+
+func serviceOrderDevicesToRepo(req []models.OrderDevice) []repo.OrderDevice {
+	var devices []repo.OrderDevice
 
 	for _, od := range req {
-		d := &repo.OrderDevice{
+		d := repo.OrderDevice{
 			DeviceUUID: od.DeviceUUID,
 			Amount:     od.Amount,
 		}
@@ -45,11 +50,11 @@ func serviceOrderDevicesToRepo(req []*models.OrderDevice) []*repo.OrderDevice {
 	return devices
 }
 
-func repoOrderDevicesToService(res []*repo.OrderDevice) []*models.OrderDevice {
-	var devices []*models.OrderDevice
+func repoOrderDevicesToService(res []repo.OrderDevice) []models.OrderDevice {
+	var devices []models.OrderDevice
 
 	for _, od := range res {
-		d := &models.OrderDevice{
+		d := models.OrderDevice{
 			DeviceUUID: od.DeviceUUID,
 			Amount:     od.Amount,
 		}
@@ -57,12 +62,6 @@ func repoOrderDevicesToService(res []*repo.OrderDevice) []*models.OrderDevice {
 	}
 
 	return devices
-}
-
-func (*serviceConverter) CreateOrderResToService(orderUUID string) models.CreateOrderRes {
-	return models.CreateOrderRes{
-		OrderUUID: orderUUID,
-	}
 }
 
 func (*serviceConverter) CheckOrderToService(res repo.CheckOrderRes) models.CheckOrderRes {

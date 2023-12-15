@@ -29,7 +29,8 @@ type txManager struct {
 }
 
 type TxManager interface {
-	CreateOrderTx(in models.TxBody) error
+	CreateOrderTx(in models.CreateOrderTxBody) error
+	CancelOrderTx(in models.CancelOrderTxBody) error
 }
 
 const (
@@ -37,7 +38,7 @@ const (
 )
 
 func NewTxManager(b *broker.Broker, log *slog.Logger) TxManager {
-	prod, err := broker.NewProducer([]string{b.BrokerAddr}, kafkaClientID)
+	prod, err := broker.NewProducer([]string{b.Addr}, kafkaClientID)
 	if err != nil {
 		panic("failed to create producer: " + err.Error())
 	}
@@ -54,13 +55,72 @@ const (
 	userFailureStatus   = 1
 	successStatus       = 2
 
-	// txAmount - number of services
-	txAmount = 3
+	// createOrderTxAmount - number of services to create order
+	createOrderTxAmount = 3
+	// cancelOrderTxAmount - number of services to cancel order
+	cancelOrderTxAmount = 2
 
 	internalError = "internal error"
 )
 
-func (t *txManager) CreateOrderTx(in models.TxBody) error {
+func (t *txManager) CancelOrderTx(in models.CancelOrderTxBody) error {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Millisecond*200)
+	defer cancel()
+
+	order, tx, err := in.Repo.CancelOrderTx(ctx, in.OrderUUID)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	txUUID := uuid.New().String()
+
+	var (
+		wg    = &sync.WaitGroup{}
+		chErr = make(chan error)
+	)
+
+	wg.Add(cancelOrderTxAmount)
+
+	go func() {
+		defer wg.Done()
+		err = t.startTx(t.broker.Topics.DeviceRollback.In, t.broker.Topics.Device.Out, models.DeviceReq{
+			TxUUID:       txUUID,
+			OrderDevices: in.OrderDevices,
+		}, txUUID)
+		if err != nil {
+			chErr <- err
+		}
+	}()
+
+	go func() {
+		defer wg.Done()
+		err = t.startTx(t.broker.Topics.BalanceRefund.In, t.broker.Topics.BalanceRefund.Out, models.BalanceReq{
+			TxUUID:     txUUID,
+			OrderPrice: order.Price,
+			UserUUID:   order.UserUUID,
+		}, txUUID)
+		if err != nil {
+			chErr <- err
+		}
+	}()
+
+	go func() {
+		wg.Wait()
+		close(chErr)
+	}()
+
+	for err = range chErr {
+		return err
+	}
+
+	tx.Commit()
+	t.notifyWorkers(successStatus, txUUID)
+
+	return nil
+}
+
+func (t *txManager) CreateOrderTx(in models.CreateOrderTxBody) error {
 	txUUID := uuid.New().String()
 
 	var (
@@ -68,11 +128,11 @@ func (t *txManager) CreateOrderTx(in models.TxBody) error {
 		chErr = make(chan error, 2)
 		tx    *sql.Tx
 	)
-	wg.Add(txAmount)
+	wg.Add(createOrderTxAmount)
 
 	go func() {
 		defer wg.Done()
-		err := t.startTx(t.broker.Topics.User.In, t.broker.Topics.User.Out, models.BalanceReq{
+		err := t.startTx(t.broker.Topics.Balance.In, t.broker.Topics.Balance.Out, models.BalanceReq{
 			TxUUID:     txUUID,
 			OrderPrice: in.OrderPrice,
 			UserUUID:   in.UserUUID,
@@ -129,7 +189,7 @@ func (t *txManager) CreateOrderTx(in models.TxBody) error {
 }
 
 func (t *txManager) startTx(topicIn string, topicOut string, body interface{}, txUUID string) error {
-	cons, err := sarama.NewConsumer([]string{t.broker.BrokerAddr}, nil)
+	cons, err := sarama.NewConsumer([]string{t.broker.Addr}, nil)
 	if err != nil {
 		return status.Error(codes.Internal, internalError)
 	}
@@ -201,10 +261,10 @@ func (t *txManager) notifyWorkers(txStatus uint32, txUUID string) {
 		Status: txStatus,
 	})
 	_, _, err := t.p.SendMessage(&sarama.ProducerMessage{
-		Topic: t.broker.Topics.User.In,
+		Topic: t.broker.Topics.Balance.In,
 		Value: sarama.StringEncoder(bytes),
 	})
-	t.handleSendMessageError(err, t.broker.Topics.User.In)
+	t.handleSendMessageError(err, t.broker.Topics.Balance.In)
 
 	bytes, _ = json.Marshal(models.DeviceReq{
 		TxUUID: txUUID,

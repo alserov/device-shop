@@ -35,7 +35,7 @@ func (m *MockTxManager) EXPECT() *MockTxManagerMockRecorder {
 }
 
 // CreateOrderTx mocks base method.
-func (m *MockTxManager) CreateOrderTx(in models.TxBody) error {
+func (m *MockTxManager) CreateOrderTx(in models.CreateOrderTxBody) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CreateOrderTx", in)
 	ret0, _ := ret[0].(error)

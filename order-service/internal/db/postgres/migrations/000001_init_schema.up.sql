@@ -10,7 +10,7 @@ CREATE TABLE orders
 (
     order_uuid  TEXT,
     user_uuid   TEXT,
-    total_price float CHECK ( total_price > 0),
+    order_price float CHECK ( order_price > 0),
     status      int,
     created_at  timestamptz
 )

@@ -25,7 +25,7 @@ type ServiceAdminConverter interface {
 
 type serviceDeviceConverter struct{}
 type ServiceDeviceConverter interface {
-	DevicesToService(devices []*repo.Device) []*models.Device
+	DevicesToService(devices []*repo.Device) []models.Device
 	DeviceToService(device repo.Device) models.Device
 }
 
@@ -49,10 +49,10 @@ func (*serviceAdminConverter) UpdateDeviceReqToRepo(req models.UpdateDeviceReq) 
 	}
 }
 
-func (*serviceDeviceConverter) DevicesToService(devices []*repo.Device) []*models.Device {
-	res := make([]*models.Device, 0, len(devices))
+func (*serviceDeviceConverter) DevicesToService(devices []*repo.Device) []models.Device {
+	res := make([]models.Device, 0, len(devices))
 	for _, device := range devices {
-		pbDevice := &models.Device{
+		pbDevice := models.Device{
 			UUID:         device.UUID,
 			Title:        device.Title,
 			Description:  device.Description,

@@ -17,7 +17,7 @@ func TestCreateOrder(t *testing.T) {
 	createOrderReq := models.CreateOrderReq{
 		OrderPrice: 100,
 		UserUUID:   "uuid",
-		OrderDevices: []*models.OrderDevice{
+		OrderDevices: []models.OrderDevice{
 			{
 				DeviceUUID: "uuid",
 				Amount:     1,
@@ -29,7 +29,7 @@ func TestCreateOrder(t *testing.T) {
 	defer ctrl.Finish()
 
 	broker := brokermock.NewMockTxManager(ctrl)
-	broker.EXPECT().CreateOrderTx(gomock.Any())
+	broker.EXPECT().CreateOrderTx(gomock.Any()).Return(nil).Times(1)
 
 	s := NewService(nil, broker, nil)
 
@@ -40,6 +40,30 @@ func TestCreateOrder(t *testing.T) {
 	require.NoError(t, err)
 
 	require.NotEqual(t, "", createdOrder.OrderUUID)
+}
+
+func TestUpdateOrder(t *testing.T) {
+	updateOrderReq := models.UpdateOrderReq{
+		OrderUUID: "uuid",
+		Status:    status.DELIVERING,
+	}
+
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	store := repomock.NewMockOrderRepo(ctrl)
+	store.EXPECT().UpdateOrder(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).Times(1)
+
+	broker := brokermock.NewMockTxManager(ctrl)
+	broker.EXPECT().CreateOrderTx(gomock.Any()).Return(nil).Times(1)
+
+	s := NewService(store, broker, nil)
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*3)
+	defer cancel()
+
+	err := s.UpdateOrder(ctx, updateOrderReq)
+	require.NoError(t, err)
 }
 
 func TestCheckOrder(t *testing.T) {
@@ -57,7 +81,7 @@ func TestCheckOrder(t *testing.T) {
 		Status:     status.PENDING_CODE,
 		OrderPrice: 100,
 		CreatedAt:  &now,
-		OrderDevices: []*repo.OrderDevice{
+		OrderDevices: []repo.OrderDevice{
 			{
 				DeviceUUID: "uuid",
 				Amount:     1,

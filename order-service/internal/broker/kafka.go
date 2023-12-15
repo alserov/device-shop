@@ -1,16 +1,18 @@
 package broker
 
 type Broker struct {
-	BrokerAddr string
-	Topics     Topics
+	Addr   string
+	Topics Topics
 }
 
 type Topics struct {
 	Email string
 
-	User Topic
+	Balance       Topic
+	BalanceRefund Topic
 
-	Device Topic
+	Device         Topic
+	DeviceRollback Topic
 
 	Collection Topic
 }
