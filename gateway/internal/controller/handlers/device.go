@@ -3,13 +3,10 @@ package handlers
 import (
 	"context"
 	"fmt"
-	"github.com/IBM/sarama"
 	"github.com/alserov/device-shop/gateway/internal/broker"
 	"github.com/alserov/device-shop/gateway/internal/cache"
-	"github.com/alserov/device-shop/gateway/internal/logger"
 	"github.com/alserov/device-shop/gateway/internal/utils"
 	"github.com/alserov/device-shop/gateway/internal/utils/validation"
-	"github.com/alserov/device-shop/gateway/pkg/client"
 	"github.com/alserov/device-shop/gateway/pkg/responser"
 	"github.com/alserov/device-shop/proto/gen/device"
 	"github.com/gin-gonic/gin"
@@ -30,27 +27,18 @@ type DeviceHandler interface {
 }
 
 type devicesHandler struct {
-	log         *slog.Logger
-	serviceAddr string
-	cache       cache.Repository
-
-	p broker.RequestProducer
+	log    *slog.Logger
+	client device.DevicesClient
+	cache  cache.Repository
+	p      broker.MetricsProducer
 }
 
-type DeviceH struct {
-	DeviceAddr  string
-	RedisClient *redis.Client
-	Producer    sarama.SyncProducer
-	Metrics     *broker.Metrics
-	Log         *slog.Logger
-}
-
-func NewDeviceHandler(dh *DeviceH) DeviceHandler {
+func NewDeviceHandler(c device.DevicesClient, r *redis.Client, p broker.MetricsProducer, log *slog.Logger) DeviceHandler {
 	return &devicesHandler{
-		serviceAddr: dh.DeviceAddr,
-		cache:       cache.NewRepo(dh.RedisClient),
-		log:         dh.Log,
-		p:           broker.NewRequestProducer(dh.Producer, dh.Metrics),
+		client: c,
+		cache:  cache.NewRepo(r),
+		log:    log,
+		p:      p,
 	}
 }
 
@@ -64,17 +52,9 @@ func (h *devicesHandler) GetDeviceByUUID(c *gin.Context) {
 		return
 	}
 
-	cl, cc, err := client.DialDevice(h.serviceAddr)
+	device, err := h.client.GetDeviceByUUID(c.Request.Context(), uuid)
 	if err != nil {
-		h.log.Error("failed to dial device service", logger.Error(err, op))
-		w.ServerError()
-		return
-	}
-	defer cc.Close()
-
-	device, err := cl.GetDeviceByUUID(c.Request.Context(), uuid)
-	if err != nil {
-		w.HandleServiceError(err, "cl.GetDeviceByUUID", h.log)
+		w.HandleServiceError(err, op, h.log)
 		return
 	}
 
@@ -112,20 +92,12 @@ func (h *devicesHandler) GetAllDevices(c *gin.Context) {
 		return
 	}
 
-	cl, cc, err := client.DialDevice(h.serviceAddr)
-	if err != nil {
-		h.log.Error("failed to dial device service", logger.Error(err, op))
-		w.ServerError()
-		return
-	}
-	defer cc.Close()
-
 	ctx, cancel := context.WithTimeout(c.Request.Context(), time.Duration(1000)*time.Millisecond)
 	defer cancel()
 
-	devices, err := cl.GetAllDevices(ctx, getDevicesCred)
+	devices, err := h.client.GetAllDevices(ctx, getDevicesCred)
 	if err != nil {
-		w.HandleServiceError(err, "cl.GetAllDevices", h.log)
+		w.HandleServiceError(err, op, h.log)
 		return
 	}
 
@@ -134,11 +106,11 @@ func (h *devicesHandler) GetAllDevices(c *gin.Context) {
 		Key: fmt.Sprintf("%d%d", getDevicesCred.Index, getDevicesCred.Amount),
 	})
 	if err != nil {
-		h.log.Error("failed to set cache", logger.Error(err, "h.cache.SetValue"))
+		h.log.Error("failed to set cache", slog.String("error", err.Error()), slog.String("op", op))
 	}
 
 	if err := h.p.Latency(time.Since(start)); err != nil {
-		h.log.Error("failed to send message to topic", logger.Error(err, "h.p.Latency()"))
+		h.log.Error("failed to send message to topic", slog.String("error", err.Error()), slog.String("op", op))
 	}
 
 	w.Data(responser.H{
@@ -175,20 +147,12 @@ func (h *devicesHandler) GetDevicesByTitle(c *gin.Context) {
 		return
 	}
 
-	cl, cc, err := client.DialDevice(h.serviceAddr)
-	if err != nil {
-		h.log.Error("failed to dial device service", logger.Error(err, op))
-		w.ServerError()
-		return
-	}
-	defer cc.Close()
-
 	ctx, cancel := context.WithTimeout(c.Request.Context(), time.Duration(1000)*time.Millisecond)
 	defer cancel()
 
-	devices, err := cl.GetDevicesByTitle(ctx, &device.GetDeviceByTitleReq{Title: title})
+	devices, err := h.client.GetDevicesByTitle(ctx, &device.GetDeviceByTitleReq{Title: title})
 	if err != nil {
-		w.HandleServiceError(err, "cl.GetDevicesByTitle", h.log)
+		w.HandleServiceError(err, op, h.log)
 		return
 	}
 
@@ -197,7 +161,7 @@ func (h *devicesHandler) GetDevicesByTitle(c *gin.Context) {
 		Key: title,
 	})
 	if err != nil {
-		h.log.Error("failed to set cache", logger.Error(err, "h.cache.SetValue"))
+		h.log.Error("failed to set cache", slog.String("error", err.Error()), slog.String("op", op))
 	}
 
 	w.Data(responser.H{
@@ -225,22 +189,14 @@ func (h *devicesHandler) GetDevicesByManufacturer(c *gin.Context) {
 		return
 	}
 
-	cl, cc, err := client.DialDevice(h.serviceAddr)
-	if err != nil {
-		h.log.Error("failed to dial device service", logger.Error(err, op))
-		w.ServerError()
-		return
-	}
-	defer cc.Close()
-
 	ctx, cancel := context.WithTimeout(c.Request.Context(), time.Second)
 	defer cancel()
 
-	d, err := cl.GetDevicesByManufacturer(ctx, &device.GetByManufacturer{
+	d, err := h.client.GetDevicesByManufacturer(ctx, &device.GetByManufacturer{
 		Manufacturer: manu,
 	})
 	if err != nil {
-		w.HandleServiceError(err, "cl.GetDevicesByManufacturer", h.log)
+		w.HandleServiceError(err, op, h.log)
 		return
 	}
 
@@ -249,7 +205,7 @@ func (h *devicesHandler) GetDevicesByManufacturer(c *gin.Context) {
 		Val: d.Devices,
 	})
 	if err != nil {
-		h.log.Error("failed to set cache", logger.Error(err, "h.cache.SetValue"))
+		h.log.Error("failed to set cache", slog.String("error", err.Error()), slog.String("op", op))
 	}
 
 	w.Data(responser.H{
@@ -288,14 +244,6 @@ func (h *devicesHandler) GetDevicesByPrice(c *gin.Context) {
 		return
 	}
 
-	cl, cc, err := client.DialDevice(h.serviceAddr)
-	if err != nil {
-		h.log.Error("failed to dial device service", logger.Error(err, op))
-		w.ServerError()
-		return
-	}
-	defer cc.Close()
-
 	r := &device.GetByPrice{
 		Min: float32(minVal),
 		Max: float32(maxVal),
@@ -304,9 +252,9 @@ func (h *devicesHandler) GetDevicesByPrice(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), time.Second)
 	defer cancel()
 
-	d, err := cl.GetDevicesByPrice(ctx, r)
+	d, err := h.client.GetDevicesByPrice(ctx, r)
 	if err != nil {
-		w.HandleServiceError(err, "cl.GetDevicesByPrice", h.log)
+		w.HandleServiceError(err, op, h.log)
 		return
 	}
 
@@ -315,7 +263,7 @@ func (h *devicesHandler) GetDevicesByPrice(c *gin.Context) {
 		Val: d.Devices,
 	})
 	if err != nil {
-		h.log.Error("failed to set cache", logger.Error(err, "h.cache.SetValue"))
+		h.log.Error("failed to set cache", slog.String("error", err.Error()), slog.String("op", op))
 	}
 
 	w.Data(responser.H{

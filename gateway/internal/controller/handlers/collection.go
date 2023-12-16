@@ -2,10 +2,8 @@ package handlers
 
 import (
 	"context"
-	"github.com/alserov/device-shop/gateway/internal/logger"
 	"github.com/alserov/device-shop/gateway/internal/utils"
 	"github.com/alserov/device-shop/gateway/internal/utils/validation"
-	"github.com/alserov/device-shop/gateway/pkg/client"
 	"github.com/alserov/device-shop/gateway/pkg/responser"
 	"github.com/alserov/device-shop/proto/gen/collection"
 	"github.com/gin-gonic/gin"
@@ -25,19 +23,14 @@ type CollectionsHandler interface {
 }
 
 type collectionsHandler struct {
-	serviceAddr string
-	log         *slog.Logger
+	client collection.CollectionsClient
+	log    *slog.Logger
 }
 
-type CollectionH struct {
-	UserAddr string
-	Log      *slog.Logger
-}
-
-func NewCollectionsHandler(ch *CollectionH) CollectionsHandler {
+func NewCollectionsHandler(c collection.CollectionsClient, log *slog.Logger) CollectionsHandler {
 	return &collectionsHandler{
-		serviceAddr: ch.UserAddr,
-		log:         ch.Log,
+		client: c,
+		log:    log,
 	}
 }
 
@@ -51,20 +44,12 @@ func (h *collectionsHandler) AddToFavourite(c *gin.Context) {
 		return
 	}
 
-	cl, cc, err := client.DialCollection(h.serviceAddr)
-	if err != nil {
-		h.log.Error("failed to dial collection service", logger.Error(err, op))
-		w.ServerError()
-		return
-	}
-	defer cc.Close()
-
 	ctx, cancel := context.WithTimeout(c.Request.Context(), time.Second)
 	defer cancel()
 
-	_, err = cl.AddToFavourite(ctx, addCred)
+	_, err = h.client.AddToFavourite(ctx, addCred)
 	if err != nil {
-		w.HandleServiceError(err, "cl.AddToFavourite", h.log)
+		w.HandleServiceError(err, op, h.log)
 		return
 	}
 
@@ -80,21 +65,12 @@ func (h *collectionsHandler) RemoveFromFavourite(c *gin.Context) {
 		w.UserError(err.Error())
 		return
 	}
-
-	cl, cc, err := client.DialCollection(h.serviceAddr)
-	if err != nil {
-		h.log.Error("failed to dial collection service", logger.Error(err, op))
-		w.ServerError()
-		return
-	}
-	defer cc.Close()
-
 	ctx, cancel := context.WithTimeout(c.Request.Context(), time.Second)
 	defer cancel()
 
-	_, err = cl.RemoveFromFavourite(ctx, deviceAndUserUUIDs)
+	_, err = h.client.RemoveFromFavourite(ctx, deviceAndUserUUIDs)
 	if err != nil {
-		w.HandleServiceError(err, "cl.AddToFavourite", h.log)
+		w.HandleServiceError(err, op, h.log)
 		return
 	}
 
@@ -112,20 +88,12 @@ func (h *collectionsHandler) GetFavourite(c *gin.Context) {
 		return
 	}
 
-	cl, cc, err := client.DialCollection(h.serviceAddr)
-	if err != nil {
-		h.log.Error("failed to dial collection service", logger.Error(err, op))
-		w.ServerError()
-		return
-	}
-	defer cc.Close()
-
 	ctx, cancel := context.WithTimeout(c.Request.Context(), time.Second)
 	defer cancel()
 
-	coll, err := cl.GetFavourite(ctx, &collection.GetCollectionReq{UserUUID: userUUID})
+	coll, err := h.client.GetFavourite(ctx, &collection.GetCollectionReq{UserUUID: userUUID})
 	if err != nil {
-		w.HandleServiceError(err, "cl.GetFavourite", h.log)
+		w.HandleServiceError(err, op, h.log)
 		return
 	}
 
@@ -145,20 +113,12 @@ func (h *collectionsHandler) AddToCart(c *gin.Context) {
 		return
 	}
 
-	cl, cc, err := client.DialCollection(h.serviceAddr)
-	if err != nil {
-		h.log.Error("failed to dial collection service", logger.Error(err, op))
-		w.ServerError()
-		return
-	}
-	defer cc.Close()
-
 	ctx, cancel := context.WithTimeout(c.Request.Context(), time.Second)
 	defer cancel()
 
-	_, err = cl.AddToCart(ctx, addCred)
+	_, err = h.client.AddToCart(ctx, addCred)
 	if err != nil {
-		w.HandleServiceError(err, "cl.AddToCart", h.log)
+		w.HandleServiceError(err, op, h.log)
 		return
 	}
 
@@ -175,20 +135,12 @@ func (h *collectionsHandler) RemoveFromCart(c *gin.Context) {
 		return
 	}
 
-	cl, cc, err := client.DialCollection(h.serviceAddr)
-	if err != nil {
-		h.log.Error("failed to dial collection service", logger.Error(err, op))
-		w.ServerError()
-		return
-	}
-	defer cc.Close()
-
 	ctx, cancel := context.WithTimeout(c.Request.Context(), time.Second)
 	defer cancel()
 
-	_, err = cl.RemoveFromCart(ctx, removeCred)
+	_, err = h.client.RemoveFromCart(ctx, removeCred)
 	if err != nil {
-		w.HandleServiceError(err, "cl.RemoveFromCart", h.log)
+		w.HandleServiceError(err, op, h.log)
 		return
 	}
 
@@ -206,22 +158,14 @@ func (h *collectionsHandler) GetCart(c *gin.Context) {
 		return
 	}
 
-	cl, cc, err := client.DialCollection(h.serviceAddr)
-	if err != nil {
-		h.log.Error("failed to dial collection service", logger.Error(err, op))
-		w.ServerError()
-		return
-	}
-	defer cc.Close()
-
 	ctx, cancel := context.WithTimeout(c.Request.Context(), time.Second)
 	defer cancel()
 
-	coll, err := cl.GetCart(ctx, &collection.GetCollectionReq{
+	coll, err := h.client.GetCart(ctx, &collection.GetCollectionReq{
 		UserUUID: userUUID,
 	})
 	if err != nil {
-		w.HandleServiceError(err, "cl.RemoveFromCart", h.log)
+		w.HandleServiceError(err, op, h.log)
 		return
 	}
 

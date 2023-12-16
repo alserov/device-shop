@@ -2,7 +2,6 @@ package responser
 
 import (
 	"encoding/json"
-	"github.com/alserov/device-shop/gateway/internal/logger"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"log/slog"
@@ -66,17 +65,17 @@ func (r *responser) Value(msg interface{}) {
 	json.NewEncoder(r.w).Encode(msg)
 }
 
-func (r *responser) HandleServiceError(err error, action string, log *slog.Logger) {
+func (r *responser) HandleServiceError(err error, op string, log *slog.Logger) {
 	if st, ok := status.FromError(err); ok {
 		switch st.Code() {
 		case codes.Internal:
-			log.Error("failed to execute grpc function", logger.Error(err, action))
+			log.Error("failed to execute grpc function", slog.String("error", err.Error()), slog.String("op", op))
 			r.ServerError()
 		default:
 			r.UserError(st.Message())
 		}
 		return
 	}
-	log.Error("unexpected error", logger.Error(err, action))
+	log.Error("unexpected error", slog.String("error", err.Error()), slog.String("op", op))
 	r.ServerError()
 }

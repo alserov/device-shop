@@ -12,13 +12,13 @@ type requestProducer struct {
 	metrics *Metrics
 }
 
-type RequestProducer interface {
+type MetricsProducer interface {
 	Latency(latency time.Duration) error
 	IncUsers() error
 	NewOrder() error
 }
 
-func NewRequestProducer(p sarama.SyncProducer, m *Metrics) RequestProducer {
+func NewMetricsProducer(p sarama.SyncProducer, m *Metrics) MetricsProducer {
 	return &requestProducer{
 		p:       p,
 		metrics: m,

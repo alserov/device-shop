@@ -10,16 +10,6 @@ import (
 
 type serverConverter struct{}
 
-func (s *serverConverter) CancelOrderReqToService(req *order.CancelOrderReq) string {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (s *serverConverter) DeviceToIncreaseDeviceAmountPb(req *device.Device) *device.IncreaseDeviceAmountByUUIDReq {
-	//TODO implement me
-	panic("implement me")
-}
-
 type ServerConverter interface {
 	CancelOrder
 	CreateOrder
@@ -28,7 +18,6 @@ type ServerConverter interface {
 }
 
 type CancelOrder interface {
-	CancelOrderReqToService(req *order.CancelOrderReq) string
 	DeviceToIncreaseDeviceAmountPb(req *device.Device) *device.IncreaseDeviceAmountByUUIDReq
 }
 
@@ -48,6 +37,13 @@ type CreateOrder interface {
 
 func NewServerConverter() ServerConverter {
 	return &serverConverter{}
+}
+
+func (s *serverConverter) DeviceToIncreaseDeviceAmountPb(req *device.Device) *device.IncreaseDeviceAmountByUUIDReq {
+	return &device.IncreaseDeviceAmountByUUIDReq{
+		DeviceUUID: req.UUID,
+		Amount:     req.Amount,
+	}
 }
 
 func (s *serverConverter) CreateOrderReqToService(req *order.CreateOrderReq, orderPrice float32) models.CreateOrderReq {

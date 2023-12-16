@@ -2,13 +2,12 @@ package service
 
 import (
 	"context"
-	"database/sql"
 	"github.com/alserov/device-shop/order-service/internal/broker/manager"
 	broker "github.com/alserov/device-shop/order-service/internal/broker/manager/models"
 	"github.com/alserov/device-shop/order-service/internal/db"
-	repo "github.com/alserov/device-shop/order-service/internal/db/models"
 	"github.com/alserov/device-shop/order-service/internal/service/models"
 	"github.com/alserov/device-shop/order-service/internal/utils/converter"
+
 	"github.com/google/uuid"
 	"log/slog"
 	"sync"
@@ -79,39 +78,37 @@ func (s *service) UpdateOrder(ctx context.Context, req models.UpdateOrderReq) er
 func (s *service) CancelOrder(ctx context.Context, orderUUID string) error {
 	var (
 		wg           = &sync.WaitGroup{}
-		chErr        = make(chan error)
-		chTxs        = make(chan *sql.Tx, 2)
-		orderDevices []repo.OrderDevice
-		orderInfo    repo.CancelOrderRes
+		chErr        = make(chan error, 1)
+		chTxs        = make(chan db.SqlTx, 2)
+		orderDevices *db.CancelOrderDevices
+		orderInfo    *db.CancelOrder
 	)
 
 	wg.Add(2)
 
 	go func() {
 		defer wg.Done()
-		devices, tx, err := s.repo.CancelOrderDevicesTx(ctx, orderUUID)
-		chTxs <- tx
+		res, err := s.repo.CancelOrderDevicesTx(ctx, orderUUID)
+		chTxs <- res.GetTx()
 		if err != nil {
 			chErr <- err
 		}
-		orderDevices = devices
+		orderDevices = res.Value().(*db.CancelOrderDevices)
 	}()
 
 	go func() {
 		defer wg.Done()
-		info, tx, err := s.repo.CancelOrderTx(ctx, orderUUID)
-		chTxs <- tx
+		res, err := s.repo.CancelOrderTx(ctx, orderUUID)
+		chTxs <- res.GetTx()
 		if err != nil {
-			tx.Rollback()
 			chErr <- err
 		}
-		orderInfo = info
+		orderInfo = res.Value().(*db.CancelOrder)
 	}()
 
-	go func() {
-		wg.Wait()
-		close(chErr)
-	}()
+	wg.Wait()
+	close(chErr)
+	close(chTxs)
 
 	for err := range chErr {
 		for tx := range chTxs {
@@ -122,7 +119,7 @@ func (s *service) CancelOrder(ctx context.Context, orderUUID string) error {
 
 	err := s.txManager.CancelOrderTx(broker.CancelOrderTxBody{
 		OrderUUID:    orderUUID,
-		OrderDevices: orderDevices,
+		OrderDevices: orderDevices.Devices,
 		OrderPrice:   orderInfo.Price,
 		UserUUID:     orderInfo.UserUUID,
 	})

@@ -2,10 +2,9 @@ package handlers
 
 import (
 	"context"
-	"github.com/alserov/device-shop/gateway/internal/logger"
+
 	"github.com/alserov/device-shop/gateway/internal/utils"
 	"github.com/alserov/device-shop/gateway/internal/utils/validation"
-	"github.com/alserov/device-shop/gateway/pkg/client"
 	"github.com/alserov/device-shop/gateway/pkg/responser"
 	"github.com/alserov/device-shop/proto/gen/device"
 
@@ -25,44 +24,31 @@ type AdminHandler interface {
 	UpdateDeviceAmount(c *gin.Context)
 }
 
-type AdminH struct {
-	DeviceAddr string
-	Log        *slog.Logger
-}
-
-func NewAdminHandler(ah *AdminH) AdminHandler {
+func NewAdminHandler(c device.DevicesClient, log *slog.Logger) AdminHandler {
 	return &adminHandler{
-		log:         ah.Log,
-		serviceAddr: ah.DeviceAddr,
+		log:    log,
+		client: c,
 	}
 }
 
 type adminHandler struct {
-	serviceAddr string
-	log         *slog.Logger
+	client device.DevicesClient
+	log    *slog.Logger
 }
 
 func (h *adminHandler) UpdateDeviceAmount(c *gin.Context) {
 	w := responser.NewResponser(c.Writer)
-	op := "increase device amount"
+	op := "adminHandler.UpdateDeviceAmount"
 
-	deviceUUIDandAmount, err := utils.Decode[device.IncreaseDeviceAmountByUUIDReq](c.Request)
+	deviceUUIDAndAmount, err := utils.Decode[device.IncreaseDeviceAmountReq](c.Request)
 	if err != nil {
 		w.UserError(err.Error())
 		return
 	}
 
-	cl, cc, err := client.DialDevice(h.serviceAddr)
+	_, err = h.client.IncreaseDeviceAmount(c.Request.Context(), deviceUUIDAndAmount)
 	if err != nil {
-		h.log.Error("failed to dial device service", logger.Error(err, op))
-		w.ServerError()
-		return
-	}
-	defer cc.Close()
-
-	_, err = cl.IncreaseDeviceAmount(c.Request.Context(), deviceUUIDandAmount)
-	if err != nil {
-		w.HandleServiceError(err, "cl.IncreaseDeviceAmount", h.log)
+		w.HandleServiceError(err, op, h.log)
 		return
 	}
 
@@ -79,20 +65,12 @@ func (h *adminHandler) CreateDevice(c *gin.Context) {
 		return
 	}
 
-	cl, cc, err := client.DialDevice(h.serviceAddr)
-	if err != nil {
-		h.log.Error("failed to dial device service", logger.Error(err, op))
-		w.ServerError()
-		return
-	}
-	defer cc.Close()
-
 	ctx, cancel := context.WithTimeout(c.Request.Context(), time.Duration(1000)*time.Millisecond)
 	defer cancel()
 
-	_, err = cl.CreateDevice(ctx, device)
+	_, err = h.client.CreateDevice(ctx, device)
 	if err != nil {
-		w.HandleServiceError(err, "cl.CreateDevice", h.log)
+		w.HandleServiceError(err, op, h.log)
 		return
 	}
 
@@ -109,20 +87,12 @@ func (h *adminHandler) DeleteDevice(c *gin.Context) {
 		return
 	}
 
-	cl, cc, err := client.DialDevice(h.serviceAddr)
-	if err != nil {
-		h.log.Error("failed to dial device service", logger.Error(err, op))
-		w.ServerError()
-		return
-	}
-	defer cc.Close()
-
 	ctx, cancel := context.WithTimeout(c.Request.Context(), time.Duration(1000)*time.Millisecond)
 	defer cancel()
 
-	_, err = cl.DeleteDevice(ctx, &device.DeleteDeviceReq{UUID: deviceUUID})
+	_, err := h.client.DeleteDevice(ctx, &device.DeleteDeviceReq{UUID: deviceUUID})
 	if err != nil {
-		w.HandleServiceError(err, "cl.DeleteDevice", h.log)
+		w.HandleServiceError(err, op, h.log)
 		return
 	}
 
@@ -139,20 +109,12 @@ func (h *adminHandler) UpdateDevice(c *gin.Context) {
 		return
 	}
 
-	cl, cc, err := client.DialDevice(h.serviceAddr)
-	if err != nil {
-		h.log.Error("failed to dial device service", logger.Error(err, op))
-		w.ServerError()
-		return
-	}
-	defer cc.Close()
-
 	ctx, cancel := context.WithTimeout(c.Request.Context(), time.Duration(1000)*time.Millisecond)
 	defer cancel()
 
-	_, err = cl.UpdateDevice(ctx, device)
+	_, err = h.client.UpdateDevice(ctx, device)
 	if err != nil {
-		w.HandleServiceError(err, "cl.UpdateDevice", h.log)
+		w.HandleServiceError(err, op, h.log)
 		return
 	}
 

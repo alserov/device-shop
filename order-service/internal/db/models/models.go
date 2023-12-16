@@ -1,6 +1,8 @@
 package models
 
-import "time"
+import (
+	"time"
+)
 
 type CreateOrderReq struct {
 	UserUUID     string
@@ -43,9 +45,4 @@ type CheckOrderRes struct {
 	OrderPrice   float32
 	OrderDevices []OrderDevice
 	UserUUID     string
-}
-
-type CancelOrderRes struct {
-	Price    float32
-	UserUUID string
 }

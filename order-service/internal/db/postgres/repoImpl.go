@@ -84,12 +84,17 @@ func (r *repo) CreateOrderTx(_ context.Context, req models.CreateOrderReq) (*sql
 	return tx, nil
 }
 
-func (r *repo) CancelOrderDevicesTx(_ context.Context, orderUUID string) ([]models.OrderDevice, error) {
-	query := `SELECT device_uuid, amount FROM ordered_devices WHERE order_uuid = $1`
+func (r *repo) CancelOrderDevicesTx(_ context.Context, orderUUID string) (db.Tx, error) {
+	query := `DELETE FROM ordered_devices WHERE order_uuid = $1 RETURNING device_uuid, amount`
 
-	var orderedDevices []models.OrderDevice
+	tx, err := r.db.Begin()
+	if err != nil {
+		return nil, status.Error(codes.Internal, internalError)
+	}
 
-	rows, err := r.db.Query(query, orderUUID)
+	var devices []models.OrderDevice
+
+	rows, err := tx.Query(query, orderUUID)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, status.Error(codes.NotFound, fmt.Sprintf("there are no devices ordered with uuid: %s", orderUUID))
 	}
@@ -102,10 +107,13 @@ func (r *repo) CancelOrderDevicesTx(_ context.Context, orderUUID string) ([]mode
 		if err = rows.Scan(&d); err != nil {
 			return nil, status.Error(codes.Internal, internalError)
 		}
-		orderedDevices = append(orderedDevices, d)
+		devices = append(devices, d)
 	}
 
-	return orderedDevices, nil
+	return &db.CancelOrderDevices{
+		Devices: devices,
+		Tx:      tx,
+	}, nil
 }
 
 func (r *repo) CheckOrder(_ context.Context, orderUUID string) (models.CheckOrderRes, error) {
@@ -174,26 +182,28 @@ func (r *repo) CheckOrder(_ context.Context, orderUUID string) (models.CheckOrde
 	}, nil
 }
 
-func (r *repo) CancelOrderTx(ctx context.Context, orderUUID string) (models.CancelOrderRes, *sql.Tx, error) {
+func (r *repo) CancelOrderTx(_ context.Context, orderUUID string) (db.Tx, error) {
 	op := "repo.CancelOrderTx"
 	query := `UPDATE orders SET status = $1 WHERE order_uuid = $2 RETURNING order_price,user_uuid`
 
+	var res db.CancelOrder
+
 	tx, err := r.db.Begin()
+	res.Tx = tx
 	if err != nil {
-		return models.CancelOrderRes{}, tx, status.Error(codes.Internal, internalError)
+		return &res, status.Error(codes.Internal, internalError)
 	}
 
-	var res models.CancelOrderRes
 	err = tx.QueryRow(query, oStatus.CANCELED_CODE, orderUUID).Scan(&res)
 	if errors.Is(err, sql.ErrNoRows) {
-		return models.CancelOrderRes{}, tx, status.Error(codes.NotFound, orderNotFound)
+		return &db.CancelOrder{}, status.Error(codes.NotFound, orderNotFound)
 	}
 	if err != nil {
 		r.log.Error("failed to execute query", slog.String("error", err.Error()), slog.String("op", op))
-		return models.CancelOrderRes{}, tx, status.Error(codes.Internal, internalError)
+		return &res, status.Error(codes.Internal, internalError)
 	}
 
-	return res, tx, nil
+	return &res, nil
 }
 
 func (r *repo) UpdateOrder(_ context.Context, orderStatus string, orderUUID string) error {

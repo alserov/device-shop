@@ -2,35 +2,33 @@ package handlers
 
 import (
 	"context"
-	"github.com/alserov/device-shop/gateway/internal/logger"
 
 	"github.com/alserov/device-shop/gateway/internal/utils"
 	"github.com/alserov/device-shop/gateway/internal/utils/validation"
-	"github.com/alserov/device-shop/gateway/pkg/client"
 	"github.com/alserov/device-shop/gateway/pkg/responser"
 	"github.com/alserov/device-shop/proto/gen/order"
 
 	"github.com/gin-gonic/gin"
 	"log/slog"
-	"net/http"
 	"time"
 )
 
-type OrdersHandler interface {
+type OrderHandler interface {
 	CreateOrder(c *gin.Context)
 	UpdateOrder(c *gin.Context)
 	CheckOrder(c *gin.Context)
+	CancelOrder(c *gin.Context)
 }
 
-type OrderH struct {
-	OrderAddr string
-	Log       *slog.Logger
+type orderHandler struct {
+	client order.OrdersClient
+	log    *slog.Logger
 }
 
-func NewOrderHandler(oh *OrderH) OrdersHandler {
-	return &ordersHandler{
-		serviceAddr: oh.OrderAddr,
-		log:         oh.Log,
+func NewOrderHandler(c order.OrdersClient, log *slog.Logger) OrderHandler {
+	return &orderHandler{
+		client: c,
+		log:    log,
 	}
 }
 
@@ -38,12 +36,7 @@ const (
 	invalidQueryParam = "invalid query param"
 )
 
-type ordersHandler struct {
-	serviceAddr string
-	log         *slog.Logger
-}
-
-func (h *ordersHandler) CreateOrder(c *gin.Context) {
+func (h *orderHandler) CreateOrder(c *gin.Context) {
 	w := responser.NewResponser(c.Writer)
 	op := "ordersHandler.CreateOrder"
 
@@ -53,27 +46,19 @@ func (h *ordersHandler) CreateOrder(c *gin.Context) {
 		return
 	}
 
-	cl, cc, err := client.DialOrder(h.serviceAddr)
-	if err != nil {
-		h.log.Error("failed to dial order service", logger.Error(err, op))
-		w.ServerError()
-		return
-	}
-	defer cc.Close()
-
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
 	defer cancel()
 
-	res, err := cl.CreateOrder(ctx, order)
+	res, err := h.client.CreateOrder(ctx, order)
 	if err != nil {
-		w.HandleServiceError(err, "cl.CreateOrder", h.log)
+		w.HandleServiceError(err, op, h.log)
 		return
 	}
 
 	w.Value(res)
 }
 
-func (h *ordersHandler) UpdateOrder(c *gin.Context) {
+func (h *orderHandler) UpdateOrder(c *gin.Context) {
 	w := responser.NewResponser(c.Writer)
 	op := "ordersHandler.UpdateOrder"
 
@@ -83,50 +68,56 @@ func (h *ordersHandler) UpdateOrder(c *gin.Context) {
 		return
 	}
 
-	cl, cc, err := client.DialOrder(h.serviceAddr)
-	if err != nil {
-		h.log.Error("failed to dial order service", logger.Error(err, op))
-		w.ServerError()
-		return
-	}
-	defer cc.Close()
-
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
 	defer cancel()
 
-	_, err = cl.UpdateOrder(ctx, orderStatus)
+	_, err = h.client.UpdateOrder(ctx, orderStatus)
 	if err != nil {
-		w.HandleServiceError(err, "cl.UpdateOrder", h.log)
+		w.HandleServiceError(err, op, h.log)
 		return
 	}
 
-	c.Status(http.StatusOK)
+	w.OK()
 }
 
-func (h *ordersHandler) CheckOrder(c *gin.Context) {
+func (h *orderHandler) CancelOrder(c *gin.Context) {
 	w := responser.NewResponser(c.Writer)
-	op := "ordersHandler.CheckOrder"
+	op := "ordersHandler.CancelOrder"
 
-	orderUUID := c.Param("orderUUID")
+	orderUUID := c.Param("order_uuid")
 	if orderUUID == "" {
 		w.UserError(invalidQueryParam)
 		return
 	}
 
-	cl, cc, err := client.DialOrder(h.serviceAddr)
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
+	defer cancel()
+
+	_, err := h.client.CancelOrder(ctx, &order.CancelOrderReq{OrderUUID: orderUUID})
 	if err != nil {
-		h.log.Error("failed to dial order service", logger.Error(err, op))
-		w.ServerError()
+		w.HandleServiceError(err, op, h.log)
 		return
 	}
-	defer cc.Close()
+
+	w.OK()
+}
+
+func (h *orderHandler) CheckOrder(c *gin.Context) {
+	w := responser.NewResponser(c.Writer)
+	op := "ordersHandler.CheckOrder"
+
+	orderUUID := c.Param("order_uuid")
+	if orderUUID == "" {
+		w.UserError(invalidQueryParam)
+		return
+	}
 
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
 	defer cancel()
 
-	order, err := cl.CheckOrder(ctx, &order.CheckOrderReq{OrderUUID: orderUUID})
+	order, err := h.client.CheckOrder(ctx, &order.CheckOrderReq{OrderUUID: orderUUID})
 	if err != nil {
-		w.HandleServiceError(err, "cl.CheckOrder", h.log)
+		w.HandleServiceError(err, op, h.log)
 		return
 	}
 

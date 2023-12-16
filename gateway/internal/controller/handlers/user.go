@@ -2,12 +2,12 @@ package handlers
 
 import (
 	"context"
-	"github.com/alserov/device-shop/gateway/internal/logger"
+
 	"github.com/alserov/device-shop/gateway/internal/utils"
 	"github.com/alserov/device-shop/gateway/internal/utils/validation"
-	"github.com/alserov/device-shop/gateway/pkg/client"
 	"github.com/alserov/device-shop/gateway/pkg/responser"
 	"github.com/alserov/device-shop/proto/gen/user"
+
 	"github.com/gin-gonic/gin"
 	"log/slog"
 	"time"
@@ -18,19 +18,14 @@ type UsersHandler interface {
 }
 
 type usersHandler struct {
-	serviceAddr string
-	log         *slog.Logger
+	client user.UsersClient
+	log    *slog.Logger
 }
 
-type UserH struct {
-	UserAddr string
-	Log      *slog.Logger
-}
-
-func NewUserHandler(uh *UserH) UsersHandler {
+func NewUserHandler(c user.UsersClient, log *slog.Logger) UsersHandler {
 	return &usersHandler{
-		serviceAddr: uh.UserAddr,
-		log:         uh.Log,
+		client: c,
+		log:    log,
 	}
 }
 
@@ -44,20 +39,12 @@ func (h *usersHandler) TopUpBalance(c *gin.Context) {
 		return
 	}
 
-	cl, cc, err := client.DialUser(h.serviceAddr)
-	if err != nil {
-		h.log.Error("failed to dial user service", logger.Error(err, op))
-		w.ServerError()
-		return
-	}
-	defer cc.Close()
-
 	ctx, cancel := context.WithTimeout(c.Request.Context(), time.Second)
 	defer cancel()
 
-	res, err := cl.TopUpBalance(ctx, cashAmount)
+	res, err := h.client.TopUpBalance(ctx, cashAmount)
 	if err != nil {
-		w.HandleServiceError(err, "cl.TopUpBalance", h.log)
+		w.HandleServiceError(err, op, h.log)
 		return
 	}
 

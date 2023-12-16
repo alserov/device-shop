@@ -2,11 +2,8 @@ package handlers
 
 import (
 	"context"
-	"github.com/alserov/device-shop/gateway/internal/logger"
-
 	"github.com/alserov/device-shop/gateway/internal/utils"
 	"github.com/alserov/device-shop/gateway/internal/utils/validation"
-	"github.com/alserov/device-shop/gateway/pkg/client"
 	"github.com/alserov/device-shop/gateway/pkg/responser"
 	"github.com/alserov/device-shop/proto/gen/user"
 
@@ -23,19 +20,14 @@ type AuthHandler interface {
 }
 
 type authHandler struct {
-	log         *slog.Logger
-	serviceAddr string
+	log    *slog.Logger
+	client user.UsersClient
 }
 
-type AuthH struct {
-	AuthAddr string
-	Log      *slog.Logger
-}
-
-func NewAuthHandler(ah *AuthH) AuthHandler {
+func NewAuthHandler(c user.UsersClient, log *slog.Logger) AuthHandler {
 	return &authHandler{
-		log:         ah.Log,
-		serviceAddr: ah.AuthAddr,
+		log:    log,
+		client: c,
 	}
 }
 
@@ -54,20 +46,12 @@ func (h *authHandler) Signup(c *gin.Context) {
 		return
 	}
 
-	cl, cc, err := client.DialUser(h.serviceAddr)
-	if err != nil {
-		h.log.Error("failed to dial device service", logger.Error(err, op))
-		w.ServerError()
-		return
-	}
-	defer cc.Close()
-
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
 	defer cancel()
 
-	user, err := cl.Signup(ctx, userInfo)
+	user, err := h.client.Signup(ctx, userInfo)
 	if err != nil {
-		w.HandleServiceError(err, "cl.Signup", h.log)
+		w.HandleServiceError(err, op, h.log)
 		return
 	}
 
@@ -86,20 +70,12 @@ func (h *authHandler) Login(c *gin.Context) {
 		return
 	}
 
-	cl, cc, err := client.DialUser(h.serviceAddr)
-	if err != nil {
-		h.log.Error("failed to dial device service", logger.Error(err, op))
-		w.ServerError()
-		return
-	}
-	defer cc.Close()
-
 	ctx, cancel := context.WithTimeout(c.Request.Context(), time.Second)
 	defer cancel()
 
-	res, err := cl.Login(ctx, userInfo)
+	res, err := h.client.Login(ctx, userInfo)
 	if err != nil {
-		w.HandleServiceError(err, "cl.Login", h.log)
+		w.HandleServiceError(err, op, h.log)
 		return
 	}
 
@@ -122,22 +98,14 @@ func (h *authHandler) GetInfo(c *gin.Context) {
 		return
 	}
 
-	cl, cc, err := client.DialUser(h.serviceAddr)
-	if err != nil {
-		h.log.Error("failed to dial user service", logger.Error(err, op))
-		w.ServerError()
-		return
-	}
-	defer cc.Close()
-
 	ctx, cancel := context.WithTimeout(c.Request.Context(), time.Second)
 	defer cancel()
 
-	res, err := cl.GetUserInfo(ctx, &user.GetUserInfoReq{
+	res, err := h.client.GetUserInfo(ctx, &user.GetUserInfoReq{
 		UserUUID: userUUID,
 	})
 	if err != nil {
-		w.HandleServiceError(err, "cl.GetUserInfo", h.log)
+		w.HandleServiceError(err, op, h.log)
 		return
 	}
 

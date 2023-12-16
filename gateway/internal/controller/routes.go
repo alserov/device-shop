@@ -3,8 +3,6 @@ package controller
 import (
 	"github.com/alserov/device-shop/gateway/internal/middleware"
 	"github.com/gin-gonic/gin"
-	swaggerFiles "github.com/swaggo/files"
-	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
 const (
@@ -16,8 +14,6 @@ const (
 )
 
 func LoadRoutes(r *gin.Engine, h *Controller) {
-	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
-
 	// AUTH
 	userAuth := r.Group(authPath)
 	userAuth.POST("/signup", h.authHandler.Signup)
@@ -38,7 +34,8 @@ func LoadRoutes(r *gin.Engine, h *Controller) {
 	order := r.Group(ordersPath).Use(middleware.CheckIfAuthorized())
 	order.POST("/new", h.orderHandler.CreateOrder)
 	order.PUT("/update", h.orderHandler.UpdateOrder)
-	order.GET("/:orderUUID", h.orderHandler.CheckOrder)
+	order.GET("/:order_uuid", h.orderHandler.CheckOrder)
+	order.DELETE("/:order_uuid", h.orderHandler.CancelOrder)
 
 	// ADMIN routes
 	admin := r.Group(adminPath).Use(middleware.CheckIfAllowed())

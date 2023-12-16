@@ -66,7 +66,7 @@ const (
 func (a *App) MustStart() {
 	a.log.Info("starting app", slog.Int("port", a.server.port))
 
-	cl := cache.MustConnect(a.cacheAddr)
+	redisCl := cache.MustConnect(a.cacheAddr)
 	a.log.Info("cache connected")
 
 	producer, err := broker.NewProducer([]string{a.broker.Addr}, kafkaClientID)
@@ -74,13 +74,18 @@ func (a *App) MustStart() {
 		panic("failed to init producer: " + err.Error())
 	}
 
-	controller.LoadRoutes(a.server.router, controller.NewController(&controller.C{
-		Topics:      a.broker.Topics,
-		RedisClient: cl,
-		Producer:    producer,
-		Services:    a.services,
-		Log:         a.log,
-	}))
+	metricsProducer := broker.NewMetricsProducer(producer, a.broker.Topics.Metrics)
+
+	ctrl, closeConns := controller.NewController(&controller.Ctrl{
+		Topics:          a.broker.Topics,
+		Services:        a.services,
+		Log:             a.log,
+		RedisClient:     redisCl,
+		MetricsProducer: metricsProducer,
+	})
+	defer closeConns()
+
+	controller.LoadRoutes(a.server.router, ctrl)
 
 	a.log.Info("app is running")
 	if err = a.server.server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
