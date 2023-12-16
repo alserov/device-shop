@@ -9,12 +9,10 @@ import (
 	"google.golang.org/grpc"
 	"log/slog"
 	"net"
-	"time"
 )
 
 type App struct {
 	port       int
-	timeout    time.Duration
 	dbDsn      string
 	log        *slog.Logger
 	gRPCServer *grpc.Server

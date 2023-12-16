@@ -170,12 +170,18 @@ func (t *txManager) CreateOrderTx(in brokermodels.CreateOrderTxBody) error {
 	close(chErr)
 
 	for err := range chErr {
-		tx.Rollback()
 		t.notifyWorkers(userFailureStatus, txUUID)
+		if err = tx.Rollback(); err != nil {
+			t.log.Error("failed to rollback", slog.String("error", err.Error()), slog.String("op", "txManager.CreateOrderTx"))
+			return status.Error(codes.Internal, internalError)
+		}
 		return err
 	}
 
-	tx.Commit()
+	if err := tx.Commit(); err != nil {
+		t.notifyWorkers(serverFailureStatus, txUUID)
+		return status.Error(codes.Internal, internalError)
+	}
 	t.notifyWorkers(successStatus, txUUID)
 	return nil
 }

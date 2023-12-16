@@ -68,20 +68,6 @@ func (*serverConverter) pbOrderDevicesToService(devices []*order.OrderDevice) []
 	return orderDevices
 }
 
-func (*serverConverter) serverOrderDevicesToPb(devices []order.OrderDevice) []models.OrderDevice {
-	var orderDevices []models.OrderDevice
-
-	for _, device := range devices {
-		d := models.OrderDevice{
-			DeviceUUID: device.DeviceUUID,
-			Amount:     device.Amount,
-		}
-		orderDevices = append(orderDevices, d)
-	}
-
-	return orderDevices
-}
-
 func toTimepb(t *time.Time) *timestamppb.Timestamp {
 	return &timestamppb.Timestamp{
 		Seconds: t.Unix(),

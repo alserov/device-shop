@@ -76,9 +76,12 @@ func (r *repo) CreateOrderTx(_ context.Context, req models.CreateOrderReq) (*sql
 	}()
 
 	for err = range chErr {
-		tx.Rollback()
+		if err = tx.Rollback(); err != nil {
+			r.log.Error("failed to rollback", slog.String("error", err.Error()), slog.String("op", op))
+			return tx, status.Error(codes.Internal, internalError)
+		}
 		r.log.Error("failed to create order", slog.String("error", err.Error()), slog.String("op", op))
-		return tx, status.Error(codes.Internal, internalError)
+		return tx, err
 	}
 
 	return tx, nil
@@ -141,7 +144,12 @@ func (r *repo) CheckOrder(_ context.Context, orderUUID string) (models.CheckOrde
 				uuid   string
 				amount uint32
 			)
-			if err = rows.Scan(&uuid, &amount); err != nil {
+			err = rows.Scan(&uuid, &amount)
+			if errors.Is(sql.ErrNoRows, err) {
+				r.log.Error("failed to get order device", slog.String("error", err.Error()), slog.String("op", op))
+				chErr <- status.Error(codes.InvalidArgument, orderNotFound)
+			}
+			if err != nil {
 				chErr <- err
 			}
 			devices = append(devices, models.OrderDevice{
@@ -155,7 +163,12 @@ func (r *repo) CheckOrder(_ context.Context, orderUUID string) (models.CheckOrde
 		defer wg.Done()
 		query := `SELECT total_price,status,created_at, user_uuid FROM orders WHERE order_uuid = $1`
 
-		if err := r.db.QueryRow(query, orderUUID).Scan(&order.Price, &order.Status, &order.CreatedAt, &order.UserUUID); err != nil {
+		err := r.db.QueryRow(query, orderUUID).Scan(&order.Price, &order.Status, &order.CreatedAt, &order.UserUUID)
+		if errors.Is(sql.ErrNoRows, err) {
+			r.log.Error("failed to get order", slog.String("error", err.Error()), slog.String("op", op))
+			chErr <- status.Error(codes.InvalidArgument, orderNotFound)
+		}
+		if err != nil {
 			chErr <- err
 		}
 	}()
@@ -166,10 +179,6 @@ func (r *repo) CheckOrder(_ context.Context, orderUUID string) (models.CheckOrde
 	}()
 
 	for err := range chErr {
-		if errors.Is(sql.ErrNoRows, err) {
-			return models.CheckOrderRes{}, status.Error(codes.InvalidArgument, orderNotFound)
-		}
-		r.log.Error("failed to create order", slog.String("error", err.Error()), slog.String("op", op))
 		return models.CheckOrderRes{}, err
 	}
 
@@ -242,7 +251,7 @@ func (r *repo) UpdateOrder(_ context.Context, orderStatus string, orderUUID stri
 		close(chErr)
 	}()
 
-	for _ = range chErr {
+	for range chErr {
 		return status.Error(codes.Internal, internalError)
 	}
 

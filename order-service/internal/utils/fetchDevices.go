@@ -9,10 +9,6 @@ import (
 	"sync"
 )
 
-const (
-	internalError = "internal error"
-)
-
 func FetchDevicesFromOrder(ctx context.Context, cl device.DevicesClient, devicesFromOrder []models.OrderDevice) ([]*device.Device, error) {
 	var (
 		wg      = &sync.WaitGroup{}
