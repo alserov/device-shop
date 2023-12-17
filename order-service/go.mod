@@ -5,7 +5,7 @@ go 1.21.0
 require (
 	github.com/IBM/sarama v1.42.1
 	github.com/alserov/device-shop/gateway v0.0.0-20231204190602-9d348540f28e
-	github.com/alserov/device-shop/proto v0.0.0-20231215172214-e8ef5eb41a58
+	github.com/alserov/device-shop/proto v0.0.0-20231216161602-4388990ccdcb
 	github.com/golang-migrate/migrate/v4 v4.16.2
 	github.com/golang/mock v1.6.0
 	github.com/google/uuid v1.4.0

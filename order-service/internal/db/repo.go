@@ -6,7 +6,7 @@ import (
 	"github.com/alserov/device-shop/order-service/internal/db/models"
 )
 
-type OrderRepo interface {
+type Repository interface {
 	CreateOrderTx(ctx context.Context, req models.CreateOrderReq) (*sql.Tx, error)
 	CheckOrder(ctx context.Context, orderUUID string) (models.CheckOrderRes, error)
 	UpdateOrder(ctx context.Context, status string, orderUUID string) error

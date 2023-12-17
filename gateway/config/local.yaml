@@ -15,11 +15,7 @@ cache:
   addr: 127.0.0.1:4001
 
 services:
-  user:
-    addr: 127.0.0.1:3002
-  device:
-    addr: 127.0.0.1:3003
-  order:
-    addr: 127.0.0.1:3005
-  coll:
-    addr: 127.0.0.1:3004
+  userAddr: 127.0.0.1:3002
+  deviceAddr: 127.0.0.1:3003
+  orderAddr: 127.0.0.1:3005
+  collAddr: 127.0.0.1:3004

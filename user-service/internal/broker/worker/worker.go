@@ -22,7 +22,7 @@ type worker struct {
 	topicIn  string
 	topicOut string
 
-	repo db.UserRepo
+	repo db.Repository
 	conv converter.BrokerConverter
 
 	c sarama.Consumer
@@ -38,7 +38,7 @@ type Worker interface {
 	MustStart()
 }
 
-func NewWorker(b *broker.Broker, repo db.UserRepo, log *slog.Logger) Worker {
+func NewWorker(b *broker.Broker, repo db.Repository, log *slog.Logger) Worker {
 	cons, err := sarama.NewConsumer([]string{b.Addr}, nil)
 	if err != nil {
 		panic("failed to start kafka consumer: " + err.Error())

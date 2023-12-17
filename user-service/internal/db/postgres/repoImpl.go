@@ -12,7 +12,7 @@ import (
 	"log/slog"
 )
 
-func NewRepo(db *sql.DB, log *slog.Logger) db.UserRepo {
+func NewRepo(db *sql.DB, log *slog.Logger) db.Repository {
 	return &repo{
 		db:  db,
 		log: log,

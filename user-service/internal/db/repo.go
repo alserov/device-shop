@@ -6,7 +6,7 @@ import (
 	"github.com/alserov/device-shop/user-service/internal/db/models"
 )
 
-type UserRepo interface {
+type Repository interface {
 	InternalActions
 	BalanceActions
 	AuthActions

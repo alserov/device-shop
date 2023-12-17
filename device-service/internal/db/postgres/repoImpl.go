@@ -13,7 +13,7 @@ import (
 	"sync"
 )
 
-func NewRepo(db *sql.DB, log *slog.Logger) db.DeviceRepo {
+func NewRepo(db *sql.DB, log *slog.Logger) db.Repository {
 	return &repo{
 		db:  db,
 		log: log,

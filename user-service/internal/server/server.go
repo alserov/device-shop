@@ -2,13 +2,11 @@ package server
 
 import (
 	"context"
-	"database/sql"
+	"github.com/alserov/device-shop/proto/gen/user"
 	"github.com/alserov/device-shop/user-service/internal/broker"
 	"github.com/alserov/device-shop/user-service/internal/broker/mail"
 	"github.com/alserov/device-shop/user-service/internal/broker/worker"
-	"github.com/alserov/device-shop/user-service/internal/db/postgres"
-
-	"github.com/alserov/device-shop/proto/gen/user"
+	"github.com/alserov/device-shop/user-service/internal/db"
 	"github.com/alserov/device-shop/user-service/internal/service"
 	"github.com/alserov/device-shop/user-service/internal/utils/converter"
 	"github.com/alserov/device-shop/user-service/internal/utils/validation"
@@ -20,21 +18,20 @@ import (
 
 type Server struct {
 	GRPCServer *grpc.Server
-	DB         *sql.DB
+	Repo       db.Repository
 	Log        *slog.Logger
 
 	Broker *broker.Broker
 }
 
 func MustRegister(s *Server) {
-	dbRepo := postgres.NewRepo(s.DB, s.Log)
-
 	work := worker.NewWorker(&broker.Broker{
 		Addr: s.Broker.Addr,
-		Topics: broker.Topics{
-			Email: s.Broker.Topics.Email,
+		Topics: &broker.Topics{
+			Email:  s.Broker.Topics.Email,
+			Worker: s.Broker.Topics.Worker,
 		},
-	}, dbRepo, s.Log)
+	}, s.Repo, s.Log)
 
 	prod, err := broker.NewProducer([]string{s.Broker.Addr}, "SIGNUP_EMAIL")
 	if err != nil {
@@ -45,7 +42,7 @@ func MustRegister(s *Server) {
 
 	user.RegisterUsersServer(s.GRPCServer, &server{
 		log:     s.Log,
-		service: service.NewService(dbRepo, work, email, s.Log),
+		service: service.NewService(s.Repo, work, email, s.Log),
 		valid:   validation.NewValidator(),
 		conv:    converter.NewServerConverter(),
 	})

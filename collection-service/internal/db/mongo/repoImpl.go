@@ -18,7 +18,7 @@ type repo struct {
 	db  *mongo.Client
 }
 
-func NewCollectionsRepo(db *mongo.Client, log *slog.Logger) db.CollectionRepo {
+func NewRepo(db *mongo.Client, log *slog.Logger) db.Repository {
 	return &repo{
 		log: log,
 		db:  db,

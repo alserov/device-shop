@@ -14,7 +14,7 @@ import (
 	gomock "github.com/golang/mock/gomock"
 )
 
-// MockOrderRepo is a mock of OrderRepo interface.
+// MockOrderRepo is a mock of Repository interface.
 type MockOrderRepo struct {
 	ctrl     *gomock.Controller
 	recorder *MockOrderRepoMockRecorder

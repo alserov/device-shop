@@ -5,28 +5,33 @@ import (
 	"github.com/alserov/device-shop/order-service/internal/broker"
 	"github.com/alserov/device-shop/order-service/internal/config"
 	"github.com/alserov/device-shop/order-service/internal/db/postgres"
+	"github.com/alserov/device-shop/order-service/internal/logger"
 	"github.com/alserov/device-shop/order-service/internal/server"
 	"google.golang.org/grpc"
 	"log/slog"
 	"net"
+	"os"
+	"os/signal"
+	"syscall"
 )
 
-type App struct {
-	port       int
-	dbDsn      string
+type app struct {
+	port  int
+	dbDsn string
+
 	log        *slog.Logger
 	gRPCServer *grpc.Server
-	kafka      *broker.Broker
-	services   services
+	broker     *broker.Broker
+	services   *server.Services
 }
 
-type services struct {
-	deviceAddr string
+type App interface {
+	MustStart()
 }
 
-func New(cfg *config.Config, log *slog.Logger) *App {
-	return &App{
-		log:        log,
+func New(cfg *config.Config) App {
+	return &app{
+		log:        logger.MustSetupLogger(cfg.Env),
 		port:       cfg.GRPC.Port,
 		gRPCServer: grpc.NewServer(),
 		dbDsn: fmt.Sprintf("host=%s port=%d user=%s password=%v dbname=%s sslmode=%s",
@@ -37,41 +42,43 @@ func New(cfg *config.Config, log *slog.Logger) *App {
 			cfg.DB.Name,
 			cfg.DB.Sslmode,
 		),
-		kafka: &broker.Broker{
-			Addr: cfg.Kafka.BrokerAddr,
+		broker: &broker.Broker{
+			Addr: cfg.Broker.Addr,
 			Topics: broker.Topics{
 				Balance: broker.Topic{
-					In:  cfg.Kafka.UserTopicIn,
-					Out: cfg.Kafka.UserTopicOut,
+					In:  cfg.Broker.UserTopicIn,
+					Out: cfg.Broker.UserTopicOut,
 				},
 				Device: broker.Topic{
-					In:  cfg.Kafka.DeviceTopicIn,
-					Out: cfg.Kafka.DeviceTopicOut,
+					In:  cfg.Broker.DeviceTopicIn,
+					Out: cfg.Broker.DeviceTopicOut,
 				},
 				Collection: broker.Topic{
-					In:  cfg.Kafka.CollectionTopicIn,
-					Out: cfg.Kafka.CollectionTopicOut,
+					In:  cfg.Broker.CollectionTopicIn,
+					Out: cfg.Broker.CollectionTopicOut,
 				},
 			},
 		},
-		services: services{
-			deviceAddr: cfg.Services.DeviceAddr,
+		services: &server.Services{
+			DeviceAddr: cfg.Services.DeviceAddr,
 		},
 	}
 }
 
-func (a *App) MustStart() {
+func (a *app) MustStart() {
+	defer a.recover()
 	a.log.Info("starting app", slog.Int("port", a.port))
 
 	db := postgres.MustConnect(a.dbDsn)
 	a.log.Info("db connected")
+	repo := postgres.NewRepo(db, a.log)
 
 	server.Register(&server.Server{
 		Log:        a.log,
-		DeviceAddr: a.services.deviceAddr,
+		Services:   a.services,
 		GRPCServer: a.gRPCServer,
-		DB:         db,
-		Broker:     a.kafka,
+		Repo:       repo,
+		Broker:     a.broker,
 	})
 
 	l, err := net.Listen("tcp", fmt.Sprintf(":%d", a.port))
@@ -79,12 +86,28 @@ func (a *App) MustStart() {
 		panic("failed to listen: " + err.Error())
 	}
 
-	a.log.Info("app is running")
-	if err = a.gRPCServer.Serve(l); err != nil {
-		panic("failed to serve: " + err.Error())
-	}
+	chStop := make(chan os.Signal)
+	signal.Notify(chStop, syscall.SIGTERM, syscall.SIGINT)
+
+	go func() {
+		a.log.Info("app is running")
+		if err = a.gRPCServer.Serve(l); err != nil {
+			panic("failed to server: " + err.Error())
+		}
+	}()
+
+	sign := <-chStop
+	a.stop(sign)
 }
 
-func (a *App) Stop() {
-	a.gRPCServer.Stop()
+func (a *app) stop(sign os.Signal) {
+	a.gRPCServer.GracefulStop()
+	a.log.Info("app was stopped due to: ", sign.String())
+}
+
+func (a *app) recover() {
+	err := recover()
+	if err != nil {
+		a.log.Error("app was stopped due to panic", slog.Any("error", err))
+	}
 }

@@ -2,33 +2,39 @@ package server
 
 import (
 	"context"
-	"github.com/alserov/device-shop/collection-service/internal/db/mongo"
-	"github.com/alserov/device-shop/gateway/pkg/client"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	"github.com/alserov/device-shop/collection-service/internal/db"
 	"github.com/alserov/device-shop/collection-service/internal/service"
 	"github.com/alserov/device-shop/collection-service/internal/utils/converter"
 	"github.com/alserov/device-shop/collection-service/internal/utils/validation"
+	"github.com/alserov/device-shop/gateway/pkg/client"
 	"github.com/alserov/device-shop/proto/gen/collection"
 
-	mg "go.mongodb.org/mongo-driver/mongo"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"log/slog"
 )
 
-func Register(s *grpc.Server, db *mg.Client, deviceServiceAddr string, log *slog.Logger) {
-	dbRepo := mongo.NewCollectionsRepo(db, log)
+type Server struct {
+	GRPCServer *grpc.Server
+	Repo       db.Repository
+	Services   *Services
+	Log        *slog.Logger
+}
 
-	collection.RegisterCollectionsServer(s, &server{
-		log:     log,
-		service: service.NewService(dbRepo, log),
-		valid:   validation.NewValidator(),
-		conv:    converter.NewServerConverter(),
-		services: services{
-			deviceAddr: deviceServiceAddr,
-		},
+type Services struct {
+	DeviceAddr string
+}
+
+func Register(s *Server) {
+	collection.RegisterCollectionsServer(s.GRPCServer, &server{
+		log:      s.Log,
+		service:  service.NewService(s.Repo, s.Log),
+		valid:    validation.NewValidator(),
+		conv:     converter.NewServerConverter(),
+		services: s.Services,
 	})
 }
 
@@ -38,14 +44,10 @@ type server struct {
 
 	log *slog.Logger
 
-	services services
+	services *Services
 
 	valid *validation.Validator
 	conv  *converter.ServerConverter
-}
-
-type services struct {
-	deviceAddr string
 }
 
 const (
@@ -59,7 +61,7 @@ func (s *server) AddToFavourite(ctx context.Context, req *collection.ChangeColle
 		return nil, err
 	}
 
-	cl, cc, err := client.DialDevice(s.services.deviceAddr)
+	cl, cc, err := client.DialDevice(s.services.DeviceAddr)
 	if err != nil {
 		s.log.Error("failed to dial device service", slog.String("error", err.Error()), slog.String("op", op))
 		return nil, status.Error(codes.Internal, internalErr)
@@ -107,7 +109,7 @@ func (s *server) AddToCart(ctx context.Context, req *collection.ChangeCollection
 		return nil, err
 	}
 
-	cl, cc, err := client.DialDevice(s.services.deviceAddr)
+	cl, cc, err := client.DialDevice(s.services.DeviceAddr)
 	if err != nil {
 		s.log.Error("failed to dial device service", slog.String("error", err.Error()), slog.String("op", op))
 		return nil, status.Error(codes.Internal, internalErr)

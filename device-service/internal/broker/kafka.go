@@ -2,7 +2,7 @@ package broker
 
 type Broker struct {
 	Addr   string
-	Topics Topics
+	Topics *Topics
 }
 
 type Topics struct {

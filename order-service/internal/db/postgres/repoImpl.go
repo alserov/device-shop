@@ -16,7 +16,7 @@ import (
 	"sync"
 )
 
-func NewRepo(db *sql.DB, log *slog.Logger) db.OrderRepo {
+func NewRepo(db *sql.DB, log *slog.Logger) db.Repository {
 	return &repo{
 		log: log,
 		db:  db,
@@ -99,7 +99,10 @@ func (r *repo) CancelOrderDevicesTx(_ context.Context, orderUUID string) (db.Tx,
 
 	rows, err := tx.Query(query, orderUUID)
 	if errors.Is(err, sql.ErrNoRows) {
-		return nil, status.Error(codes.NotFound, fmt.Sprintf("there are no devices ordered with uuid: %s", orderUUID))
+		return &db.CancelOrderDevices{
+			Devices: devices,
+			Tx:      tx,
+		}, status.Error(codes.NotFound, fmt.Sprintf("there are no devices ordered with uuid: %s", orderUUID))
 	}
 	if err != nil {
 		return nil, status.Error(codes.Internal, internalError)
@@ -193,7 +196,7 @@ func (r *repo) CheckOrder(_ context.Context, orderUUID string) (models.CheckOrde
 
 func (r *repo) CancelOrderTx(_ context.Context, orderUUID string) (db.Tx, error) {
 	op := "repo.CancelOrderTx"
-	query := `UPDATE orders SET status = $1 WHERE order_uuid = $2 RETURNING order_price,user_uuid`
+	query := `UPDATE orders SET status = $1 WHERE order_uuid = $2 RETURNING total_price,user_uuid`
 
 	var res db.CancelOrder
 
@@ -203,7 +206,7 @@ func (r *repo) CancelOrderTx(_ context.Context, orderUUID string) (db.Tx, error)
 		return &res, status.Error(codes.Internal, internalError)
 	}
 
-	err = tx.QueryRow(query, oStatus.CANCELED_CODE, orderUUID).Scan(&res)
+	err = tx.QueryRow(query, oStatus.CANCELED_CODE, orderUUID).Scan(&res.Price, &res.UserUUID)
 	if errors.Is(err, sql.ErrNoRows) {
 		return &db.CancelOrder{}, status.Error(codes.NotFound, orderNotFound)
 	}
@@ -217,41 +220,15 @@ func (r *repo) CancelOrderTx(_ context.Context, orderUUID string) (db.Tx, error)
 
 func (r *repo) UpdateOrder(_ context.Context, orderStatus string, orderUUID string) error {
 	op := "repo.UpdateOrder"
-	var (
-		wg    = &sync.WaitGroup{}
-		chErr = make(chan error)
-	)
 
-	wg.Add(2)
+	query := `UPDATE orders SET status = $1 WHERE order_uuid = $2`
 
-	go func() {
-		defer wg.Done()
-		query := `UPDATE orders SET status = $1 WHERE order_uuid = $2`
-
-		_, err := r.db.Exec(query, oStatus.StatusToCode(orderStatus), orderUUID)
-		if err != nil {
-			r.log.Error("failed to delete order from orders", slog.String("error", err.Error()), slog.String("op", op))
-			chErr <- err
-		}
-	}()
-
-	go func() {
-		defer wg.Done()
-		query := `DELETE FROM order_devices * WHERE order_uuid =$1`
-
-		_, err := r.db.Exec(query, orderUUID)
-		if err != nil {
-			r.log.Error("failed to delete order devices from order_devices", slog.String("error", err.Error()), slog.String("op", op))
-			chErr <- err
-		}
-	}()
-
-	go func() {
-		wg.Wait()
-		close(chErr)
-	}()
-
-	for range chErr {
+	_, err := r.db.Exec(query, oStatus.StatusToCode(orderStatus), orderUUID)
+	if errors.Is(err, sql.ErrNoRows) {
+		return status.Error(codes.NotFound, orderNotFound)
+	}
+	if err != nil {
+		r.log.Error("failed to delete order from orders", slog.String("error", err.Error()), slog.String("op", op))
 		return status.Error(codes.Internal, internalError)
 	}
 

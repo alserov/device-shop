@@ -6,7 +6,7 @@ import (
 	"github.com/alserov/device-shop/device-service/internal/db/models"
 )
 
-type DeviceRepo interface {
+type Repository interface {
 	GetActions
 	AdminActions
 	ChangeAmountActions

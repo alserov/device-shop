@@ -5,7 +5,6 @@ import (
 	"github.com/alserov/device-shop/order-service/internal/service/models"
 	"github.com/alserov/device-shop/proto/gen/device"
 	"github.com/alserov/device-shop/proto/gen/order"
-	"log/slog"
 	"sync"
 )
 
@@ -13,7 +12,6 @@ func FetchDevicesFromOrder(ctx context.Context, cl device.DevicesClient, devices
 	var (
 		wg      = &sync.WaitGroup{}
 		chErr   = make(chan error)
-		mu      = &sync.Mutex{}
 		devices = make([]*device.Device, 0, len(devicesFromOrder))
 	)
 
@@ -30,8 +28,6 @@ func FetchDevicesFromOrder(ctx context.Context, cl device.DevicesClient, devices
 				chErr <- err
 			}
 			device.Amount = d.Amount
-			mu.Lock()
-			defer mu.Unlock()
 			devices = append(devices, device)
 		}()
 	}
@@ -48,7 +44,7 @@ func FetchDevicesFromOrder(ctx context.Context, cl device.DevicesClient, devices
 	return devices, nil
 }
 
-func FetchDevicesWithPrice(ctx context.Context, cl device.DevicesClient, log *slog.Logger, orderDevices []*order.OrderDevice) (float32, error) {
+func CountOrderPrice(ctx context.Context, cl device.DevicesClient, orderDevices []*order.OrderDevice) (float32, error) {
 	var (
 		price float32
 		wg    = &sync.WaitGroup{}

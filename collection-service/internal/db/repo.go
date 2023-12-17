@@ -5,7 +5,7 @@ import (
 	"github.com/alserov/device-shop/collection-service/internal/db/models"
 )
 
-type CollectionRepo interface {
+type Repository interface {
 	CartActions
 	FavouriteActions
 

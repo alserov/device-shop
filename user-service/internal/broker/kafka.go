@@ -2,16 +2,16 @@ package broker
 
 type Broker struct {
 	Addr   string
-	Topics Topics
+	Topics *Topics
 }
 
 type Topics struct {
 	Email string
 
-	Worker Topic
+	Worker WorkerTopic
 }
 
-type Topic struct {
+type WorkerTopic struct {
 	In  string
 	Out string
 }

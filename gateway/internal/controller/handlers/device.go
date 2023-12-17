@@ -10,8 +10,6 @@ import (
 	"github.com/alserov/device-shop/gateway/pkg/responser"
 	"github.com/alserov/device-shop/proto/gen/device"
 	"github.com/gin-gonic/gin"
-	"github.com/go-redis/redis"
-
 	"log/slog"
 	"strconv"
 	"strings"
@@ -33,10 +31,10 @@ type devicesHandler struct {
 	p      broker.MetricsProducer
 }
 
-func NewDeviceHandler(c device.DevicesClient, r *redis.Client, p broker.MetricsProducer, log *slog.Logger) DeviceHandler {
+func NewDeviceHandler(c device.DevicesClient, cache cache.Repository, p broker.MetricsProducer, log *slog.Logger) DeviceHandler {
 	return &devicesHandler{
 		client: c,
-		cache:  cache.NewRepo(r),
+		cache:  cache,
 		log:    log,
 		p:      p,
 	}

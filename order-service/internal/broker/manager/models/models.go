@@ -40,7 +40,7 @@ type CancelOrderTxBody struct {
 }
 
 type CreateOrderTxBody struct {
-	Repo      db.OrderRepo
+	Repo      db.Repository
 	Order     models.CreateOrderReq
 	OrderUUID string
 

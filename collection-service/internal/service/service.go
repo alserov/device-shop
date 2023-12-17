@@ -22,7 +22,7 @@ type Service interface {
 	RemoveDeviceFromCollections(ctx context.Context, deviceUUID string) error
 }
 
-func NewService(repo db.CollectionRepo, log *slog.Logger) Service {
+func NewService(repo db.Repository, log *slog.Logger) Service {
 	return &service{
 		log:  log,
 		repo: repo,
@@ -32,7 +32,7 @@ func NewService(repo db.CollectionRepo, log *slog.Logger) Service {
 
 type service struct {
 	log  *slog.Logger
-	repo db.CollectionRepo
+	repo db.Repository
 
 	conv *converter.ServiceConverter
 }

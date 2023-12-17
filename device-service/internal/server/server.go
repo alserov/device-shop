@@ -2,8 +2,7 @@ package server
 
 import (
 	"context"
-	"database/sql"
-	"github.com/alserov/device-shop/device-service/internal/db/postgres"
+	"github.com/alserov/device-shop/device-service/internal/db"
 	"github.com/alserov/device-shop/device-service/internal/service"
 	"github.com/alserov/device-shop/device-service/internal/utils/converter"
 	"github.com/alserov/device-shop/device-service/internal/utils/validation"
@@ -16,18 +15,25 @@ import (
 	"log/slog"
 )
 
-func Register(s *grpc.Server, db *sql.DB, log *slog.Logger, collectionAddr string) {
-	dbRepo := postgres.NewRepo(db, log)
-	service := service.NewService(dbRepo, log)
+type Server struct {
+	Log *slog.Logger
 
-	device.RegisterDevicesServer(s, &server{
-		log:     log,
-		service: service,
-		services: services{
-			collectionAddr: collectionAddr,
-		},
-		valid: validation.NewValidator(),
-		conv:  converter.NewServerConverter(),
+	Services   *Services
+	GRPCServer *grpc.Server
+	Repo       db.Repository
+}
+
+type Services struct {
+	CollectionAddr string
+}
+
+func Register(s *Server) {
+	device.RegisterDevicesServer(s.GRPCServer, &server{
+		log:      s.Log,
+		service:  service.NewService(s.Repo, s.Log),
+		services: s.Services,
+		valid:    validation.NewValidator(),
+		conv:     converter.NewServerConverter(),
 	})
 }
 
@@ -37,14 +43,10 @@ type server struct {
 	device.UnimplementedDevicesServer
 	service service.Service
 
-	services services
+	services *Services
 
 	valid *validation.Validator
 	conv  *converter.ServerConverter
-}
-
-type services struct {
-	collectionAddr string
 }
 
 func (s *server) GetAllDevices(ctx context.Context, req *device.GetAllDevicesReq) (*device.DevicesRes, error) {
@@ -133,7 +135,7 @@ func (s *server) DeleteDevice(ctx context.Context, req *device.DeleteDeviceReq) 
 		return nil, err
 	}
 
-	cl, cc, err := client.DialCollection(s.services.collectionAddr)
+	cl, cc, err := client.DialCollection(s.services.CollectionAddr)
 	if err != nil {
 		s.log.Error("failed to dial collection service", slog.String("error", err.Error()), slog.String("op", op))
 		return nil, status.Error(codes.Internal, "internal error")

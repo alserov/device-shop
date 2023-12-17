@@ -12,7 +12,7 @@ import (
 	"time"
 )
 
-type CollectionsHandler interface {
+type CollectionHandler interface {
 	AddToFavourite(c *gin.Context)
 	RemoveFromFavourite(c *gin.Context)
 	GetFavourite(c *gin.Context)
@@ -22,21 +22,21 @@ type CollectionsHandler interface {
 	GetCart(c *gin.Context)
 }
 
-type collectionsHandler struct {
+type collectionHandler struct {
 	client collection.CollectionsClient
 	log    *slog.Logger
 }
 
-func NewCollectionsHandler(c collection.CollectionsClient, log *slog.Logger) CollectionsHandler {
-	return &collectionsHandler{
+func NewCollectionsHandler(c collection.CollectionsClient, log *slog.Logger) CollectionHandler {
+	return &collectionHandler{
 		client: c,
 		log:    log,
 	}
 }
 
-func (h *collectionsHandler) AddToFavourite(c *gin.Context) {
+func (h *collectionHandler) AddToFavourite(c *gin.Context) {
 	w := responser.NewResponser(c.Writer)
-	op := "collectionsHandler.AddToFavourite"
+	op := "collectionHandler.AddToFavourite"
 
 	addCred, err := utils.Decode[collection.ChangeCollectionReq](c.Request, validation.CheckCollection)
 	if err != nil {
@@ -56,9 +56,9 @@ func (h *collectionsHandler) AddToFavourite(c *gin.Context) {
 	w.OK()
 }
 
-func (h *collectionsHandler) RemoveFromFavourite(c *gin.Context) {
+func (h *collectionHandler) RemoveFromFavourite(c *gin.Context) {
 	w := responser.NewResponser(c.Writer)
-	op := "collectionsHandler.RemoveFromFavourite"
+	op := "collectionHandler.RemoveFromFavourite"
 
 	deviceAndUserUUIDs, err := utils.Decode[collection.ChangeCollectionReq](c.Request, validation.CheckCollection)
 	if err != nil {
@@ -77,9 +77,9 @@ func (h *collectionsHandler) RemoveFromFavourite(c *gin.Context) {
 	w.OK()
 }
 
-func (h *collectionsHandler) GetFavourite(c *gin.Context) {
+func (h *collectionHandler) GetFavourite(c *gin.Context) {
 	w := responser.NewResponser(c.Writer)
-	op := "collectionsHandler.GetFavourite"
+	op := "collectionHandler.GetFavourite"
 
 	userUUID := c.Param("userUUID")
 
@@ -103,9 +103,9 @@ func (h *collectionsHandler) GetFavourite(c *gin.Context) {
 	})
 }
 
-func (h *collectionsHandler) AddToCart(c *gin.Context) {
+func (h *collectionHandler) AddToCart(c *gin.Context) {
 	w := responser.NewResponser(c.Writer)
-	op := "collectionsHandler.AddToCart"
+	op := "collectionHandler.AddToCart"
 
 	addCred, err := utils.Decode[collection.ChangeCollectionReq](c.Request, validation.CheckCollection)
 	if err != nil {
@@ -125,9 +125,9 @@ func (h *collectionsHandler) AddToCart(c *gin.Context) {
 	w.OK()
 }
 
-func (h *collectionsHandler) RemoveFromCart(c *gin.Context) {
+func (h *collectionHandler) RemoveFromCart(c *gin.Context) {
 	w := responser.NewResponser(c.Writer)
-	op := "collectionsHandler.RemoveFromCart"
+	op := "collectionHandler.RemoveFromCart"
 
 	removeCred, err := utils.Decode[collection.ChangeCollectionReq](c.Request, validation.CheckCollection)
 	if err != nil {
@@ -147,9 +147,9 @@ func (h *collectionsHandler) RemoveFromCart(c *gin.Context) {
 	c.Status(http.StatusOK)
 }
 
-func (h *collectionsHandler) GetCart(c *gin.Context) {
+func (h *collectionHandler) GetCart(c *gin.Context) {
 	w := responser.NewResponser(c.Writer)
-	op := "collectionsHandler.GetCart"
+	op := "collectionHandler.GetCart"
 
 	userUUID := c.Param("userUUID")
 

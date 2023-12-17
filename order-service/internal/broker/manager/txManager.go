@@ -49,6 +49,7 @@ func NewTxManager(b *broker.Broker, log *slog.Logger) TxManager {
 		log:    log,
 		p:      prod,
 		broker: b,
+		conv:   converter.NewServiceConverter(),
 	}
 }
 
@@ -117,7 +118,7 @@ func (t *txManager) CreateOrderTx(in brokermodels.CreateOrderTxBody) error {
 
 	var (
 		wg    = &sync.WaitGroup{}
-		chErr = make(chan error, 2)
+		chErr = make(chan error, createOrderTxAmount)
 		tx    *sql.Tx
 	)
 	wg.Add(createOrderTxAmount)
@@ -171,7 +172,7 @@ func (t *txManager) CreateOrderTx(in brokermodels.CreateOrderTxBody) error {
 
 	for err := range chErr {
 		t.notifyWorkers(userFailureStatus, txUUID)
-		if err = tx.Rollback(); err != nil {
+		if err := tx.Rollback(); err != nil {
 			t.log.Error("failed to rollback", slog.String("error", err.Error()), slog.String("op", "txManager.CreateOrderTx"))
 			return status.Error(codes.Internal, internalError)
 		}

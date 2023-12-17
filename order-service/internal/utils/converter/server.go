@@ -18,7 +18,7 @@ type ServerConverter interface {
 }
 
 type CancelOrder interface {
-	DeviceToIncreaseDeviceAmountPb(req *device.Device) *device.IncreaseDeviceAmountByUUIDReq
+	DeviceToIncreaseDeviceAmountPb(req *device.Device) *device.IncreaseDeviceAmountReq
 }
 
 type UpdateOrder interface {
@@ -39,18 +39,18 @@ func NewServerConverter() ServerConverter {
 	return &serverConverter{}
 }
 
-func (s *serverConverter) DeviceToIncreaseDeviceAmountPb(req *device.Device) *device.IncreaseDeviceAmountByUUIDReq {
-	return &device.IncreaseDeviceAmountByUUIDReq{
-		DeviceUUID: req.UUID,
-		Amount:     req.Amount,
-	}
-}
-
 func (s *serverConverter) CreateOrderReqToService(req *order.CreateOrderReq, orderPrice float32) models.CreateOrderReq {
 	return models.CreateOrderReq{
 		OrderDevices: s.pbOrderDevicesToService(req.OrderDevices),
 		UserUUID:     req.UserUUID,
 		OrderPrice:   orderPrice,
+	}
+}
+
+func (s *serverConverter) DeviceToIncreaseDeviceAmountPb(req *device.Device) *device.IncreaseDeviceAmountReq {
+	return &device.IncreaseDeviceAmountReq{
+		DeviceUUID: req.UUID,
+		Amount:     req.Amount,
 	}
 }
 

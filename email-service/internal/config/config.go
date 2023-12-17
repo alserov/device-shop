@@ -6,30 +6,30 @@ import (
 	"os"
 )
 
-type EmailConfig struct {
+type Config struct {
 	Env   string `yaml:"env"`
 	Email struct {
 		Password string `yaml:"password"`
 		Name     string `yaml:"name"`
 		Email    string `yaml:"email"`
 	} `yaml:"email"`
-	Topics struct {
-		Email struct {
+	Broker struct {
+		Addr   string `yaml:"addr"`
+		Topics struct {
 			AuthTopic  string `yaml:"authTopic"`
 			OrderTopic string `yaml:"orderTopic"`
-		} `yaml:"email"`
-	} `yaml:"topics"`
-	BrokerAddr string `yaml:"brokerAddr"`
+		} `yaml:"topics"`
+	} `yaml:"broker"`
 }
 
-func MustLoadEmail() *EmailConfig {
+func MustLoadEmail() *Config {
 	path := fetchEmailConfigPath()
 
 	if _, err := os.Stat(path); err != nil {
 		panic("config file not found: " + path)
 	}
 
-	var cfg EmailConfig
+	var cfg Config
 	if err := cleanenv.ReadConfig(path, &cfg); err != nil {
 		panic("failed to read config: " + err.Error())
 	}

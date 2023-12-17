@@ -21,7 +21,7 @@ import (
 
 type service struct {
 	log  *slog.Logger
-	repo db.UserRepo
+	repo db.Repository
 
 	w worker.Worker
 	e mail.Emailer
@@ -29,7 +29,7 @@ type service struct {
 	conv *converter.ServiceConverter
 }
 
-func NewService(repo db.UserRepo, w worker.Worker, e mail.Emailer, log *slog.Logger) Service {
+func NewService(repo db.Repository, w worker.Worker, e mail.Emailer, log *slog.Logger) Service {
 	return &service{
 		log:  log,
 		repo: repo,

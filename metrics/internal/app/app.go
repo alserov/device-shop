@@ -73,23 +73,33 @@ func (a *app) MustStart() {
 	prmHandler := promhttp.HandlerFor(reg, promhttp.HandlerOpts{})
 	pMux.Handle("/metrics", prmHandler)
 
+	chStop := make(chan os.Signal)
+	chErr := make(chan error)
+	signal.Notify(chStop, syscall.SIGTERM, syscall.SIGINT)
+
 	go func() {
 		a.log.Info("app is running", slog.Int("port", a.server.port))
 		if err := http.ListenAndServe(fmt.Sprintf(":%d", a.server.port), pMux); err != nil {
-			panic("failed to start server: " + err.Error())
+			chErr <- err
 		}
 	}()
 
-	chStop := make(chan os.Signal)
-	signal.Notify(chStop, syscall.SIGTERM, syscall.SIGINT)
-
-	sign := <-chStop
-	a.stop()
-	a.log.Info("app was stopped", slog.String("signal", sign.String()))
+	select {
+	case sign := <-chStop:
+		a.stop(sign)
+	case <-chErr:
+		recover()
+	}
 }
 
-func (a *app) stop() {
+func (a *app) stop(sign os.Signal) {
 	if err := a.server.server.Shutdown(context.Background()); err != nil {
 		panic("failed to shutdown server: " + err.Error())
 	}
+	a.log.Info("app was stopped", slog.String("signal", sign.String()))
+}
+
+func (a *app) recover() {
+	err := recover()
+	a.log.Error("app was stopped due to panic", slog.Any("error", err))
 }

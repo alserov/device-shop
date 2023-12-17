@@ -10,7 +10,6 @@ import (
 	"google.golang.org/grpc/status"
 
 	"github.com/alserov/device-shop/device-service/internal/db"
-	"github.com/alserov/device-shop/device-service/internal/db/postgres"
 	"github.com/alserov/device-shop/device-service/internal/utils/converter"
 
 	"log/slog"
@@ -25,7 +24,7 @@ type worker struct {
 	topicIn  string
 	topicOut string
 
-	repo db.DeviceRepo
+	repo db.Repository
 
 	c sarama.Consumer
 	p sarama.SyncProducer
@@ -40,7 +39,7 @@ const (
 	kafkaClientID = "USER_WORKER"
 )
 
-func NewTxWorker(b *broker.Broker, db *sql.DB, log *slog.Logger) Worker {
+func NewTxWorker(b *broker.Broker, repo db.Repository, log *slog.Logger) Worker {
 	cons, err := sarama.NewConsumer([]string{b.Addr}, nil)
 	if err != nil {
 		panic("failed to start kafka consumer: " + err.Error())
@@ -56,7 +55,7 @@ func NewTxWorker(b *broker.Broker, db *sql.DB, log *slog.Logger) Worker {
 		c:        cons,
 		p:        prod,
 		conv:     converter.NewWorkerConverter(),
-		repo:     postgres.NewRepo(db, log),
+		repo:     repo,
 		topicIn:  b.Topics.Manager.In,
 		topicOut: b.Topics.Manager.Out,
 		txs:      make(map[string]*sql.Tx),

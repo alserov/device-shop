@@ -7,11 +7,11 @@ import (
 )
 
 type Config struct {
-	Env      string      `yaml:"env" env-default:"local"`
-	DB       DBConfig    `yaml:"db"`
-	GRPC     GRPCConfig  `yaml:"grpc"`
-	Kafka    KafkaConfig `yaml:"kafka"`
-	Services Services    `json:"services"`
+	Env      string       `yaml:"env" env-default:"local"`
+	DB       DBConfig     `yaml:"db"`
+	GRPC     GRPCConfig   `yaml:"grpc"`
+	Broker   BrokerConfig `yaml:"broker"`
+	Services Services     `json:"services"`
 }
 
 type Services struct {
@@ -32,8 +32,8 @@ type GRPCConfig struct {
 	Timeout string `yaml:"timeout"`
 }
 
-type KafkaConfig struct {
-	BrokerAddr string `yaml:"brokerAddr"`
+type BrokerConfig struct {
+	Addr string `yaml:"brokerAddr"`
 
 	UserTopicIn  string `yaml:"userTopicIn"`
 	UserTopicOut string `yaml:"userTopicOut"`

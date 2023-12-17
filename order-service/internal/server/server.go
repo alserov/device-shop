@@ -2,13 +2,12 @@ package server
 
 import (
 	"context"
-	"database/sql"
+	"github.com/alserov/device-shop/order-service/internal/db"
 	"google.golang.org/protobuf/types/known/emptypb"
 
 	"github.com/alserov/device-shop/gateway/pkg/client"
 	"github.com/alserov/device-shop/order-service/internal/broker"
 	"github.com/alserov/device-shop/order-service/internal/broker/manager"
-	"github.com/alserov/device-shop/order-service/internal/db/postgres"
 	"github.com/alserov/device-shop/order-service/internal/service"
 	"github.com/alserov/device-shop/order-service/internal/utils"
 	"github.com/alserov/device-shop/order-service/internal/utils/converter"
@@ -24,25 +23,27 @@ import (
 type Server struct {
 	Log *slog.Logger
 
-	DeviceAddr string
+	Services   *Services
 	GRPCServer *grpc.Server
-	DB         *sql.DB
+	Repo       db.Repository
 
 	Broker *broker.Broker
 }
 
-func Register(s *Server) {
-	dbRepo := postgres.NewRepo(s.DB, s.Log)
+type Services struct {
+	DeviceAddr string
+}
 
+func Register(s *Server) {
 	manager := manager.NewTxManager(s.Broker, s.Log)
 
 	order.RegisterOrdersServer(s.GRPCServer, &server{
 		log:     s.Log,
-		service: service.NewService(dbRepo, manager, s.Log),
+		service: service.NewService(s.Repo, manager, s.Log),
 		valid:   validation.NewValidator(),
 		conv:    converter.NewServerConverter(),
 		services: services{
-			deviceAddr: s.DeviceAddr,
+			deviceAddr: s.Services.DeviceAddr,
 		},
 	})
 }
@@ -80,7 +81,7 @@ func (s *server) CreateOrder(ctx context.Context, req *order.CreateOrderReq) (*o
 	}
 	defer cc.Close()
 
-	orderPrice, err := utils.FetchDevicesWithPrice(ctx, cl, s.log, req.OrderDevices)
+	orderPrice, err := utils.CountOrderPrice(ctx, cl, req.OrderDevices)
 	if err != nil {
 		return nil, err
 	}

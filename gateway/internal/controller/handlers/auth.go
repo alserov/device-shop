@@ -16,7 +16,6 @@ import (
 type AuthHandler interface {
 	Signup(c *gin.Context)
 	Login(c *gin.Context)
-	GetInfo(c *gin.Context)
 }
 
 type authHandler struct {
@@ -85,29 +84,4 @@ func (h *authHandler) Login(c *gin.Context) {
 		"refreshToken": res.RefreshToken,
 		"userUUID":     res.UUID,
 	})
-}
-
-func (h *authHandler) GetInfo(c *gin.Context) {
-	w := responser.NewResponser(c.Writer)
-	op := "authHandler.getInfo"
-
-	userUUID := c.Param("userUUID")
-
-	if userUUID == "" {
-		w.UserError("userUUID can not be empty")
-		return
-	}
-
-	ctx, cancel := context.WithTimeout(c.Request.Context(), time.Second)
-	defer cancel()
-
-	res, err := h.client.GetUserInfo(ctx, &user.GetUserInfoReq{
-		UserUUID: userUUID,
-	})
-	if err != nil {
-		w.HandleServiceError(err, op, h.log)
-		return
-	}
-
-	w.Value(res)
 }

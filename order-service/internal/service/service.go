@@ -23,14 +23,14 @@ type Service interface {
 type service struct {
 	log *slog.Logger
 
-	repo db.OrderRepo
+	repo db.Repository
 
 	conv converter.ServiceConverter
 
 	txManager manager.TxManager
 }
 
-func NewService(repo db.OrderRepo, txManager manager.TxManager, log *slog.Logger) Service {
+func NewService(repo db.Repository, txManager manager.TxManager, log *slog.Logger) Service {
 	return &service{
 		log:       log,
 		repo:      repo,
@@ -78,7 +78,7 @@ func (s *service) UpdateOrder(ctx context.Context, req models.UpdateOrderReq) er
 func (s *service) CancelOrder(ctx context.Context, orderUUID string) error {
 	var (
 		wg           = &sync.WaitGroup{}
-		chErr        = make(chan error, 1)
+		chErr        = make(chan error, 2)
 		chTxs        = make(chan db.SqlTx, 2)
 		orderDevices *db.CancelOrderDevices
 		orderInfo    *db.CancelOrder
@@ -89,20 +89,22 @@ func (s *service) CancelOrder(ctx context.Context, orderUUID string) error {
 	go func() {
 		defer wg.Done()
 		res, err := s.repo.CancelOrderDevicesTx(ctx, orderUUID)
-		chTxs <- res.GetTx()
 		if err != nil {
 			chErr <- err
+			return
 		}
+		chTxs <- res.GetTx()
 		orderDevices = res.Value().(*db.CancelOrderDevices)
 	}()
 
 	go func() {
 		defer wg.Done()
 		res, err := s.repo.CancelOrderTx(ctx, orderUUID)
-		chTxs <- res.GetTx()
 		if err != nil {
 			chErr <- err
+			return
 		}
+		chTxs <- res.GetTx()
 		orderInfo = res.Value().(*db.CancelOrder)
 	}()
 

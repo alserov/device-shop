@@ -2,87 +2,67 @@ package app
 
 import (
 	"context"
-	"github.com/IBM/sarama"
-	"github.com/alserov/device-shop/email-service/internal/broker"
+	"github.com/alserov/device-shop/email-service/internal/worker"
+	"github.com/alserov/device-shop/email-service/internal/worker/order"
+
 	"github.com/alserov/device-shop/email-service/internal/config"
 	"github.com/alserov/device-shop/email-service/internal/email"
+	"github.com/alserov/device-shop/email-service/internal/logger"
+	"github.com/alserov/device-shop/email-service/internal/worker/auth"
+
 	"log/slog"
 	"os/signal"
 	"syscall"
 )
 
-type EmailApp struct {
+type app struct {
 	log *slog.Logger
-	cfg *config.EmailConfig
+	cfg *config.Config
 }
 
-func NewEmailApp(cfg *config.EmailConfig, log *slog.Logger) *EmailApp {
-	return &EmailApp{
-		log: log,
+type App interface {
+	MustStart()
+}
+
+func NewApp(cfg *config.Config) App {
+	return &app{
+		log: logger.MustSetupLogger(cfg.Env),
 		cfg: cfg,
 	}
 }
 
-func (a *EmailApp) MustStartEmail() {
-	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
-	defer cancel()
+func (a *app) MustStart() {
+	defer a.recover()
+	ctx := context.Background()
+	signal.NotifyContext(ctx, syscall.SIGTERM, syscall.SIGINT)
 
-	go a.mustStartEmailManager(ctx, a.cfg)
-
-	a.log.Info("app is running")
-	select {
-	case <-ctx.Done():
-		a.log.Info("app was stopped")
-	}
+	a.mustStartEmailManager(ctx)
 }
 
-func (a *EmailApp) mustStartEmailManager(ctx context.Context, cfg *config.EmailConfig) {
-	poster := email.NewEmailManager(cfg.Email.Password, cfg.Email.Email, cfg.Email.Name)
+func (a *app) mustStartEmailManager(ctx context.Context) {
+	poster := email.NewEmailManager(a.cfg.Email.Password, a.cfg.Email.Email, a.cfg.Email.Name)
 
-	cons, err := sarama.NewConsumer([]string{a.cfg.BrokerAddr}, nil)
-	if err != nil {
-		panic("failed to create a consumer: " + err.Error())
-	}
+	go auth.StartWorker(&worker.Worker{
+		Ctx:        ctx,
+		Topic:      a.cfg.Broker.Topics.AuthTopic,
+		BrokerAddr: a.cfg.Broker.Addr,
+		Poster:     poster,
+		Log:        a.log,
+	})
+	go order.StartWorker(&worker.Worker{
+		Ctx:        ctx,
+		Topic:      a.cfg.Broker.Topics.OrderTopic,
+		BrokerAddr: a.cfg.Broker.Addr,
+		Poster:     poster,
+		Log:        a.log,
+	})
 
-	go func() {
-		msgs, err := broker.Subscribe(cfg.Topics.Email.AuthTopic, cons)
-		if err != nil {
-			panic("failed to subscribe for a topic: " + err.Error())
-		}
-		for i := 0; i < 5; i++ {
-			go func() {
-				for m := range msgs {
-					if err = poster.SendAuth(string(m)); err != nil {
-						a.log.Error("failed to send message", slog.String("error", err.Error()))
-					}
-				}
-			}()
-		}
-		select {
-		case <-ctx.Done():
-		}
-	}()
+	a.log.Info("app is running")
+	<-ctx.Done()
+	a.log.Info("app was stopped")
+}
 
-	go func() {
-		msgs, err := broker.Subscribe(cfg.Topics.Email.OrderTopic, cons)
-		if err != nil {
-			panic("failed to subscribe for a topic: " + err.Error())
-		}
-		for i := 0; i < 5; i++ {
-			go func() {
-				for m := range msgs {
-					if err = poster.SendOrder(string(m)); err != nil {
-						a.log.Error("failed to send message", slog.String("error", err.Error()))
-					}
-				}
-			}()
-		}
-		select {
-		case <-ctx.Done():
-		}
-	}()
-
-	select {
-	case <-ctx.Done():
-	}
+func (a *app) recover() {
+	err := recover()
+	a.log.Error("app was stopped due to panic", slog.Any("error", err))
 }

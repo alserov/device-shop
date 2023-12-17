@@ -13,12 +13,12 @@ import (
 type service struct {
 	log *slog.Logger
 
-	repo db.DeviceRepo
+	repo db.Repository
 
 	conv *converter.ServiceConverter
 }
 
-func NewService(repo db.DeviceRepo, log *slog.Logger) Service {
+func NewService(repo db.Repository, log *slog.Logger) Service {
 	return &service{
 		log:  log,
 		repo: repo,

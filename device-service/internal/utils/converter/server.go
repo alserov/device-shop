@@ -32,7 +32,7 @@ type ServerDevice interface {
 	DeviceToPb(d models.Device) *device.Device
 	GetDevicesByPriceToService(req *device.GetByPrice) models.GetByPrice
 	GetAllDevicesReqToService(req *device.GetAllDevicesReq) models.GetAllDevicesReq
-	GetAllDevicesResToPb(res []*models.Device) *device.DevicesRes
+	GetAllDevicesResToPb(res []models.Device) *device.DevicesRes
 }
 
 func (*serverAdmin) CreateDeviceToService(req *device.CreateDeviceReq) models.CreateDeviceReq {
@@ -92,7 +92,7 @@ func (*serverDevice) GetDevicesByPriceToService(req *device.GetByPrice) models.G
 	}
 }
 
-func (*serverDevice) GetAllDevicesResToPb(res []*models.Device) *device.DevicesRes {
+func (*serverDevice) GetAllDevicesResToPb(res []models.Device) *device.DevicesRes {
 	var devices device.DevicesRes
 	for _, d := range res {
 		device := &device.Device{

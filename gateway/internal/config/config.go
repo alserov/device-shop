@@ -19,9 +19,9 @@ type Broker struct {
 	Addr   string `yaml:"addr"`
 	Topics struct {
 		Metrics struct {
-			Users   string `yaml:"users"`
-			Orders  string `yaml:"orders"`
-			Latency string `yaml:"latency"`
+			UsersAmount string `yaml:"usersAmount"`
+			Orders      string `yaml:"orders"`
+			Latency     string `yaml:"latency"`
 		} `yaml:"metrics"`
 	} `yaml:"topics"`
 }
@@ -32,14 +32,10 @@ type Server struct {
 }
 
 type Services struct {
-	User   Service `yaml:"user"`
-	Device Service `yaml:"device"`
-	Order  Service `yaml:"order"`
-	Coll   Service `yaml:"coll"`
-}
-
-type Service struct {
-	Addr string `yaml:"addr"`
+	UserAddr   string `yaml:"userAddr"`
+	DeviceAddr string `yaml:"deviceAddr"`
+	OrderAddr  string `yaml:"orderAddr"`
+	CollAddr   string `yaml:"collAddr"`
 }
 
 type Cache struct {

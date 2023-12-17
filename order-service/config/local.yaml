@@ -9,7 +9,7 @@ db:
 grpc:
   port: 3005
   timeout: 5s
-kafka:
+broker:
   brokerAddr: 127.0.0.1:9092
   userTopicIn: USER_SERVICE_IN_TX
   userTopicOut: USER_SERVICE_OUT_TX
