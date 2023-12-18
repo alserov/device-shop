@@ -8,7 +8,7 @@
 5. Docker
 6. Kafka (sarama)
 
-![Image not found](docs/schema.png)
+![Image not found](gateway/docs/schema.png)
 
 # TX Manager schema
-![Image not found](docs/manager.png)
+![Image not found](gateway/docs/manager.png)

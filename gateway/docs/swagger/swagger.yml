@@ -1,0 +1,121 @@
+swagger: "2.0"
+
+info:
+  title: Device Shop Gateway
+  version: 0.0.1
+
+host: "localhost:3001"
+schemes:
+  - http
+consumes:
+  - application/json
+produces:
+  - application/json
+
+paths:
+  /auth/signup:
+    post:
+      summary: signup
+      tags:
+        - Auth
+      operationId: signup
+      parameters:
+        - name: body
+          in: body
+          schema:
+            $ref: '#/definitions/SignupReq'
+      responses:
+        '200':
+          description: user was authorized
+          schema:
+            $ref: '#/definitions/SignupRes'
+        '400':
+          description: user was not authorized because of invalid args or this username already taken
+          schema:
+            $ref: '#/definitions/ErrorRes'
+        '500':
+          description: user was not authorized because of server error
+          schema:
+            $ref: '#/definitions/ErrorRes'
+  /auth/login:
+    post:
+      summary: login
+      tags:
+        - Auth
+      operationId: login
+      parameters:
+        - name: body
+          in: body
+          schema:
+            $ref: '#/definitions/LoginReq'
+      responses:
+        '200':
+          description: user was logged in
+          schema:
+            $ref: '#/definitions/LoginRes'
+        '400':
+          description: user was not logged in because of invalid args or not authorized
+          schema:
+            $ref: '#/definitions/ErrorRes'
+        '500':
+          description: user was not authorized because of server error
+          schema:
+            $ref: '#/definitions/ErrorRes'
+
+
+
+definitions:
+  ErrorRes:
+    properties:
+      error:
+        type: string
+
+  SignupReq:
+    required:
+      - username
+      - password
+      - email
+    properties:
+      username:
+        type: string
+        example: curious_shuffle
+      password:
+        type: string
+        example: qwerty123
+      email:
+        type: string
+        example: mymail@gmail.com
+    type: object
+
+  SignupRes:
+    properties:
+      username:
+        type: string
+      email:
+        type: string
+      uuid:
+        type: string
+      cash:
+        type: number
+      refreshToken:
+        type: string
+      token:
+        type: string
+
+  LoginReq:
+    required:
+      - username
+    properties:
+      username:
+        type: string
+        example: curious_shuffle
+      password:
+        type: string
+        example: qwerty123
+
+  LoginRes:
+    properties:
+      refreshToken:
+        type: string
+      uuid:
+        type: string
